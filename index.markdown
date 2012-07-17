@@ -1,4 +1,4 @@
-# Existential Types in C#
+# Existential Types in C\#
 
 I was thinking about existential types recently, what they might be useful for, and if it was possible to encode them in C#.
 
