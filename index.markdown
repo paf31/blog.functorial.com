@@ -1,4 +1,4 @@
-# Existential Types in C\#
+# Existential Types in C# #
 
 I was thinking about existential types recently, what they might be useful for, and if it was possible to encode them in C#.
 
@@ -104,6 +104,7 @@ Finally, here's an example encoding Peano arithmetic over a hidden data type:
                  var _1 = a.Successor(_0);
                  var _2 = a.Successor(_1);
                  var _3 = a.Successor(_2);
+                 
                  return string.Format("{0}, {1}, {2}",
                      a.ToString(_1),
                      a.ToString(_2),
