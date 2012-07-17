@@ -8,12 +8,12 @@ As an example, think of the situation where we want to assign unique identifiers
 
 We might encode this as follows:
 
-interface KeyProvider<K, T> 
-{
-    K NextKey(T t);
+    interface KeyProvider<K, T> 
+    {
+        K NextKey(T t);
 
-    T Map(K key);
-}
+        T Map(K key);
+    }
 
 Here, the type variable K stands for the type of the identifiers, the type we want to hide. The type variable T denotes the type of object we hope to uniquely identify.
 
@@ -21,27 +21,27 @@ We might create an implementation using the System.Guid class or by using a coun
 
 Fortunately, there is a nice isomorphism
 
-exists X. T = forall R. (forall X. T -> R) -> R 
+    exists X. T = forall R. (forall X. T -> R) -> R 
 
 Basically, this says that if you want a value of any type, R, say, and you can compute it given an existential package with any underlying type X, then I can give you that value by instantiating your generic function with the underlying type of the existential package and applying it to its payload.
 
 The isomorphism looks like
 
-pack A a => \R. \f. f[A](a)
+    pack A a => \R. \f. f[A](a)
 
 We can unpack the type by providing a result type R and passing in a function of type forall X. T -> R
 
 Translating this into C# using generics for universals we get:
 
-interface KeyProviderFunction<R, T>
-{
-    R Apply<K>(KeyProvider<K, T> provider);
-}
+    interface KeyProviderFunction<R, T>
+    {
+        R Apply<K>(KeyProvider<K, T> provider);
+    }
 
-interface KeyProvider<T>
-{
-    R Apply<R, T>(KeyProviderFunction<R, T> f);
-}
+    interface KeyProvider<T>
+    {
+        R Apply<R, T>(KeyProviderFunction<R, T> f);
+    }
 
 With this kind of method dispatch, we've created a version of the KeyProvider interface with the type variable K hidden.
 
@@ -49,71 +49,71 @@ Now, to use an implementation of KeyProvider<T>, we simply have to provide a fun
 
 Finally, here's an example encoding Peano arithmetic over a hidden data type:
 
-interface PeanoArithmetic<T>
-{
-    T Zero { get; }
-
-    T Successor(T t);
- 
-    string ToString(T t);
-}
- 
-interface PeanoArithmeticFunction<R>
-{
-     R Apply<T>(PeanoArithmetic<T> arithmetic);
-}
- 
-interface PeanoArithmetic
-{
-     R Apply<R>(PeanoArithmeticFunction<R> f);
-}
- 
-class PeanoArithmeticImplementation : PeanoArithmetic
-{
-    class PeanoArithmeticMethods : PeanoArithmetic<int>
+    interface PeanoArithmetic<T>
     {
-         public int Zero
-         {
-             get { return 0; }
-         }
+        T Zero { get; }
+    
+        T Successor(T t);
  
-         public int Successor(int n)
-         {
-             return n + 1;
-         }
- 
-         public string ToString(int n)
-         {
-             return n.ToString();
-         }
+        string ToString(T t);
     }
  
-    public R Apply<R>(PeanoArithmeticFunction<R> f)
+    interface PeanoArithmeticFunction<R>
     {
-         return f.Apply<int>(new PeanoArithmeticMethods());
+         R Apply<T>(PeanoArithmetic<T> arithmetic);
     }
-}
+     
+    interface PeanoArithmetic
+    {
+         R Apply<R>(PeanoArithmeticFunction<R> f);
+    }
+     
+    class PeanoArithmeticImplementation : PeanoArithmetic
+    {
+        class PeanoArithmeticMethods : PeanoArithmetic<int>
+        {
+             public int Zero
+             {
+                 get { return 0; }
+             }
+     
+             public int Successor(int n)
+             {
+                 return n + 1;
+             }
+     
+             public string ToString(int n)
+             {
+                 return n.ToString();
+             }
+        }
  
-class Program
-{
-     class OneTwoThree : PeanoArithmeticFunction<string>
-     {
-         public string Apply<T>(PeanoArithmetic<T> a)
+        public R Apply<R>(PeanoArithmeticFunction<R> f)
+        {
+             return f.Apply<int>(new PeanoArithmeticMethods());
+        }
+    }
+ 
+    class Program
+    {
+         class OneTwoThree : PeanoArithmeticFunction<string>
          {
-             var _0 = a.Zero;
-             var _1 = a.Successor(_0);
-             var _2 = a.Successor(_1);
-             var _3 = a.Successor(_2);
-             return string.Format("{0}, {1}, {2}",
-                 a.ToString(_1),
-                 a.ToString(_2),
-                 a.ToString(_3));
+             public string Apply<T>(PeanoArithmetic<T> a)
+             {
+                 var _0 = a.Zero;
+                 var _1 = a.Successor(_0);
+                 var _2 = a.Successor(_1);
+                 var _3 = a.Successor(_2);
+                 return string.Format("{0}, {1}, {2}",
+                     a.ToString(_1),
+                     a.ToString(_2),
+                     a.ToString(_3));
+             }
          }
-     }
  
-     static void Main(string[] args)
-     {
-         PeanoArithmetic peano = new PeanoArithmeticImplementation();
-         Console.WriteLine(peano.Apply<string>(new OneTwoThree()));
-     }
-}
+         static void Main(string[] args)
+         {
+             PeanoArithmetic peano = new PeanoArithmeticImplementation();
+             Console.WriteLine(peano.Apply<string>(new OneTwoThree()));
+         }
+    }
