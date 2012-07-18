@@ -47,7 +47,11 @@ With this kind of method dispatch, we've created a version of the KeyProvider in
 
 Now, to use an implementation of KeyProvider<T>, we simply have to provide a function of type KeyProviderFunction<R, T> for some result type R.
 
-Finally, here's an example encoding Peano arithmetic over a hidden data type:
+## Peano Arithmetic ##
+
+Here's an example encoding Peano arithmetic over a hidden data type.
+
+An algebra for the Peano axioms is a type with a zero, and a successor function. For illustration purposes, we'll also add a printing function ToString:
 
     interface PeanoArithmetic<T>
     {
@@ -58,6 +62,8 @@ Finally, here's an example encoding Peano arithmetic over a hidden data type:
         string ToString(T t);
     }
  
+Now we can existentially quantify over the type parameter T to define a Peano algebra with a hidden underlying type:
+
     interface PeanoArithmeticFunction<R>
     {
          R Apply<T>(PeanoArithmetic<T> arithmetic);
@@ -67,7 +73,9 @@ Finally, here's an example encoding Peano arithmetic over a hidden data type:
     {
          R Apply<R>(PeanoArithmeticFunction<R> f);
     }
-     
+
+Here is a simple implementation using Integers as the underlying type:
+
     class PeanoArithmeticImplementation : PeanoArithmetic
     {
         class PeanoArithmeticMethods : PeanoArithmetic<int>
@@ -93,7 +101,9 @@ Finally, here's an example encoding Peano arithmetic over a hidden data type:
              return f.Apply<int>(new PeanoArithmeticMethods());
         }
     }
- 
+
+Even though the type parameter has been hidden, the existentially quantified type can still be used. We can, for example, print the numbers 1, 2, 3 as follows:
+     
     class Program
     {
          class OneTwoThree : PeanoArithmeticFunction<string>
