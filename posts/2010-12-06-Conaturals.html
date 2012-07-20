@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Greatest Fixed Points Part 2 - The Conaturals</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Greatest Fixed Points Part 2 - The Conaturals</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>As a continuation of my last post on the encoding of greatest fixed point types, I'd like to give a treatment of another interesting greatest fixed point type - the conatural numbers, the greatest fixed point of the functor</p>
+<blockquote>
+<p>F (X) = 1 + X</p>
+</blockquote>
+<p>Using the encoding of greatest fixed points from my last post, we can define the conaturals as follows:</p>
+<pre><code>class Conat&lt;T&gt;
+{
+    public T Seed { get; set; }
+    public Func&lt;T, Either&lt;Unit, T&gt;&gt; Generator { get; set; }
+}
+
+interface ConatFunction&lt;R&gt;
+{
+    R Apply&lt;T&gt;(Conat&lt;T&gt; n);
+}
+
+interface Conat
+{
+    R Apply&lt;R&gt;(ConatFunction&lt;R&gt; f);
+}</code></pre>
+<p>Let's interpret this: a conatural number with a (hidden) base type T is a finite or infinite chain of elements of T. Two conaturals are equivalent as existential packages if and only if their chains are both infinite or have the same finite length.</p>
+<p>Let's define some conatural numbers:</p>
+<pre><code>class ConatOne : Conat
+{
+    public R Apply&lt;R&gt;(ConatFunction&lt;R&gt; f)
+    {
+        return f.Apply&lt;Unit&gt;(new Conat&lt;Unit&gt;
+        {
+            Seed = new Unit(),
+            Generator = n =&gt; Either&lt;Unit, Unit&gt;.inl(new Unit())
+        });
+    }
+}
+
+class ConatInfinity : Conat
+{
+    public R Apply&lt;R&gt;(ConatFunction&lt;R&gt; f)
+    {
+        return f.Apply&lt;Unit&gt;(new Conat&lt;Unit&gt;
+        {
+            Seed = new Unit(),
+            Generator = n =&gt; Either&lt;Unit, Unit&gt;.inr(new Unit())
+        });
+    }
+}</code></pre>
+<p>The chain corresponding to the conatural <code>one</code> is parameterized by the <code>Unit</code> type and terminates after one step.</p>
+<p>The chain corresponding to the conatural <code>infinity</code> is parameterized by the <code>Unit</code> type and cycles indefinitely.</p>
+<p>To define a successor conatural, we can replace the underlying type T with the type <code>1 + T</code>, the extra unit type being required here to add an extra step to the chain defining the successor:</p>
+<pre><code>class SuccessorConat&lt;T&gt; : Conat&lt;Either&lt;Unit, T&gt;&gt;
+{
+    public SuccessorConat(Conat&lt;T&gt; n)
+    {
+        Seed = Either&lt;Unit, T&gt;.inl(new Unit());
+        Generator = e =&gt; e.Case&lt;Either&lt;Unit, Either&lt;Unit, T&gt;&gt;&gt;(
+            u =&gt; Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inr(Either&lt;Unit, T&gt;.inr(n.Seed)),
+            e1 =&gt; n.Generator(e1).Case(
+                u1 =&gt; Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inl(new Unit()),
+                e2 =&gt; Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inr(Either&lt;Unit, T&gt;.inr(e2))));
+    }
+}</code></pre>
+<p>Addition of conaturals can be defined by summing base types, essentially gluing the end of the first chain to the start of the first:</p>
+<pre><code>class ConatAdd&lt;T1, T2&gt; : Conat&lt;Either&lt;T1, T2&gt;&gt;
+{
+    public ConatAdd(Conat&lt;T1&gt; n, Conat&lt;T2&gt; m)
+    {
+        Seed = Either&lt;T1, T2&gt;.inr(m.Seed);
+        Generator = e =&gt; e.Case&lt;Either&lt;Unit, Either&lt;T1, T2&gt;&gt;&gt;(
+            t1 =&gt; n.Generator(t1).Case&lt;Either&lt;Unit, Either&lt;T1, T2&gt;&gt;&gt;(
+                u2 =&gt; Either&lt;Unit, Either&lt;T1, T2&gt;&gt;.inl(new Unit()),
+                e2 =&gt; Either&lt;Unit, Either&lt;T1, T2&gt;&gt;.inr(Either&lt;T1, T2&gt;.inl(e2))),
+            t2 =&gt; m.Generator(t2).Case&lt;Either&lt;Unit, Either&lt;T1, T2&gt;&gt;&gt;(
+                u1 =&gt; Either&lt;Unit, Either&lt;T1, T2&gt;&gt;.inr(Either&lt;T1, T2&gt;.inl(n.Seed)),
+                e1 =&gt; Either&lt;Unit, Either&lt;T1, T2&gt;&gt;.inr(Either&lt;T1, T2&gt;.inr(e1))));
+    }
+}</code></pre>
+<p>Multiplication can be defined similarly over the product type. We can visualize this as traversing the elements of one chain several times, once for each step in the second chain:</p>
+<pre><code>class ConatMult&lt;T1, T2&gt; : Conat&lt;Tuple&lt;T1, T2&gt;&gt;
+{
+    public ConatMult(Conat&lt;T1&gt; n, Conat&lt;T2&gt; m)
+    {
+        Seed = Tuple.Create&lt;T1, T2&gt;(n.Seed, m.Seed);
+        Generator = p =&gt; n.Generator(p.Item1).Case&lt;Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;&gt;(
+                u1 =&gt; m.Generator(p.Item2).Case&lt;Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;&gt;(
+                    u2 =&gt; Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;.inl(new Unit()),
+                    t2 =&gt; Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;.inr(Tuple.Create&lt;T1, T2&gt;(n.Seed, t2))),
+                t1 =&gt; Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;.inr(Tuple.Create&lt;T1, T2&gt;(t1, p.Item2)));
+    }
+}</code></pre>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>

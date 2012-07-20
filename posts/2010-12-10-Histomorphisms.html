@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Histomorphisms, Dynamic Programming and the Knapsack Problem</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Histomorphisms, Dynamic Programming and the Knapsack Problem</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>Histomorphisms generalize the concept of course-of-value iteration to arbitrary recursive data types. They are useful for expressing solutions to problems which depend optimally on solutions to structurally smaller problems. That is, histomorphisms are useful for applying the concepts of dynamic programming over recursive datatypes.</p>
+<p>Using some the methods in my previous posts, we can express histomorphisms in C# over a fixed recursive data type in a type-safe way. In a language such as Haskell, we can generalize the method so that it applies to any recursive data type, but in C# the lack of type-level functions prevents us from doing so.</p>
+<p>First, a little theory. Recall the definition of catamorphism as the unique \(F\)-algebra morphism from the initial \(F\)-algebra:</p>
+<p>\(\require{AMSmath} \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex} \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}} \begin{array}{ccc} F \mu_F&amp; \ra{F (|\phi|)} &amp; F A \\ \da{in} &amp; &amp; \da{\phi} \\ \mu_F&amp; \ras{(|\phi|)} &amp; A \end{array}\)</p>
+<p>We want to use answers to subproblems to generate﻿ the solution to the full problem. That is, we want to use the values of \((|\phi|) x\) for structurally smaller values \(x\) of \(\mu_F\).</p>
+<p>In order to use intermediate results, we replace the recursive data structure with one which is structurally similar, but which also stores the partially calculated results. That structure is given by the cofree comonad over \(F\), denoted here \(\operatorname{CoFree}_F\):</p>
+<p>\(\operatorname{CoFree}_F X = \nu ( Y \rightarrow X \times F Y )\)</p>
+<p>Here, we've replaced the functor \(F\) with the functor \(Y \rightarrow X \times F Y\), which carries an extra \(X\) at each step of the recursion.</p>
+<p>We can think of an element of \(\operatorname{CoFree}_F X\) as an \(X\)-annotated version of the recursive data type \(\mu_F\).</p>
+<p>The diagram above now becomes:</p>
+<p>\(\require{AMSmath} \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex} \newcommand{\las}[1]{\kern-1.5ex\xleftarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}} \begin{array}{ccc} F \mu_F &amp; \ra{F (|\epsilon|)} &amp; F \operatorname{CoFree}_F X &amp; \ra{[\phi, id]} &amp; X \times F \operatorname{CoFree}_F X \\ \da{\operatorname{in}} &amp; &amp; \da{\epsilon} &amp; &amp; \da{id} \\ \mu_F &amp; \ras{(|\epsilon|)} &amp; \operatorname{CoFree}_F X &amp; \las{\operatorname{out}} &amp; X \times \operatorname{CoFree}_F X \end{array}\)</p>
+<p>The left square is a catamorphism, where the algebra morphism is defined by the commutativity of the right square.</p>
+<p>Composing with the map \(extract :: \operatorname{CoFree}_F X \rightarrow X\) gives the desired map histo \(\phi :: \mu_F \rightarrow X\).</p>
+<p>\(\operatorname{histo} \phi\) is given by following the arrows around the top of the diagram: first we apply the histomorphism to a structurally smaller value of \(\mu F\) before using \(\phi\) to accumulate results from structurally smaller values, saving the result along with previous results, and then extracting the final result from the comonad.</p>
+<p>Now, let's express this in C#. Note, the lack of memoized functions in C# makes the following implementation non-optimal. It is provided simply to illustrate the ideas presented above.</p>
+<p>We are going to solve the knapsack problem, a problem which is particularly amenable to a dynamic programming solution, and whose solution is expressible as a histomorphism. The problem is stated as follows: given a collection of \(n\) objects of weights \(w_1, \dots, w_n\) and values \(v_1, \dots, v_n\), find the maximum total value \(\operatorname{KS}(W)\) of a set of objects which can be carried in a knapsack capable of carrying a maximum weight \(W\).</p>
+<p>Notice that \(\operatorname{KS}(0)=0\), being the total value of the only set of objects which can be carried in a knapsack of maximum weight zero, the empty set.</p>
+<p>Also, for \(W \lt 0\), we can calculate \(\operatorname{KS}(W)\) based on \(\operatorname{KS}(n)\) for \(n \lt W\), as follows:</p>
+<p>\(\operatorname{KS}(W) = ( \operatorname{KS}(W - 1), v1 + \operatorname{KS}(W - w1), \dots, vn + \operatorname{KS}(W - wn) )\)</p>
+<p>The domain of our histomorphism is going to be the natural numbers, the least fixed point of the functor \(F X = 1 + X\). The codomain will be the primitive C# type int. First, let's define the natural numbers:</p>
+<pre><code>class NatF&lt;T&gt;
+{
+    public Either&lt;Unit, T&gt; Data;
+}
+
+interface Nat
+{
+    T Cata&lt;T&gt;(Func&lt;NatF&lt;T&gt;, T&gt; f);   
+}</code></pre>
+<p>We also need to define a data type representing the cofree comonad over F. Using the encoding of greatest fixed points described here, we have the following:</p>
+<pre><code>class CoFreeNatF&lt;L, T&gt;
+{
+    public L Leaf;
+    public NatF&lt;T&gt; Data;   
+}
+
+
+class ECoFreeNatF&lt;L, T&gt;
+{
+    public T Seed;
+    public Func&lt;T, CoFreeNatF&lt;L, T&gt;&gt; Generator;
+}
+
+
+interface CoFreeNatFunc&lt;L, R&gt;
+{
+    R Apply&lt;T&gt;(ECoFreeNatF&lt;L, T&gt; value);
+}
+
+
+interface CoFreeNat&lt;L&gt;
+{
+    R Apply&lt;R&gt;(CoFreeNatFunc&lt;L, R&gt; f);
+}</code></pre>
+<p>Here we've given the name <code>CoFreeNatF</code> to the functor defining the cofree comonad over \(F\), and <code>ECoFreeNatF</code> to the term \(X \times (X \rightarrow \operatorname{CoFree}_{Nat} X)\) appearing inside the existential type defining <code>CoFreeNat</code> as a greatest fixed point type.</p>
+<p>With those definitions, and the definition of a catamorphism given here, we can define a histomorphism as follows:</p>
+<pre><code>public static Func&lt;Nat, L&gt; Histo&lt;L&gt;(Func&lt;NatF&lt;CoFreeNat&lt;L&gt;&gt;, L&gt; histoSeed)
+{
+    Func&lt;NatF&lt;CoFreeNat&lt;L&gt;&gt;, CoFreeNat&lt;L&gt;&gt; seed =
+        leafy =&gt; new CoFreeNatF&lt;L, CoFreeNat&lt;L&gt;&gt;
+        {
+            Leaf = histoSeed(leafy),
+            Data = leafy
+        }.Out();
+
+    return n =&gt; n.Cata&lt;CoFreeNat&lt;L&gt;&gt;(seed).Extract&lt;L&gt;();
+}</code></pre>
+<p>To give this some meaning, we need some utility methods in order to extract data from the comonad. In particular, we are missing the definition of the functions</p>
+<blockquote>
+<p>out :: CoFreeNatF L (CoFreeNat L)-&gt; CoFreeNat L</p>
+</blockquote>
+<p>and</p>
+<blockquote>
+<p>extract :: CoFreeNat L -&gt; L</p>
+</blockquote>
+<p>\(\operatorname{out}\) lets us combine a previously calculated value and a value in the comonad to give a new value in the comonad. It is the arrow on the bottom of the right hand square in the diagram above.</p>
+<p>We have to divide into two cases, the zero case and the successor case. Here we use the class names Node and Chain respectively:</p>
+<pre><code>class Node&lt;L&gt; : CoFreeNat&lt;L&gt;
+{
+    private L leaf;
+
+    public Node(L leaf)
+    {
+        this.leaf = leaf;
+    }
+
+    public R Apply&lt;R&gt;(CoFreeNatFunc&lt;L, R&gt; f)
+    {
+        return f.Apply&lt;Unit&gt;(new ECoFreeNatF&lt;L, Unit&gt;
+        {
+            Seed = new Unit(),
+            Generator = u =&gt; new CoFreeNatF&lt;L, Unit&gt;
+            {
+                Leaf = leaf,
+                Data = new NatF&lt;Unit&gt;
+                {
+                    Data = Either&lt;Unit, Unit&gt;.inl(new Unit())
+                }
+            }
+        });
+    }
+}
+
+class ChainFunction&lt;L, R&gt; : CoFreeNatFunc&lt;L, R&gt;
+{
+    private L leaf; private CoFreeNatFunc&lt;L, R&gt; f;
+
+    public ChainFunction(L leaf, CoFreeNatFunc&lt;L, R&gt; f)
+    {
+        this.leaf = leaf; this.f = f;
+    }
+
+    public R Apply&lt;T&gt;(ECoFreeNatF&lt;L, T&gt; value)
+    {
+        return f.Apply&lt;Either&lt;Unit, T&gt;&gt;(new ECoFreeNatF&lt;L, Either&lt;Unit, T&gt;&gt;
+        {
+            Seed = Either&lt;Unit, T&gt;.inl(new Unit()),
+            Generator = e =&gt; e.Case(u =&gt; new CoFreeNatF&lt;L, Either&lt;Unit, T&gt;&gt;
+            {
+                Leaf = leaf,
+                Data = new NatF&lt;Either&lt;Unit, T&gt;&gt;
+                {
+                    Data = Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inr(Either&lt;Unit, T&gt;.inr(value.Seed))
+                }
+            }, t =&gt;
+            {
+                var next = value.Generator(t); return new CoFreeNatF&lt;L, Either&lt;Unit, T&gt;&gt;
+                {
+                    Leaf = next.Leaf,
+                    Data = new NatF&lt;Either&lt;Unit, T&gt;&gt;
+                    {
+                        Data = Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inr(next.Data.Data)
+                    }
+                };
+            })
+        });
+    }
+}
+
+class Chain&lt;L&gt; : CoFreeNat&lt;L&gt;
+{
+    private L leaf; private CoFreeNat&lt;L&gt; pred;
+
+    public Chain(L leaf, CoFreeNat&lt;L&gt; pred)
+    {
+        this.leaf = leaf; this.pred = pred;
+    }
+
+    public R Apply&lt;R&gt;(CoFreeNatFunc&lt;L, R&gt; f)
+    {
+        return pred.Apply&lt;R&gt;(new ChainFunction&lt;L, R&gt;(leaf, f));
+    }
+}
+
+public static CoFreeNat&lt;L&gt; Out&lt;L&gt;(this CoFreeNatF&lt;L, CoFreeNat&lt;L&gt;&gt; n)
+{
+    return n.Data.Data.Case&lt;CoFreeNat&lt;L&gt;&gt;(unit =&gt; new Node&lt;L&gt;(n.Leaf),
+        pred =&gt; new Chain&lt;L&gt;(n.Leaf, pred));
+} </code></pre>
+<p>We also have the inverse, unrolling one level of the comonad to give a previously-calculated value and another value of the comonad:</p>
+<pre><code>class InFunction&lt;L&gt; : CoFreeNatFunc&lt;L, CoFreeNatF&lt;L, CoFreeNat&lt;L&gt;&gt;&gt;
+{
+    public CoFreeNatF&lt;L, CoFreeNat&lt;L&gt;&gt; Apply&lt;T&gt;(ECoFreeNatF&lt;L, T&gt; n)
+    {
+        var value = n.Generator(n.Seed);
+
+        return new CoFreeNatF&lt;L, CoFreeNat&lt;L&gt;&gt;
+        {
+            Leaf = value.Leaf,
+            Data = value.Data.Data.Case(unit =&gt; new NatF&lt;CoFreeNat&lt;L&gt;&gt;
+            {
+                Data = Either&lt;Unit, CoFreeNat&lt;L&gt;&gt;.inl(new Unit())
+            }, t =&gt; new NatF&lt;CoFreeNat&lt;L&gt;&gt;
+            {
+                Data = Either&lt;Unit, CoFreeNat&lt;L&gt;&gt;.inr(new AnaCoFreeNat&lt;L, T&gt;(t, n.Generator))
+            })
+        };
+    }
+}
+
+public static CoFreeNatF&lt;L, CoFreeNat&lt;L&gt;&gt; In&lt;L&gt;(this CoFreeNat&lt;L&gt; n)
+{
+    return n.Apply(new InFunction&lt;L&gt;());
+}</code></pre>
+<p>We also need to extract values from the comonad:</p>
+<pre><code>class ExtractFunction&lt;L&gt; : CoFreeNatFunc&lt;L, L&gt;
+{
+    public L Apply&lt;T&gt;(ECoFreeNatF&lt;L, T&gt; tree)
+    {
+        return tree.Generator(tree.Seed).Leaf;
+    }
+}
+
+public static L Extract&lt;L&gt;(this CoFreeNat&lt;L&gt; leafy)
+{
+    return leafy.Apply&lt;L&gt;(new ExtractFunction&lt;L&gt;());
+}</code></pre>
+<p>I will leave the definition of anamorphism into the comonad as a simple exercise.</p>
+<p>At last, we can define the solution to the knapsack problem. For brevity here I'm going to fix the weights and values here. We have three types of object: a type of value 2 and weight 2, a type of value 3 and weight 3 and a type of value 5 and weight 4.</p>
+<pre><code>Func&lt;NatF&lt;CoFreeNat&lt;int&gt;&gt;, int&gt; seed = n =&gt;
+    n.Data.Case&lt;int&gt;(
+        unit =&gt; 0,
+        chain =&gt; new[] {                       
+        /* KS(n - 1)     */ chain.Extract(),
+        /* KS(n - 2) + 2 */ chain.In().Data.Data.Case(
+                                u =&gt; 0,
+                                n1 =&gt; n1.Extract() + 2),                       
+        /* KS(n - 3) + 3 */ chain.In().Data.Data.Case(
+                                u =&gt; 0,
+                                n1 =&gt; n1.In().Data.Data.Case(
+                                    u =&gt; 0, n2 =&gt;
+                                    n2.Extract() + 3)),
+        /* KS(n - 4) + 5 */ chain.In().Data.Data.Case(
+                                u =&gt; 0,
+                                n1 =&gt; n1.In().Data.Data.Case(
+                                    u =&gt; 0,
+                                    n2 =&gt; n2.In().Data.Data.Case(
+                                        u =&gt; 0,
+                                        n3 =&gt; n3.Extract() + 5)))
+        }.Max());
+
+var solution = Histo&lt;int&gt;(seed);</code></pre>
+<p>Eager readers may want to try the following:</p>
+<ul>
+<li>Generalize the above to handle an arbitrary set of weights and values.</li>
+<li>Express the fibonnaci sequence \(\operatorname{fib } 0 = \operatorname{fib } 1 = 1, \operatorname{fib } n = \operatorname{fib }(n - 1) + \operatorname{fib }(n - 2)\) for \(n &gt; 1\) as a histomorphism.</li>
+<li>Define histomorphisms over another recursive data type such as binary trees or lists.</li>
+</ul>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>
