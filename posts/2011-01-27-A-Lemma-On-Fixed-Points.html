@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - A Lemma on Fixed Points</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>A Lemma on Fixed Points</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>I was reading some of my older notes on least fixed point types and found this. It's hardly groundbreaking I'm sure you'll agree, but I thought it was quite a nice little result.</p>
+<h2 id="lemma">Lemma</h2>
+<p>Suppose</p>
+<p>\(F : (X, Y) \rightarrow (F_1 X, F_2 (X, Y))\)</p>
+<p>is a functor with an initial algebra. Then the initial algebra is isomorphic to</p>
+<p>\(\mu_F \cong (\mu F_1, \mu (X \rightarrow F_2 (\mu F_1, X)))\)</p>
+<p>when all defined terms exist.</p>
+<h2 id="example">Example</h2>
+<p>Let \(F (X, Y) = (1 + X, 1 + X \times Y)\).</p>
+<p>By the lemma we have</p>
+<p>\(\mu F = (\mu (X \rightarrow 1 + X), \mu (Y \rightarrow 1 + Y \times \mu (X \rightarrow 1 + X)))\)</p>
+<p>That is, \(\mu F = (\mathbb{N}, [\mathbb{N}])\).</p>
+<h2 id="proof">Proof</h2>
+<p>We show that the term on the right of the isomorphism relation is an initial \(F\)-algebra. Then, by uniqueness, it must be isomorphic to \(\mu F\).</p>
+<p>Let</p>
+<p>\(\chi (X) = F_2(\mu F_1, X)\)</p>
+<p>First we show that \((\mu F_1, \mu \chi)\) is an \(F\)-algebra. The algebra morphism is</p>
+<p>\(\begin{array}{ccc} F (\mu F_1, \mu \chi) &amp; = &amp; (F_1 \mu F_1, F_2 (\mu F_1, \mu \chi)) \\ &amp; = &amp; (F_1 \mu F_1, \chi (\mu \chi)) \\ &amp; \rightarrow &amp; (\mu F_1, \mu \chi) \end{array}\)</p>
+<p>where the two components of the final map are the initial algebra morphisms for \(\mu F_1\) and \(\mu \chi\).</p>
+<p>It is required to prove that \((\mu F_1, \mu \chi)\) is an initial algebra, that is, for any \(F\)-algebra \(F A \rightarrow A\), there is a unique morphism of algebras \((\mu F_1, \mu \chi) \rightarrow A\).</p>
+<p>We seek morphisms \(\mu F_1 \rightarrow \pi_1 A\) and \(\mu \chi \rightarrow \pi_2 A\) such that the following diagrams commute:</p>
+<p>\(\require{AMSmath} \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex} \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}} \begin{array}{ccc} F_1 \mu F_1&amp; \ra{} &amp; F_1 \pi_1 A \\ \da{\operatorname{out}} &amp; &amp; \da{\phi} \\ \mu F_1&amp; \ras{} &amp; \pi_1 A \end{array} \begin{array}{ccc} \chi \mu \chi &amp; \ra{} &amp; \chi \pi_2 A \\ \da{\operatorname{out}} &amp; &amp; \da{} \\ \mu \chi&amp; \ras{\pi_2 A} &amp; \pi_2 A \end{array}\)</p>
+<p>The first morphism is determined uniquely by the definition of \(\mu F_1\).</p>
+<p>We just need to show that \(\pi_2 A\) is a \(\chi\)-algebra. Then, the second morphism is given uniquely by the definition of \(\mu \chi\).</p>
+<p>We have morphisms</p>
+<p>\(\begin{array}{ccc} f &amp; :: &amp; \mu F_1 \rightarrow \pi_1 A \\ \pi_2 a &amp; :: &amp; F_2 (\pi_1 A, \pi_2 A) \rightarrow \pi_2 A \end{array}\)</p>
+<p>which compose to give</p>
+<p>\(\begin{array}{ccc} \chi \pi_2 A &amp; = &amp; F_2 (\mu F_1, \pi_2 A) \\ &amp; \rightarrow &amp; F_2 (\pi_1 A, \pi_2 A) \\ &amp; \rightarrow &amp; \pi_2 A \end{array}\)</p>
+<p>﻿This completes the proof.</p>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>
