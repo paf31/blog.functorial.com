@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Strongly-Typed Format Strings</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Strongly-Typed Format Strings</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>The <code>string.Format</code> method is very useful for pretty-printing data:</p>
+<blockquote>
+<p>string.Format(&quot;{0},{1} (Born {2:d})&quot;, &quot;Smith&quot;, &quot;John&quot;, new DateTime(1900, 1, 1))</p>
+<p>Smith, John (Born 1/1/1900)</p>
+</blockquote>
+<p>One problem is that this method is not strongly typed. There is nothing to stop us supplying the wrong types of parameters:</p>
+<blockquote>
+<p>string.Format(&quot;{0},{1} (Born {2:d})&quot;, &quot;Smith&quot;, 12345, new Currency())</p>
+</blockquote>
+<p>Providing the wrong number of arguments results in an exception:</p>
+<blockquote>
+<p>string.Format(&quot;{0},{1} (Born {2:d})&quot;, &quot;Smith&quot;, &quot;John&quot;)</p>
+<p>'string.Format(&quot;{0},{1} (Born {2:d})&quot;, 1, new Currency())' threw an exception of type 'System.FormatException'</p>
+</blockquote>
+<p>and the type system can do nothing to help the developer find these bugs at compile time.</p>
+<p>Instead, we can wrap the <code>string.Format</code> method in a couple of different ways so that the method becomes strongly typed, and the mistakes above result in a compile-time error. This is inspired by an attempt to translate C's printf method into a strongly typed functional language (see [1]).</p>
+<h2 id="first-version">First Version</h2>
+<p>First, we define a collection of singleton types which define the set of possible format string 'shapes':</p>
+<pre><code>interface FormatStringShape { }
+
+class LiteralShape : FormatStringShape{ }
+
+class VariableShape&lt;T&gt; : FormatStringShape { }
+
+class CompositeShape&lt;T1, T2&gt; : FormatStringShape
+    where T1 : FormatStringShape
+    where T2 : FormatStringShape
+{ }</code></pre>
+<p>Here, the three classes are just placeholders which will appear in our types later on - we are not going to actually instantiate a <code>FormatStringShape</code> at any point.</p>
+<p><code>LiteralShape</code> is the shape of a string literal (a format string with no arguments). <code>VariableShape&lt;T&gt;</code> is the shape of a format string with one argument of type <code>T</code>. <code>CompositeShape&lt;T1, T2&gt;</code> is a shape obtained by gluing two smaller shapes together.</p>
+<p>With this notation, the shape of the format string in the example above would be the type</p>
+<blockquote>
+<p>CompositeShape&lt;VariableShape&lt;string&gt;, CompositeShape&lt;LiteralShape, CompositeShape&lt;VariableShape&lt;string&gt;, CompositeShape&lt;LiteralShape, CompositeShape&lt;VariableShape&lt;DateTime&gt;, LiteralShape&gt;&gt;&gt;&gt;&gt;&gt;</p>
+</blockquote>
+<p>Phew! The good news is that these types won't appear in the finished methods, they're just here to classify the types of format strings and format string argument sets that we can create.</p>
+<p>Now for each shape, we need to define an appropriate set of arguments. We do this by structural induction on the types of shapes:</p>
+<pre><code>interface FormatStringValues&lt;S&gt; where S : FormatStringShape { }
+
+class LiteralValues : FormatStringValues&lt;LiteralShape&gt; { }
+
+class VariableValues&lt;T&gt; : FormatStringValues&lt;VariableShape&lt;T&gt;&gt;
+{
+    public T Value { get; set; }
+
+    public VariableValues(T value) { Value = value; }
+}
+
+class CompositeValues&lt;T1, T2&gt; : FormatStringValues&lt;CompositeShape&lt;T1, T2&gt;&gt;
+    where T1 : FormatStringShape
+    where T2 : FormatStringShape
+{
+    public FormatStringValues&lt;T1&gt; Left { get; set; }
+
+    public FormatStringValues&lt;T2&gt; Right { get; set; }
+
+    public CompositeValues(FormatStringValues&lt;T1&gt; left,
+        FormatStringValues&lt;T2&gt; right)
+    {
+        Left = left;
+        Right = right;
+    }
+} </code></pre>
+<p>Note a literal takes no arguments, a variable of type <code>T</code> takes one argument of type <code>T</code> and a composite of two shapes takes two sets of arguments, one for each of its parts.</p>
+<p>With those definitions, a format string object is given by the interface:</p>
+<pre><code>interface FormatString&lt;S&gt; where S : FormatStringShape
+{
+    StringBuilder Append(StringBuilder builder, 
+        FormatStringValues&lt;S&gt; values);
+}</code></pre>
+<p>Note that the <code>Append</code> method can only be called with values of the correct shape!</p>
+<p>We could just return a string, but to reduce string concatenations, we chain the <code>StringBuilder</code> through the computation as state.</p>
+<p>Again, we define implementations, by structural induction on shape types:</p>
+<pre><code>class LiteralFormatString : FormatString&lt;LiteralShape&gt;
+{
+    public string Value { get; set; } 
+
+    public LiteralFormatString(string value) { Value = value; }
+
+    public StringBuilder Append(StringBuilder builder, 
+         FormatStringValues&lt;LiteralShape&gt; values)
+    {
+        return builder.Append(Value);
+    }
+ }
+
+class VariableFormatString&lt;T&gt; : FormatString&lt;VariableShape&lt;T&gt;&gt;
+{
+    public Func&lt;T, string&gt; Formatter { get; set; }
+
+    public VariableFormatString(Func&lt;T, string&gt; formatter) 
+    { 
+        Formatter = formatter; 
+    }
+
+    public StringBuilder Append(StringBuilder builder,
+        FormatStringValues&lt;VariableShape&lt;T&gt;&gt; values)
+    {
+        return builder.Append(Formatter(((VariableValues&lt;T&gt;) values).Value));
+    }
+}
+
+class CompositeFormatString&lt;T1, T2&gt; : FormatString&lt;CompositeShape&lt;T1, T2&gt;&gt;
+     where T1 : FormatStringShape
+     where T2 : FormatStringShape
+{
+    public FormatString&lt;T1&gt; Left { get; set; }
+
+    public FormatString&lt;T2&gt; Right{ get; set; }
+
+    public CompositeFormatString(FormatString&lt;T1&gt; left, 
+        FormatString&lt;T2&gt; right)
+    {
+        Left = left;
+        Right = right;
+    }
+
+    public StringBuilder Append(StringBuilder builder, 
+        FormatStringValues&lt;CompositeShape&lt;T1, T2&gt;&gt; values)
+    {
+        var cValues = (CompositeValues&lt;T1, T2&gt;) values;
+        return Right.Append(Left.Append(builder, cValues.Left), cValues.Right);
+    }
+}</code></pre>
+<p>A string format for a literal is just the string literal. A string format with a variable shape of type <code>T</code> is a <code>Func&lt;T, string&gt;</code> which turns the value into a suitable string. A composite string format is a pair of string formats of the correct shapes.</p>
+<p>Note that this approach requires explicit casts for the argument list types.</p>
+<p>Now, with a few extension methods (left as an exercise!) we can create format strings whose types determine their shape, and therefore prevent type errors at compile-time:</p>
+<pre><code>var formatString =
+    FormatStrings.Variable&lt;string&gt;(s =&gt; s)
+        .Then(FormatStrings.Literal(&quot;, &quot;))
+        .Then(FormatStrings.Variable&lt;string&gt;(s =&gt; s))
+        .Then(FormatStrings.Literal(&quot; (Born &quot;))
+        .Then(FormatStrings.Variable&lt;DateTime&gt;(d =&gt; d.ToShortDateString()))
+        .Then(FormatStrings.Literal(&quot;)&quot;));</code></pre>
+<p>Formatting a string looks like this:</p>
+<pre><code>formatString.Format(
+    FormatStrings.Value(&quot;Smith&quot;)
+        .Then(FormatStrings.Nothing())
+        .Then(FormatStrings.Value(&quot;John&quot;))
+        .Then(FormatStrings.Nothing())
+        .Then(FormatStrings.Value(new DateTime(1900, 1, 1)))
+        .Then(FormatStrings.Nothing()))); &gt;&gt; Smith, John (Born 1/1/1900)</code></pre>
+<p>This approach has a couple of problems. The first is the presence of the casts when formatting the value lists. The second is a performance issue - for short argument lists we can improve performance by wrapping <code>string.Format</code> directly.</p>
+<h2 id="second-version">Second Version</h2>
+<p>In this approach, we use the visitor pattern to turn the <code>FormatString&lt;S&gt;</code> directly into a format string. Similarly, we can visit the <code>FormatStringValues&lt;S&gt;</code> and collect a list of parameters. We can then call <code>string.Format</code> as usual.</p>
+<p>We define two visitor interfaces:</p>
+<pre><code>interface FormatStringValuesVisitor&lt;R&gt;
+{
+    R VisitLiteral(LiteralValues l);
+
+    R VisitVariable&lt;T&gt;(VariableValues&lt;T&gt; v);
+
+    R VisitComposite&lt;T1, T2&gt;(CompositeValues&lt;T1, T2&gt; c)
+        where T1 : FormatStringShape
+        where T2 : FormatStringShape;
+}
+
+interface FormatStringVisitor&lt;R&gt;
+{
+    R VisitLiteral&lt;T&gt;(LiteralFormatString&lt;T&gt; l);
+
+    R VisitVariable&lt;T&gt;(VariableFormatString&lt;T&gt; v);
+
+    R VisitComposite&lt;T1, T2&gt;(CompositeFormatString&lt;T1, T2&gt; c)
+        where T1 : FormatStringShape
+        where T2 : FormatStringShape;
+}</code></pre>
+<p>Now we can define two visitors to form the format string and the values list respectively:</p>
+<pre><code>class BuildFormatStringVisitor : FormatStringVisitor&lt;string&gt;
+{
+    private int index;
+
+    public string VisitLiteral(LiteralFormatString one)
+    {
+        return one.Value;
+    }
+
+    public string VisitVariable&lt;T&gt;(VariableFormatString&lt;T&gt; e)
+    {
+        return &quot;{&quot; + index++ + &quot;}&quot;;
+    }
+
+    public string VisitComposite&lt;T1, T2&gt;(CompositeFormatString&lt;T1, T2&gt; c)
+        where T1 : FormatStringShape
+        where T2 : FormatStringShape
+    {
+        return c.Left.AcceptVisitor(this) + c.Right.AcceptVisitor(this);
+    }
+}
+
+class CollectValuesVisitor : ValuesVisitor&lt;object[]&gt;
+{
+    public IEnumerable&lt;object&gt; VisitLiteral(LiteralValues e)
+    {
+        yield break;
+    }
+
+    public IEnumerable&lt;object&gt; VisitVariable&lt;T&gt;(VariableValues&lt;T&gt; one)
+    {
+        yield return one.Value;
+    }
+
+    public IEnumerable&lt;object&gt; VisitComposite&lt;T1, T2&gt;(CompositeValues&lt;T1, T2&gt; c)
+        where T1 : FormatStringShape
+        where T2 : FormatStringShape
+    {
+        return c.Left.AcceptVisitor(this).Concat(c.Right.AcceptVisitor(this));
+    }
+}</code></pre>
+<p>Formatting a string is now a case of calling the following extension method:</p>
+<pre><code>public static string Format&lt;S&gt;(this FormatString&lt;S&gt; formatString,
+    FormatStringValues&lt;S&gt; values)
+    where S : FormatStringShape
+{
+    string formatString = literals.AcceptVisitor(new BuildFormatStringVisitor());
+    var args = values.AcceptVisitor(new CollectValuesVisitor());
+    return string.Format(formatString, args.ToArray());
+}</code></pre>
+<h2 id="references">References</h2>
+<p>[1] Functional Unparsing by Olivier Danvy, 1998.</p>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>
