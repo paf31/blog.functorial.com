@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Finite Automata and Typed String Parsing</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Finite Automata and Typed String Parsing</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>Define a finite deterministic automaton with values in type <code>T</code> and inputs from an alphabet <code>I</code> as follows:</p>
+<blockquote>
+<p>exists S . S * (I -&gt; S -&gt; Maybe T * Maybe S)</p>
+</blockquote>
+<p>The intuition is that the hidden type <code>S</code> represents the possible states of the automaton, and that at each step, given an input of type <code>I</code> and the current state, we can optionally yield a value of type <code>T</code> and return a new state or fail.</p>
+<p>This type is isomorphic to the greatest fixed point type <code>Nu (X -&gt; Maybe T * (I -&gt; Maybe X))</code> so we can save ourselves some boilerplate code dealing with existential types by writing the recursive types explicitly, remembering that our type refers to the greatest fixed point:</p>
+<pre><code>class FDA&lt;I, T&gt;
+{
+    public Maybe&lt;T&gt; Value
+    {
+        get;
+        set;
+    } 
+
+    public Func&lt;I, FDA&lt;I, T&gt;&gt; Continue
+    {
+        get;
+        set;
+    }
+         public FDA(Maybe&lt;T&gt; value, Func&lt;I, FDA&lt;I, T&gt;&gt; cont)
+    {
+        Value = value;
+        Continue = cont;
+    }
+}</code></pre>
+<h2 id="extension-methods">Extension Methods</h2>
+<p>This type has the structure of a monad, and we can write extension methods which allow us to use query syntax to build up automata:</p>
+<pre><code>public static FDA&lt;I, T1&gt; Select&lt;I, T, T1&gt;(this FDA&lt;I, T&gt; a, Func&lt;T, T1&gt; f)
+{
+    return new FDA&lt;I, T1&gt;(a.Value.Select(f),
+        i =&gt;
+        {
+            var next = a.Continue(i);
+            return next == null ? null : next.Select(f);
+        });
+}
+
+public static FDA&lt;I, T1&gt; SelectMany&lt;I, T, T1&gt;(this FDA&lt;I, T&gt; a,
+    Func&lt;T, FDA&lt;I, T1&gt;&gt; f)
+{
+    return a.Value.HasValue ?
+        f(a.Value.Value)
+        : new FDA&lt;I, T1&gt;(new Maybe&lt;T1&gt;(),
+            i =&gt;
+            {
+                var next = a.Continue(i);
+                return next == null ? null : next.SelectMany(f);
+            });
+}
+
+public static FDA&lt;I, T2&gt; SelectMany&lt;I, T, T1, T2&gt;(this FDA&lt;I, T&gt; a,
+    Func&lt;T, FDA&lt;I, T1&gt;&gt; s,
+    Func&lt;T, T1, T2&gt; projector)
+{
+    return a.SelectMany(x =&gt; s(x).Select(y =&gt; projector(x, y)));
+}</code></pre>
+<p>We can inject a value into the monad by succeeding at the first step with the supplied value:</p>
+<pre><code>public static FDA&lt;I, T&gt; Accept&lt;I, T&gt;(T t)
+{
+    return new FDA&lt;I, T&gt;(new Maybe&lt;T&gt;(t), i =&gt; null);
+}</code></pre>
+<p>The monad's empty value just fails immediately:</p>
+<pre><code>public static FDA&lt;I, T&gt; Reject&lt;I, T&gt;()
+{
+    return new FDA&lt;I, T&gt;(new Maybe&lt;T&gt;(), i =&gt; null);
+}</code></pre>
+<p>We can also create an automaton which takes any input and returns the same value as its output. It's also useful to combine this with a predicate:</p>
+<pre><code>public static FDA&lt;I, I&gt; Any&lt;I&gt;()
+{
+    return new FDA&lt;I, I&gt;(new Maybe&lt;I&gt;(), i =&gt;
+        new FDA&lt;I, I&gt;(new Maybe&lt;I&gt;(i), i1 =&gt; null));
+}
+
+public static FDA&lt;I, I&gt; Any&lt;I&gt;(Func&lt;I, bool&gt; predicate)
+{
+    return new FDA&lt;I, I&gt;(new Maybe&lt;I&gt;(), i =&gt; predicate(i)
+        ? new FDA&lt;I, I&gt;(new Maybe&lt;I&gt;(i), i1 =&gt; null) : null);
+}</code></pre>
+<p>Using this method, we can create an automaton which only accepts a single value:</p>
+<pre><code>public static FDA&lt;I, I&gt; Match&lt;I&gt;(I i) where I : IEquatable&lt;I&gt;
+{
+    return FDA.Any&lt;I&gt;(i1 =&gt; i.Equals(i1));
+}</code></pre>
+<p>We can also join two automata in a standard way by trying the input on the first automaton and then on the second:</p>
+<pre><code>public static FDA&lt;I, T&gt; Or&lt;I, T&gt;(this FDA&lt;I, T&gt; a1, FDA&lt;I, T&gt; a2)
+{
+    return new FDA&lt;I, T&gt;(a1.Value.HasValue ? a1.Value : a2.Value,
+        i =&gt; a1.Continue(i) ?? a2.Continue(i));
+}</code></pre>
+<p>Finally, we can join an automaton's final states to its intial state to create an automaton which yields many values of the same type:</p>
+<pre><code>public static FDA&lt;I, IEnumerable&lt;T&gt;&gt; AllowMany&lt;I, T&gt;(this FDA&lt;I, T&gt; a)
+{
+    return (from t in a
+            from ts in a.AllowMany()
+            select new[] { t }.Concat(ts))
+           .Or(Accept&lt;I, IEnumerable&lt;T&gt;&gt;(Enumerable.Empty&lt;T&gt;()));
+}</code></pre>
+<h2 id="running-the-automaton">Running the Automaton</h2>
+<p>Now we have a collection of ways to create automata, we need a way to deconstruct them. We can leave the monad by providing a stream of inputs in the form of an <code>IEnumerable&lt;I&gt;</code>:</p>
+<pre><code>public static Maybe&lt;T&gt; Accepts&lt;I, T&gt;(this FDA&lt;I, T&gt; a, IEnumerable&lt;I&gt; input)
+{
+    if (input.Any())
+    {
+        var next = a.Continue(input.FirstOrDefault());
+
+        if (next != null)
+        {
+            return next.Accepts(input.Skip(1));
+        }
+    }
+
+    return a.Value;
+}</code></pre>
+<h2 id="example">Example</h2>
+<p>As an example, we can write an automaton which reads two digit integers:</p>
+<pre><code>FDA&lt;char, byte&gt; Digit = FDA.Any&lt;char&gt;(char.IsNumber)
+    .Select(c =&gt; byte.Parse(c.ToString()));</code></pre>
+<p>We can test this FDA by applying the <code>Accepts</code> method:</p>
+<blockquote>
+<p>Digit.Accepts(&quot;99&quot;).Value</p>
+<p>99</p>
+</blockquote>
+<p>Here is an automaton which sums a sequence of one or two digit integers separated by plus symbols:</p>
+<pre><code>FDA&lt;char, int&gt; Sum =
+    from d1 in Digit
+    from r in
+        (from plus in FDA.Match('+')
+         from sum in Sum
+         select d1 + sum)
+         .Or(from d2 in Digit
+             from r1 in
+                 (from plus in FDA.Match('+')
+                  from sum in Sum
+                  select sum).Or(FDA.Accept&lt;char, int&gt;(0))
+             select d1 * 10 + d2 + r1)
+             .Or(FDA.Accept&lt;char, int&gt;(d1))
+    select r;</code></pre>
+<p>Again, we can test by using the <code>Accepts</code> method:</p>
+<blockquote>
+<p>Sum.Accepts(&quot;12+3+45+6+78+9&quot;)</p>
+<p>153</p>
+</blockquote>
+<h2 id="an-application-to-typed-format-strings">An Application to Typed Format Strings</h2>
+<p>Given a format string of the kind discussed in my last post, we can compile an automaton which recognises strings of the correct format:</p>
+<pre><code>interface FormatString&lt;S&gt; where S : FormatStringShape
+{
+    FDA&lt;char, FormatStringValues&lt;S&gt;&gt; Scan();
+}</code></pre>
+<p>It is easy to compile string literals to automata - we simply match character by character. Similarly, it is easy to compile format strings with composite shapes - if we can compile the two parts then we just compose the two compiled parts.</p>
+<p>The tricky part is compiling variables, i.e. holes in the format string. One way we can restrict the types of format strings is to require the length of the variable to appear in the format string shape.</p>
+<p>First we encode the natural numbers as singleton types:</p>
+<pre><code>interface Nat { }
+
+class Z : Nat { }
+
+class S&lt;N&gt; : Nat where N : Nat { }</code></pre>
+<p>Now, we can modify the type of variable format string shapes to incorporate the length of the variable we expect:</p>
+<pre><code>class VariableShape&lt;T, N&gt; : FormatStringShape where N : Nat { }</code></pre>
+<p>Now a format string of this shape takes a predicate and a reader function which parses strings of the appropriate length:</p>
+<pre><code>class VariableFormatString&lt;T, N&gt; :
+    FormatString&lt;VariableShape&lt;T, N&gt;&gt; where N : Nat
+{
+    public Func&lt;string, T&gt; Reader { get; set; }
+    public Predicate&lt;char&gt; Predicate { get; set; }
+
+    public VariableFormatString(Predicate&lt;char&gt; predicate,
+        Func&lt;string, T&gt; reader)
+    {
+        Predicate = predicate;
+        Reader = reader;
+    }
+
+    public FDA&lt;char, FormatStringValues&lt;VariableShape&lt;T, N&gt;&gt;&gt; Scan()
+    {
+        return FDA.ReadVector&lt;char, N&gt;(Predicate).Select(cs =&gt;
+            (FormatStringValues&lt;VariableShape&lt;T, N&gt;&gt;)
+                new VariableValues&lt;T, N&gt;(Reader(new string(cs))));
+    }
+}</code></pre>
+<p>Here, <code>ReadVector</code> is a helper method which parses a fixed number of characters given by the type parameter <code>N</code> to give a string.</p>
+<p>We can now write string formats which include string formats and variables of prescribed lengths. For example, here is a format string which formats US social security numbers into three integer parts of lengths three, two and four:</p>
+<pre><code>var ssnFormat =
+    FormatStrings.Variable&lt;int, S&lt;S&lt;S&lt;Z&gt;&gt;&gt;&gt;(char.IsNumber, int.Parse)
+    .Then(FormatStrings.Literal(&quot;-&quot;))
+    .Then(FormatStrings.Variable&lt;int, S&lt;S&lt;Z&gt;&gt;&gt;(char.IsNumber, int.Parse))
+    .Then(FormatStrings.Literal(&quot;-&quot;))
+    .Then(FormatStrings.Variable&lt;int, S&lt;S&lt;S&lt;S&lt;Z&gt;&gt;&gt;&gt;&gt;(char.IsNumber, int.Parse));</code></pre>
+<p>Now, using an appropriate set of helper methods to extract values from the value set, we can parse strings in the appropriate format:</p>
+<pre><code>var ssn = ssnFormat.Scan(&quot;123-45-6789&quot;);
+
+var ssn1 = ssn.Value.L().L().L().L().Extract();
+var ssn2 = ssn.Value.L().L().R().Extract();
+var ssn3 = ssn.Value.R().Extract();</code></pre>
+<p>The three integers, <code>ssn1</code>, <code>ssn2</code>, <code>ssn3</code> evaluate to 123, 45 and 6789 respectively.</p>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>

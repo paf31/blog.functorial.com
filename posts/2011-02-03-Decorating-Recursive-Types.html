@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Decorating Recursive Types</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Decorating Recursive Types</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>Suppose we have a recursive type and we want to add additional functionality in such a way that each structurally smaller value also gets that additional functionality. For example, consider the following type, whose values look like nameless lambda terms (de Bruijin terms):</p>
+<pre><code>interface Exp { }
+
+class App : Exp
+{
+    public Exp Function { get; set; }
+
+    public Exp Argument { get; set; }
+
+    public App(Exp function, Exp argument)
+    {
+        Function = function;
+        Argument = argument;
+    }
+
+    public override string ToString()
+    {
+        return string.Format(&quot;{0} {1}&quot;,
+            Function, Argument);
+    }
+}
+
+class Var : Exp
+{
+    public int Index { get; set; }
+
+    public Var(int index) { Index = index; }
+
+    public override string ToString()
+    {
+        return Index.ToString();
+    }
+}
+
+class Abs : Exp
+{
+    public Exp Body { get; set; }
+
+    public Abs(Exp body) { Body = body; }
+
+    public override string ToString()
+    {
+        return &quot;\\. &quot; + Body.ToString();
+    }
+}</code></pre>
+<p>The three subclasses <code>App</code>, <code>Var</code> and <code>Abs</code> correspond to function applications, variables and lambda abstractions respectively. We can define simple untyped lambda terms, for example:</p>
+<pre><code>new Abs
+(
+    new App
+    (
+        new Var(0),
+        new Var(0)
+    )
+);
+
+&quot;\. 0 0&quot;</code></pre>
+<p>Now suppose that we want to add additional properties, methods or events to the class in such a way that all of the subtrees expose the same new functionality.</p>
+<p>We might think of subclassing <code>Exp</code>, but that's no good since only the root of the tree would see the new functionality.</p>
+<p>One thing we can do is to use the functor which defines <code>Exp</code> as a recursive type to leave holes for the structurally smaller values in the tree. Here, we have named the type of the holes by the type variable <code>E</code>:</p>
+<pre><code>interface Exp&lt;E&gt; where E : Exp&lt;E&gt; { }
+
+class App&lt;E&gt; : Exp&lt;E&gt; where E : Exp&lt;E&gt;
+{
+    public E Function { get; set; }
+
+    public E Argument { get; set; }
+
+    public App(E function, E argument)
+    {
+        Function = function;
+        Argument = argument;
+    }
+
+    public override string ToString()
+    {
+        return string.Format(&quot;{0} {1}&quot;,
+            Function, Argument);
+    }
+}
+
+class Var&lt;E&gt; : Exp&lt;E&gt; where E : Exp&lt;E&gt;
+{
+    public int Index { get; set; }
+
+    public Var(int index) { Index = index; }
+
+    public override string ToString()
+    {
+        return Index.ToString();
+    }
+}
+
+class Abs&lt;E&gt; : Exp&lt;E&gt; where E : Exp&lt;E&gt;
+{
+    public E Body { get; set; }
+
+    public Abs(E body) { Body = body; }
+
+    public override string ToString()
+    {
+        return &quot;\\. &quot; + Body.ToString();
+    }
+}</code></pre>
+<p>Notice first of all that the various subclasses don't explicitly mention instances of <code>Exp&lt;E&gt;</code>. They only refer to their child nodes by the type variable <code>E</code>.</p>
+<p>Also notice the type constraint where <code>E : Exp&lt;E&gt;</code> appearing throughout the code: this serves to make sure that however we decorate the type <code>Exp</code>, its children are also instances of <code>Exp</code> and are decorated in the same way, so that we don't have different types of <code>Exp</code>s throughout the tree.</p>
+<p>We can &quot;tie the knot&quot; and remove the mysterious parameter <code>E</code> by defining the recursive type <code>Exp</code> as</p>
+<pre><code>interface Exp : Exp&lt;Exp&gt; { }</code></pre>
+<p>What's going on here? Well an <code>Exp</code> is an expression whose holes are filled in by expressions of type <code>Exp</code>. In turn, a subexpression appearing in a hole has subexpressions of type <code>Exp</code>, and so on...</p>
+<p>We can also wire up types for all of our subclasses, and our original code remains valid:</p>
+<pre><code>class App : App&lt;Exp&gt;, Exp
+{
+    public App(Exp function, Exp argument)
+        : base(function, argument) { }
+}
+
+class Abs : Abs&lt;Exp&gt;, Exp
+{
+    public Abs(Exp body)
+        : base(body) { }
+}
+
+class Var : Var&lt;Exp&gt;, Exp
+{
+    public Var(int index)
+        : base(index) { }
+}</code></pre>
+<p>However, now we are free to replace the particular kind of expression appearing in any holes, as long as every subexpression is decorated in the same way. This is how we are going to add new functionality to the class.</p>
+<p>For example, suppose we want to create a new version of the structure where terms are given explicit names. Here it is:</p>
+<pre><code>interface DecoratedExp : Exp, Exp&lt;DecoratedExp&gt; { }
+
+class DecoratedApp : App&lt;DecoratedExp&gt;, DecoratedExp
+{
+    public DecoratedApp(DecoratedExp function, DecoratedExp argument)
+        : base(function, argument) { }
+}
+
+class DecoratedAbs : Abs&lt;DecoratedExp&gt;, DecoratedExp
+{
+    public DecoratedAbs(string name, DecoratedExp body)
+        : base(body) { Name = name; }
+
+    public string Name { get; set; }
+
+    public override string ToString()
+    {
+        return &quot;\\&quot; + Name + &quot;. &quot; + Body.ToString();
+    }
+}
+
+class DecoratedVar : Var&lt;DecoratedExp&gt;, DecoratedExp
+{
+    public DecoratedVar(string name, int index)
+        : base(index) { Name = name; }
+
+    public string Name { get; set; }
+
+    public override string ToString() { return Name; }
+}</code></pre>
+<p>Now each <code>Var</code> and each <code>Abs</code> carries an explicit name. We can create decorated lambda terms as long as all subterms are decorated in the same way:</p>
+<pre><code>Exp dec = new DecoratedAbs
+(&quot;x&quot;,
+    new DecoratedApp(
+        new DecoratedVar(&quot;x&quot;, 0),
+        new DecoratedVar(&quot;x&quot;, 0)
+    )
+);
+
+&quot;\x. x x&quot;</code></pre>
+<p>But an attempt to mix expression types within a structure is not allowed:</p>
+<pre><code>/* Generates a type error */
+
+new DecoratedAbs
+(&quot;x&quot;,
+    new App(
+        new DecoratedVar(&quot;x&quot;, 0),
+        new Var(0)
+    )
+);</code></pre>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>
