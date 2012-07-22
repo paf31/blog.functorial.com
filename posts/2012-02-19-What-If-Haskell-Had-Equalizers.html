@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - What if Haskell had (co)-eqiualizers?</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>What if Haskell had (co)-eqiualizers?</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>Equalizers and coequalizers are two categorical constructions that I have never been fully comfortable with. I understand them in theory, such as how products and equalizers can be used to construct all finite limits, and I understand their interpretations in the category of sets, but I could never see how they should really be used in general. So I decided to try to interpret them via the Curry-Howard isomorphism in the hope of gaining a bit more understanding, hence the title of this post.</p>
+<h2 id="equalizers">Equalizers</h2>
+<p>Let's look at equalizers first. Let's take two types <code>X</code> and <code>Y</code>, and two functions <code>f, g :: X -&gt; Y</code>.</p>
+<p>In any category, equalizers are monos, so I expect the equalizer of <code>f</code> and <code>g</code> to look like a subset of the inhabitants of <code>X</code>.</p>
+<p>An equalizer of f and g will consist of a type <code>E</code> and a map <code>e :: E -&gt; X</code> such that <code>f e = g e</code>. Moreover, <code>(E, e)</code> will be universal with respect to this property.</p>
+<p>That is, given any <code>(E', e')</code> such that <code>f e' = g e'</code>, there will be an induced map <code>e' -&gt; e</code> such that the obvious diagram commutes.</p>
+<p>How might we constuct an element of <code>E</code>? Well, the universal property of <code>E</code> gives one answer. We can construct an element of <code>E</code> by producing such a pair <code>(E', e')</code>:</p>
+<pre><code>data E f g where 
+  E :: forall E'. E' -&gt; (e' :: E' -&gt; X) -&gt; (f . e' = g . e') -&gt; E</code></pre>
+<p>This is obviously not valid Haskell. The last argument in the constructor of <code>E</code> is a fictional addition to the Haskell type system. It is a witness to the commutativity of a particular diagram.</p>
+<p>That is, one would only be able to construct a member of the type <code>E</code> by providing a type <code>E'</code>, a morphism <code>e'</code> which equalizes <code>f</code> and <code>g</code>, and a witness to that fact.</p>
+<p>We would be able to destruct a value in the equalizer as follows:</p>
+<pre><code>e :: E -&gt; X
+e (E x e' _) = e' x</code></pre>
+<p>Moreover, we would know that <code>f x = g x</code> for every <code>x</code> in the image of <code>e</code>. This might be available to the compiler as an optimizing transformation.</p>
+<p>So, as expected, equalizers correspond to subtypes or refinement types. What about coequalizers?</p>
+<h2 id="coequalizers">Coequalizers</h2>
+<p>Given types <code>X</code> and <code>Y</code>, and functions <code>f, g :: X -&gt; Y</code>, the coequalizer of <code>f</code> and <code>g</code> will consist of a type <code>C</code> and a function <code>c :: Y -&gt; C</code> such that <code>c f = c g</code>.</p>
+<p><code>(C, c)</code> will be universal with respect to this property. If <code>C'</code>, <code>c' :: Y -&gt; C'</code> also satisfies <code>f c' = g c'</code> then there will be an induced function <code>c -&gt; c'</code> (and a matching commutative diagram).</p>
+<p>This time, the universal property gives an answer to how we might destruct a value in the coequalizer. We can identify an inhabitant of the coequalizer with the function it induces:</p>
+<pre><code>data C f g where 
+  C :: (forall C'. (c' :: Y -&gt; C') -&gt; (c' . f = c' . g) -&gt; C') -&gt; C</code></pre>
+<p>Now, to destruct a value in <code>C</code>, we need to pass in a type <code>C'</code>, a function <code>c' :: Y -&gt; C'</code>, and a witness to the fact that <code>c'</code> coequalizes <code>f</code> and <code>g</code>.</p>
+<p>We would be able to construct a value in <code>C</code> from any value in <code>Y</code>:</p>
+<pre><code>c :: Y -&gt; C f g
+c y = C (\c' _ = c' y)</code></pre>
+<p>Now as an example, take <code>X</code> and <code>Y</code> to be the type <code>(A, A)</code> of pairs of elements of type <code>A</code>. Take <code>f</code> to be the identity function, and <code>g</code> to be the function which swaps the components of the pair.</p>
+<p>To destruct a value in the coequalizer, we need to provide a target type, a function from pairs of element of <code>A</code> to the target type, and a proof that our function is invariant under swapping the elements in the pair. For example, we might define a function to sum a pair of integers:</p>
+<pre><code>sum (C f) = f (uncurry (+)) ?</code></pre>
+<p>where the question mark represents a proof of the commutativity of addition.</p>
+<p>We can equate this coequalizer to the type of unordered pairs of elements of <code>A</code>. It is a quotient of the type of ordered pairs <code>(A, A)</code> and the function <code>c</code> is the projection to the quotient. This allows us to capture invariants of types, as with constructions such as nested datatypes, but this way the projection function is made explicit.</p>
+<p>In a type system with coequalizers, we would be able to define all sorts of interesting quotient types: quotienting the type of lists by appropriate functions would allow us to define things like bags and sets for example.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>So, it seems that adding equalizers and coequalizers to a cartesian closed category amounts to enriching the corresponding type system with refinement types and quotient types respectively.</p>
+<p>This thought experiment used Haskell only as a means to communicate its key ideas, but was a good example of how the Curry Howard isomorphism (in this case, the appropriate side of the triangle is between type systems and cartesian closed categories) can be helpful when trying to understand some categorical concepts.</p>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Generalizing O(1) Snoc On Lists</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Generalizing O(1) Snoc On Lists</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>I've recently been thinking about how to generalize an efficient version of the <code>snoc</code> operation on lists.</p>
+<p>Specifically, one can represent lists by identifying them with their fold functions:</p>
+<pre><code>-- data List a = List { fold :: forall r. r -&gt; (a -&gt; r -&gt; r) -&gt; r }</code></pre>
+<p>This representation, as in the case of difference lists, admits efficient versions of the cons operation at both ends of the list:</p>
+<pre><code>-- cons :: a -&gt; List a -&gt; List a
+-- cons a l = List (\r0 acc -&gt; acc a $ fold l r0 acc)
+
+-- snoc :: a -List a -&gt; List a
+-- snoc a l = List (\r0 acc -&gt; fold l (acc a r0) acc)</code></pre>
+<p>I wondered if it was possible to generialize this to arbitrary least fixed point types. What I came up with is satisfactory, but I wonder if there is a better generalization of the original <code>snoc</code> function.</p>
+<p>We'll need these imports and extensions:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}</span>
+
+<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Void</span> <span class="kw">as</span> <span class="dt">V</span>
+<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Monoid</span> <span class="kw">as</span> <span class="dt">M</span>
+<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Foldable</span> <span class="kw">as</span> <span class="dt">F</span>
+<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Traversable</span> <span class="kw">as</span> <span class="dt">T</span></code></pre>
+<p>First, let's generalize the type <code>List</code> given above to any type constructor <code>f</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Rec</span> f <span class="fu">=</span> <span class="dt">Rec</span> {<span class="ot"> cata ::</span> forall r<span class="fu">.</span> (f r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r }</code></pre>
+<p>The <code>cons</code> operation is easily generalized - <code>Rec f</code> is an initial <code>f</code>-algebra, and the algebra map gives the generalization of <code>cons</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">gcons ::</span> (<span class="kw">Functor</span> f) <span class="ot">=&gt;</span> f (<span class="dt">Rec</span> f) <span class="ot">-&gt;</span> <span class="dt">Rec</span> f
+gcons x <span class="fu">=</span> <span class="dt">Rec</span> cata' <span class="kw">where</span>
+  cata' phi <span class="fu">=</span> phi <span class="fu">$</span> <span class="fu">fmap</span> (<span class="fu">flip</span> cata phi) x</code></pre>
+<p>Generalizing <code>snoc</code> is a little less obvious. I came up with the following.</p>
+<p>What I'd like to do is to replace the leaves of the recursive structure with one more level of <code>f</code>-structure. By &quot;leaves&quot; I mean values of <code>Rec f</code> with no structurally smaller elements. These are given by the summands in <code>(f x)</code> with no factor of <code>x</code>. In other words, the type of leaves of <code>f</code> is given by applying <code>f</code> to the empty type <code>Void</code>.</p>
+<p>Given a <code>Traversable</code> instance for <code>f</code>, we can attempt to convert a value into a leaf by replacing all instances of the type <code>a</code> by <code>Nothing</code>, and then collapsing the structure to a single <code>Maybe</code> value using <code>mapM</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">toLeaf ::</span> (<span class="kw">Functor</span> f, <span class="dt">T.Traversable</span> f) <span class="ot">=&gt;</span> f a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> (f <span class="dt">V.Void</span>)
+toLeaf <span class="fu">=</span> T.mapM (<span class="fu">const</span> <span class="kw">Nothing</span>)</code></pre>
+<p>Now we can define a generalized version of the <code>snoc</code> method above. <code>gsnoc</code> takes a function which replaces leaves with an additional level of <code>f</code>-structure, and applies it only to the leaves:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">gsnoc ::</span> (<span class="kw">Functor</span> f, <span class="dt">T.Traversable</span> f) <span class="ot">=&gt;</span> (forall r<span class="fu">.</span> f <span class="dt">V.Void</span> <span class="ot">-&gt;</span> f (f <span class="dt">V.Void</span>)) <span class="ot">-&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">Rec</span> f
+gsnoc f x <span class="fu">=</span> <span class="dt">Rec</span> cata' <span class="kw">where</span>
+  cata' phi <span class="fu">=</span> cata x (phi' phi)
+  phi' phi y <span class="fu">=</span> <span class="kw">case</span> toLeaf y <span class="kw">of</span> 
+    <span class="kw">Nothing</span> <span class="ot">-&gt;</span> phi y
+    (<span class="kw">Just</span> leaf) <span class="ot">-&gt;</span> phi <span class="fu">$</span> <span class="fu">fmap</span> ((<span class="fu">$</span>) phi <span class="fu">.</span> <span class="fu">fmap</span> V.absurd) <span class="fu">$</span> f leaf</code></pre>
+<p><code>gsnoc</code> is also easily seen to be an O(1) operation, independent of the size of its input.</p>
+<p>Now let's see some examples. First, we'll recover the usual O(1) snoc operation on lists.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ListF</span> a x <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a x <span class="kw">deriving</span> (<span class="kw">Functor</span>, <span class="dt">F.Foldable</span>, <span class="dt">T.Traversable</span>)
+
+<span class="kw">type</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Rec</span> (<span class="dt">ListF</span> a)</code></pre>
+<p>We can define two constructor functions and a single destructor which will help when working with this representation of lists:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nil ::</span> <span class="dt">List</span> a
+nil <span class="fu">=</span> gcons <span class="dt">Nil</span>
+
+<span class="ot">cons ::</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> a
+cons a l <span class="fu">=</span> gcons <span class="fu">$</span> <span class="dt">Cons</span> a l
+
+<span class="ot">toList ::</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> [a]
+toList <span class="fu">=</span> <span class="fu">flip</span> cata toList' <span class="kw">where</span>
+  toList' <span class="dt">Nil</span> <span class="fu">=</span> []
+  toList' (<span class="dt">Cons</span> a l) <span class="fu">=</span> a<span class="fu">:</span>l</code></pre>
+<p>We can create a list of three elements and append an element to its tail:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">test1 ::</span> <span class="dt">List</span> <span class="dt">Int</span>
+test1 <span class="fu">=</span> cons <span class="dv">1</span> <span class="fu">$</span> cons <span class="dv">2</span> <span class="fu">$</span> cons <span class="dv">3</span> nil
+
+<span class="ot">test2 ::</span> <span class="dt">List</span> <span class="dt">Int</span>
+test2 <span class="fu">=</span> gsnoc (<span class="dt">Cons</span> <span class="dv">4</span>) test1
+
+<span class="co">-- toList test2</span>
+<span class="co">-- [1,2,3,4]</span></code></pre>
+<p>Now let's try a different recursive datatype - the type of binary trees:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">TreeF</span> a x <span class="fu">=</span> <span class="dt">Tip</span> <span class="fu">|</span> <span class="dt">Branch</span> x a x <span class="kw">deriving</span> (<span class="kw">Functor</span>, <span class="dt">F.Foldable</span>, <span class="dt">T.Traversable</span>)
+
+<span class="kw">type</span> <span class="dt">Tree</span> a <span class="fu">=</span> <span class="dt">Rec</span> (<span class="dt">TreeF</span> a)</code></pre>
+<p>Again, we can define helper methods to construct and destruct trees. This time, the method flattenTree with perform an in-order traversal of the tree to collapse the tree down to a single list:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tip ::</span> <span class="dt">Tree</span> a
+tip <span class="fu">=</span> gcons <span class="dt">Tip</span>
+
+<span class="ot">branch ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> <span class="dt">Tree</span> a
+branch l a r <span class="fu">=</span> gcons <span class="fu">$</span> <span class="dt">Branch</span> l a r
+
+<span class="ot">flattenTree ::</span> <span class="dt">Tree</span> a <span class="ot">-&gt;</span> [a]
+flattenTree <span class="fu">=</span> <span class="fu">flip</span> cata flattenTree' <span class="kw">where</span>
+  flattenTree' <span class="dt">Tip</span> <span class="fu">=</span> []
+  flattenTree' (<span class="dt">Branch</span> l a r) <span class="fu">=</span> l <span class="fu">++</span> [a] <span class="fu">++</span> r</code></pre>
+<p>This time, <code>Tip</code> is the only type of leaf, and the <code>snoc</code> method will replace a <code>Tip</code> constructor with a <code>Branch</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">snocTree ::</span> a <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> <span class="dt">TreeF</span> a r
+snocTree a r <span class="fu">=</span> <span class="dt">Branch</span> r a r
+
+<span class="ot">test3 ::</span> <span class="dt">Tree</span> <span class="dt">Int</span>
+test3 <span class="fu">=</span> branch tip <span class="dv">1</span> (branch (branch tip <span class="dv">3</span> tip) <span class="dv">2</span> (branch tip <span class="dv">4</span> tip))
+
+<span class="ot">test4 ::</span> <span class="dt">Tree</span> <span class="dt">Int</span>
+test4 <span class="fu">=</span> gsnoc (snocTree <span class="dv">5</span>) test3
+
+<span class="co">-- flattenTree test4</span>
+<span class="co">-- [5,1,5,3,5,2,5,4,5]</span></code></pre>
+<p>Finally, we can also generalize the O(1) append method on lists, by replacing leaves with a whole new structure. Again, we require a <code>Traversable</code> instance as well as a <code>Functor</code> instance for <code>f</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">gappend ::</span> (<span class="kw">Functor</span> f, <span class="dt">T.Traversable</span> f) <span class="ot">=&gt;</span> (f <span class="dt">V.Void</span> <span class="ot">-&gt;</span> <span class="dt">Rec</span> f) <span class="ot">-&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">Rec</span> f
+gappend f x <span class="fu">=</span> <span class="dt">Rec</span> cata' <span class="kw">where</span>
+  cata' phi <span class="fu">=</span> cata x (phi' phi)
+  phi' phi y <span class="fu">=</span> <span class="kw">case</span> toLeaf y <span class="kw">of</span> 
+    <span class="kw">Nothing</span> <span class="ot">-&gt;</span> phi y
+    (<span class="kw">Just</span> leaf) <span class="ot">-&gt;</span> cata (f leaf) phi</code></pre>
+<p>On lists, the generalized <code>append</code> function does what one would expect:</p>
+<pre><code>-- toList $ gappend (const test1) test1
+-- [1,2,3,1,2,3]</code></pre>
+<p>On trees, <code>gappend</code> replaces each <code>Tip</code> with a new tree:</p>
+<pre><code>-- flattenTree $ gappend (const test3) test3
+-- [1,3,2,4,1,1,3,2,4,3,1,3,2,4,2,1,3,2,4,4,1,3,2,4]</code></pre>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>

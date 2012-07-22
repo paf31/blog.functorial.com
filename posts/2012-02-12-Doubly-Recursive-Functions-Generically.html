@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Doubly-Recursive Functions, Generically</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Doubly-Recursive Functions, Generically</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>Consider the following recursive function definitions. What do they have in common?</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- equals 0 0 = True</span>
+<span class="co">-- equals 0 n = False</span>
+<span class="co">-- equals n 0 = False</span>
+<span class="co">-- equals n m = equals (n - 1) (n - 2)</span>
+
+<span class="co">-- unify (Unknown n) (Unknown m) = [(n, m)]</span>
+<span class="co">-- unify (Arrow x y) (Arrow w z) = (unify x w) ++ (unify y z)</span>
+<span class="co">-- unify _ _ = error &quot;Cannot unify&quot;</span>
+
+<span class="co">-- elementAt 0 (x:xs) = x</span>
+<span class="co">-- elementAt n (x:xs) = elementAt (n - 1) xs</span>
+<span class="co">-- elementAt _ _ = error &quot;Index out of bounds&quot;</span></code></pre>
+<p>Well, all three functions take two arguments, and each one is defined recursively. Just as we can define (cata/ana)morphisms for arbitrary base functors, we can unify these three functions under a single abstraction which works over a pair of functors.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE Rank2Types, DeriveFunctor #-}</span></code></pre>
+<p>Let's define a fixed point type for an arbitrary functor f as follows:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Rec</span> f <span class="fu">=</span> <span class="dt">In</span> {<span class="ot"> out ::</span> f (<span class="dt">Rec</span> f) }</code></pre>
+<p>We can define folds and unfolds for a functor f in a uniform way as usual.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">fold phi <span class="fu">=</span> phi <span class="fu">.</span> <span class="fu">fmap</span> (fold phi) <span class="fu">.</span> out
+unfold psi <span class="fu">=</span> <span class="dt">In</span> <span class="fu">.</span> <span class="fu">fmap</span> (unfold psi) <span class="fu">.</span> psi</code></pre>
+<p>Now look at the definition of the function equals above. Consider the points where the function calls itself recursively. This happens only in the last case, where both sides contribute a smaller term. In general, we can only call a doubly recursive function recursively if we have two arguments to call the function with.</p>
+<p>This observation motivates the following definition. For functors <code>f</code> and <code>g</code>, define the following combination <code>f # g</code> of the two:</p>
+<pre><code>-- (f # g) x = exists a b. (a -&gt; b -&gt; x) (f a) (g b)</code></pre>
+<p>Now, type <code>x</code> appears in <code>(f # g) x</code> in those places where there is an <code>a</code> contributed from <code>f</code>, and a <code>b</code> contributed from <code>g</code>.</p>
+<p>For example, if we define a base functor for the type of natural numbers:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Nat</span> t <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">Succ</span> t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)</code></pre>
+<p>then we have</p>
+<pre><code>-- (Nat # Nat) t = exists a b. (a -&gt; b -&gt; x) (Nat a) (Nat b)
+--               ~ exists a b. (a -&gt; b -&gt; x) (1 + a) (1 + b)
+--               ~ exists a b. (a -&gt; b -&gt; x) (1 + a + b + a . b)
+--               ~ 1 + 1 + 1 + x</code></pre>
+<p>since we cannot eliminate the summands <code>a</code> and <code>b</code> from the existential using only the function of type <code>a -&gt; b -&gt; x</code>.</p>
+<p>Let's name the three unit constructors here <code>ZZ</code>, <code>ZS</code> and <code>SZ</code> depending on the two multiplicands from which they originated in the above isomorphism.</p>
+<p>Now we can define a function equals':</p>
+<pre><code>-- equals' :: (Nat # Nat) t -&gt; t
+-- equals' ZZ = True
+-- equals' ZS = False
+-- equals' SZ = False
+-- equals' SS t = t</code></pre>
+<p>This looks a lot like the definition of <code>equals</code> given at the top of the article.</p>
+<p>With this motivating case out of the way, we now want to use a function of type <code>(f # g) t -&gt; t</code> to define a doubly recursive function over arbitrary functors <code>f</code> and <code>g</code>:</p>
+<pre><code>-- (f # g) t -&gt; t ~ (exists a b. (a -&gt; b -&gt; x) (f a) (g b)) -&gt; t
+--                ~ (forall a b. (a -&gt; b -&gt; x) -&gt; f a -&gt; g b -&gt; t)</code></pre>
+<p>This is the type of algebra that we will use to fold a pair of structures in parallel.</p>
+<p>Finally, let's define the parallel fold function:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">parFold ::</span> (forall a b<span class="fu">.</span> (a <span class="ot">-&gt;</span> b <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> g b <span class="ot">-&gt;</span> x) <span class="ot">-&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">Rec</span> g <span class="ot">-&gt;</span> x
+parFold phi x y <span class="fu">=</span> (phi <span class="fu">$</span> parFold phi) (out x) (out y)</code></pre>
+<p>The definition is quite simple: we unwrap each of the arguments by one level, and combine them by using the algebra function, passing the fold itself to the algebra function, so that it may call the fold recursively for smaller arguments. This looks a lot like Mendler style recursion, but using two arguments in parallel.</p>
+<p>While we're at it, let's define a parallel unfold function, which is dual to the definition above:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">parUnfold ::</span> (forall a b<span class="fu">.</span> (x <span class="ot">-&gt;</span> (a, b)) <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> (f a, g b)) <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> (<span class="dt">Rec</span> f, <span class="dt">Rec</span> g)
+parUnfold psi x <span class="fu">=</span> <span class="kw">let</span> (a, b) <span class="fu">=</span> (psi <span class="fu">$</span> parUnfold psi) x <span class="kw">in</span> (<span class="dt">In</span> a, <span class="dt">In</span> b)</code></pre>
+<p>Now we can define the <code>equals</code> and <code>unify</code> functions above as instances of <code>parFold</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">equals <span class="fu">=</span> parFold equals' <span class="kw">where</span>
+  equals' _ <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">True</span>
+  equals' _ <span class="dt">Zero</span> _ <span class="fu">=</span> <span class="kw">False</span>
+  equals' _ _ <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
+  equals' f (<span class="dt">Succ</span> x) (<span class="dt">Succ</span> y) <span class="fu">=</span> f x y
+
+<span class="kw">data</span> <span class="dt">Ty</span> t <span class="fu">=</span> <span class="dt">Unknown</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">Arrow</span> t t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)
+
+unify <span class="fu">=</span> parFold unify' <span class="kw">where</span>
+  unify' _ (<span class="dt">Unknown</span> n) (<span class="dt">Unknown</span> m) <span class="fu">=</span> <span class="kw">Just</span> [(n, m)]
+  unify' f (<span class="dt">Arrow</span> x y) (<span class="dt">Arrow</span> z w) <span class="fu">=</span> <span class="kw">do</span> cs1 <span class="ot">&lt;-</span> (f x z); cs2 <span class="ot">&lt;-</span> (f y w); <span class="fu">return</span> <span class="fu">$</span> cs1 <span class="fu">++</span> cs2
+  unify' _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
+<p>The third example shows that the two recursive structures do not have to be defined over the same base functor:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">List</span> a t <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Cons</span> a t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)
+
+elementAt <span class="fu">=</span> parFold elementAt' <span class="kw">where</span>
+  elementAt' _ <span class="dt">Zero</span> (<span class="dt">Cons</span> a t) <span class="fu">=</span> <span class="kw">Just</span> a
+  elementAt' f (<span class="dt">Succ</span> n) (<span class="dt">Cons</span> a t) <span class="fu">=</span> f n t
+  elementAt' _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>

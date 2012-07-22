@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Typing Linear Lambda Terms</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Typing Linear Lambda Terms</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>In this post, I'd like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I'd like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
+<p>For example, the combinator <code>K x y = x</code> should be disallowed because the variable <code>y</code> is never used, and the combinator <code>S x y z = x z (y z)</code> should be disallowed because the variable <code>z</code> is used more than once.</p>
+<p>The combinators <code>S</code> and <code>K</code> form a basis for the set of unrestricted lambda terms, so one should ask, is there anything interesting left after they are removed? Indeed, one can find a useful basis for the class of linear lambda terms, which we will express in Haskell below.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators #-}</span>
+
+<span class="kw">module</span> <span class="dt">Lin</span> <span class="kw">where</span></code></pre>
+<p>This definition of linear lambda terms depends crucially on the definition of a splitting of a set of variables.</p>
+<p>The thing which prevents <code>S</code> from being an inhabitant of our desired type is that the variable occurs on each side of the application <code>(x z) (y z)</code>.</p>
+<p>We need to ensure that each variable only occurs on one side of each application, and this motivates the following definition of a splitting of a set of variables <code>s</code> into two disjoint sets <code>v1</code>, <code>v2</code> of variables whose union is <code>s</code>. The only splitting of the empty set is <code>E</code>, the empty splitting, and one can obtain a splitting of <code>(v:vs)</code> from a splitting of <code>vs</code> by adding <code>v</code> to either the left set <code>v1</code> or to the right set <code>v2</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Splitting</span> v1 v2 s <span class="kw">where</span>
+  <span class="dt">E</span><span class="ot"> ::</span> <span class="dt">Splitting</span> <span class="ch">'[] '</span>[] <span class="ch">'[]</span>
+  <span class="dt">L</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> (x <span class="ch">': xs) ys (x '</span><span class="fu">:</span> s)
+  <span class="dt">R</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> xs (y <span class="ch">': ys) (y '</span><span class="fu">:</span> s)</code></pre>
+<p>With that, here is the definition of the set of linear lambda terms. The definition looks similar to a definition of unrestricted lambda terms, modulo extra type constraints.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Lin</span> vars <span class="kw">where</span>
+  <span class="dt">Var</span><span class="ot"> ::</span> v <span class="ot">-&gt;</span> <span class="dt">Lin</span> (v <span class="ch">': '</span>[])
+  <span class="dt">App</span><span class="ot"> ::</span> <span class="dt">Splitting</span> vs ws s <span class="ot">-&gt;</span> <span class="dt">Lin</span> vs <span class="ot">-&gt;</span> <span class="dt">Lin</span> ws <span class="ot">-&gt;</span> <span class="dt">Lin</span> s
+  <span class="dt">Abs</span><span class="ot"> ::</span> (forall v<span class="fu">.</span> v <span class="ot">-&gt;</span> <span class="dt">Lin</span> (v <span class="ch">': vars)) -&gt; Lin vars</span></code></pre>
+<p>The type parameter vars has kind <code>[*]</code> and represents the bound variables appearing in the term.</p>
+<p>An abstraction introduces a new bound variable, and quantification over the type of the new bound variable prevents the user from constructing invalid terms by instantiating a <code>Var</code> for a different variable type <code>v</code>.</p>
+<p>An application splits the set of bound variables into two pieces. Constructing an application term requires the user to specify the splitting explictly as an argument.</p>
+<p>A variable can only be constructed in the context of a single bound variable - this disallows terms such as <code>K</code> where we have a bound variable left over.</p>
+<p>Finally, a closed linear lambda term is a linear lambda term with no free variables:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Closed</span> <span class="fu">=</span> <span class="dt">Lin</span> <span class="ch">'[]</span></code></pre>
+<p>Now we can express some linear lambda terms. The identity is the simplest example:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- I x = x</span>
+i <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="fu">-</span><span class="dt">Var</span> x)</code></pre>
+<p>The <code>B</code> and <code>C</code> combinators are a little trickier, since one has to define the splitting of the set of bound variables for every application. For example, the first application in <code>B</code> says &quot;<code>x</code> goes on the left of the application, <code>y</code> and <code>z</code> go on the right&quot;.</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- B x y z = x (y z)</span>
+b <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\z <span class="ot">-&gt;</span> <span class="dt">App</span> (<span class="dt">R</span> <span class="fu">$</span> <span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">Var</span> x) (<span class="dt">App</span> (<span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">Var</span> y) (<span class="dt">Var</span> z)))))
+
+<span class="co">-- C x y z = x z y</span>
+c <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\z <span class="ot">-&gt;</span> <span class="dt">App</span> (<span class="dt">L</span> <span class="fu">$</span> <span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">App</span> (<span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">Var</span> x) (<span class="dt">Var</span> z)) (<span class="dt">Var</span> y))))</code></pre>
+<p>As an example of something which cannot be typed as a linear lambda term, an attempt to define the <code>K</code> combinator fails with this error message:</p>
+<pre><code>-- K x y = x
+-- k = Abs (\x -&gt; Abs (\y -&gt; Var x))
+--
+--  Couldn't match expected type `(:) * var vars0'
+--              with actual type `[] *'
+--  Expected type: Lin ((:) * var1 ((:) * var vars0))
+--    Actual type: Lin ((:) * var1 ([] *))
+--  In the return type of a call of `Var'
+--  In the expression: Var x</code></pre>
+<p>This error indicates that we have one too many type variables left over at the node of the tree where <code>Var x</code> appears.</p>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>
