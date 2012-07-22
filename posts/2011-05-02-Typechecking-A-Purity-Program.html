@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Typechecking a Purity Program</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Typechecking a Purity Program</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>The Purity compiler uses a modified version of Algorithm W to verify the type safety of its programs. I am going to write a little about the common implementation of Algorithm W in the simply typed lambda calculus, and then its relationship with the Purity typechecking algorithm.</p>
+<h2 id="algorithm-w">Algorithm W</h2>
+<p>Algorithm W is a bottom-up constraint-based type inference algorithm for the simply-typed lambda calculus enriched with polymorphic let expressions. The algorithm generates a set of type constraints from an untyped term using the Robinson Unification method. If unification fails at any point then the expression cannot be typed.</p>
+<p>In the second phase of the algorithm, the generated constraints are solved to yield the final typed expression.</p>
+<p>Alternatively, the bottom-up constraint generation phase can be fused with the constrant solving phase to create a one-pass type checking algorithm, but I have not adopted this approach here, in the interests of clarity.</p>
+<h2 id="generating-constraints">Generating Constraints</h2>
+<p>The core of the constraint generation algorithm is a modified version of the Robinson Unification algorithm.</p>
+<p>The type system is augmented with a countably infinite supply of unknown types. Unknown types are labelled in the code by integers, and unify with any other type. Unification of compound types is defined by structural recursion.</p>
+<p>A constraint is a pair of (the index of) an unknown type and a type. A constraint set is a collection of constraints, and may contain a constraint for the same unknown many times.</p>
+<p>The pseudo-code for the method <code>unify</code> is shown below.</p>
+<pre><code>unify : Type -&gt; Type -&gt; [Constraint]
+
+unify T T = []
+
+unify x t = unify t x = [x = t]
+
+unify (a -&gt; b) (c -&gt; d) = unify a c :: unify b d
+
+unify (a + b) (c + d) = unify a c :: unify b d
+
+unify (a . b) (c . d) = unify a c :: unify b d
+
+unify (C s1, ..., sn) (C t1, ..., tn) = unify s1 t1 :: ... :: unify sn tn
+
+unify _ _ = fail</code></pre>
+<p>Here, <code>x</code> is any unknown, <code>T</code> is a type parameter and <code>C</code> is an <code>n</code>-ary type constructor.</p>
+<p>Construction of a constraint set proceeds bottom-up using <code>unify</code> to equate types of subexpressions with the appropriate part of the type of a containing expression.</p>
+<p>The method <code>generate-constraints</code> takes an untyped term and a type environment (a mapping from variable names to types) and returns a type and a set of constraints.</p>
+<p>A fragment of the pseudo-code for generate-constraints is shown below. The analysis for the other cases is similar.</p>
+<pre><code>Environment = string -&gt; Type
+
+Constraint = (int, Type)
+
+generate-constraints : Term -&gt; Environment -&gt; (Type, [Constraint])
+
+generate-constraints (f x, e) =
+  let (T1, C1) = generate-constraints f e in
+  let (T2, C2) = generate-constraints x e in
+  let T3 = new unknown type in
+  (T3, unify T1 (T2 -&gt; T3) :: C1 :: C2)
+
+generate-constraints (g . f, e) =
+  let (T1, C1) = generate-constraints f e in
+  let (T2, C2) = generate-constraints g e in
+  let T3, T4, T5 = new unknown types in
+  (T3 -&gt; T5, C1 :: C2 :: unify T1 (T3 -&gt; T4) :: unify T2 (T4 -&gt; T5))
+
+generate-constraints (v, e) = (e[v], []) 
+
+generate-constraints (v =&gt; t, e) =  
+  let T = new unknown type in 
+  let e' = e :: [v : T] in
+  let (T1, C1) = generate-constraints t e' in (T -&gt; T1, C1) 
+
+...</code></pre>
+<h2 id="solving-constraints">Solving Constraints</h2>
+<p>Once the constraints have been generated, they can be solved by substitution to yield the type of the initial expression. If one annotates all subexpressions with unknown types as they are generated during the constraint collection phase then a typed expression can be constructed which contains the types of all subexpressions.</p>
+<p>We maintain a mutable set of constraints and begin by adding all constraints generated in the first phase of the algorithm. At each step, a constraint is removed from the set and applied to both the solution set and the remaining constraints.</p>
+<p>The method by which a constraint is applied to another constraint is determined by case analysis and a unification step may result in new constraints being added to the set. The algorithm can therefore be seen as a producer/consumer problem with constraints being generated by unification of types, and constraints being applied to the solution set one-by-one. When the set is empty and there are no more constraints to apply, type checking is complete and one can read off the values of the unknown types from the solution set.</p>
+<p>The method solve-constraints takes a constraint set (a mapping from unknowns to types) and a solution set, (also a mapping from unknowns to types), and returns a modified solution set.</p>
+<p>The pseudo-code for solve-constraints is as follows:</p>
+<pre><code>SolutionSet = int -&gt; Type
+ 
+solve-constraints : [Constraint] -&gt; SolutionSet -&gt; SolutionSet
+ 
+solve-constraints [] _ = []
+ 
+solve-constraints ((x, T0) :: cs) s =
+  let s0 = replace x, with T0 in s
+  let cs' = [c1 | c1 &lt;- substitute (x, T0) c0 ; c0 &lt;- cs]
+  solve-constraints cs' s0  </code></pre>
+<p>where</p>
+<pre><code>substitute Constraint -&gt; Constraint -&gt; [Constraint]
+
+substitute (x, T0) (x, T1) = unify T0 T1
+
+substitute (x, T0) (y, T1) =
+  let T2 = replace x with T in
+  (y, T2) (if x /= y)</code></pre>
+<p>That is, if two constraints have the same unknown type on their left-hand sides, then we unify the types on their right-hand sides and add the result to the end of the queue of constraints not yet substituted. If the left-hand sides are different, then we substitute the right hand side of the first constraint for the left hand side of the first constraint into the right hand side of the second constraint.</p>
+<p>We can see that this process terminates since any unknown will be eliminated from the constraint set and from the solution set the first time it is encountered as the left-hand side of a constraint.</p>
+<h2 id="worked-examples">Worked Examples</h2>
+<p>Now let's see a few worked examples to illustrate the concepts.</p>
+<h3 id="example-1---the-pairing-function">Example 1 - The pairing function</h3>
+<p>Let <code>x = curry id</code>.</p>
+<p>We gather constraints from the bottom up. Let the identity term have type <code>T0 -&gt; T0</code> and the curried function have type <code>T1 -&gt; T2 -&gt; T3</code>. We have that the type of the argument to the curry function is <code>T1 . T2 -&gt; T3</code>.</p>
+<p>Unifying this type with the type of the identity term gives the constraint set</p>
+<pre><code>T0 = T1 . T2
+T0 = T3 </code></pre>
+<p>We substitute the first constraint into the (empty) solution set to get <code>{T0 : T1 . T2}</code>.</p>
+<p>The unknowns on the left hand sides of the two constraints are equal, so we unify the right hand sides, and the solution set reduces to the singleton</p>
+<pre><code>T3 = T1 . T2</code></pre>
+<p>Substituting this final constraint into the solution set gives the final solution set as <code>{T0 , T3 : T1 . T2}</code> and the type of the original expression as</p>
+<pre><code>forall Ti . T1 -&gt; T2 -&gt; T1 . T2</code></pre>
+<h3 id="example-2---the-s-combinator">Example 2 - The S combinator</h3>
+<p>Let <code>S = \x y z -&gt; x z (y z)</code></p>
+<p>This time, we gather the following constraints:</p>
+<pre><code>T0 = T2 -&gt; T3
+T1 = T2 -&gt; T4
+T3 = T4 -&gt; T5</code></pre>
+<p>The first substitution gives a solution set <code>{T0 : T2 -&gt; T3}</code> and a new constraint set</p>
+<pre><code>T1 = T2 -&gt; T4
+T3 = T4 -&gt; T5</code></pre>
+<p>The second substitution gives a solution set <code>{T0 : T2 -&gt; T3 ; T1 : T2 -&gt; T4}</code> and a new constraint set</p>
+<pre><code>T3 = T4 -&gt; T5</code></pre>
+<p>The final substitution gives the answer as the solution set</p>
+<pre><code>{T0 : T2 -&gt; T4 -&gt; T5 ; T1 : T2 -&gt; T4 ; T3 = T4 -&gt; T5}</code></pre>
+<p>and the type of the final expression is determined to be</p>
+<pre><code>forall Ti . (T2 -&gt; T4 -&gt; T5) -&gt; (T2 -&gt; T4) -&gt; T4 -&gt; T5 </code></pre>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>

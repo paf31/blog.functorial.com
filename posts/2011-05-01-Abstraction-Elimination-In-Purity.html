@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>functorial.com - Abstraction Elimination in Purity</title>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
+        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
+        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
+
+        <script type="text/x-mathjax-config"> 
+            MathJax.Hub.Config({
+                config: ["MMLorHTML.js"],
+                jax: ["input/TeX"],
+                extensions: ["tex2jax.js"],
+                TeX: { 
+                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
+                },
+                tex2jax: {
+                    inlineMath: [['$','$'], ['\\(','\\)']]
+                }
+            }); 
+        </script> 
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
+    </head>
+    <body>
+        <div id="wrapper">
+            <h1>Abstraction Elimination in Purity</h1>
+
+            <div id="navigation">
+                <a href="../index.html">Home</a>
+            </div>
+
+            <p>I'd like to write a little bit about the process of abstraction elimation in the Purity language. Abstraction elimination is the process by which lambda expressions get transformed into point-free code.</p>
+<p>This is beneficial to the programmer because programming in a point-free style is not always practical. In a lot of cases, it is much more intuitive to think in terms of variables and closures.</p>
+<p>Abstraction elimination is useful from the compiler's perspective for the opposite reason: we don't have to worry about things like closures and variables when generating executable code for an expression: we only have to concern ourselves with functions and function composition.</p>
+<p>Consider a simple example using lambda expressions - the following snippet defines the S combinator:</p>
+<blockquote>
+<p>S = \x y z -&gt; x z (y z)</p>
+</blockquote>
+<p>It is not at all obvious at first how one would write this in a point-free way. In fact, by means of some pretty-printing methods it's possible to see what the compiler desugars this into:</p>
+<blockquote>
+<p>curry (curry ((uncurry (curry ((uncurry (curry ((uncurry (uncurry (curry ((curry ((uncurry (uncurry (curry ((uncurry (curry ((uncurry (uncurry (curry ((id . outl)))) . ((outl, (outl . outr)), (outr . outr))))) . (outl, uncurry (const (id, id))))))) . ((outl, (outl . outr)), (outr . outr)))) . outl)))) . ((outl, (outl . outr)), (outr . outr))))) . (outl, uncurry (const (outl, uncurry (curry ((uncurry (const id), uncurry (curry ((uncurry (curry ((uncurry (uncurry (curry ((id . outl)))) . ((outl, (outl . outr)), (outr . outr))))) . (outl, uncurry (const (id, id))))))))))))))) . ((outl . outl), ((outr . outl), outr)))))</p>
+</blockquote>
+<p>Not pretty at all. One can verify by pasting the above expression into the REPL that it is indeed a valid expression (although it might take a while to compile!)</p>
+<p>Obviously, the expression above is far from optimal. The point though is that lambda expressions and abstraction elimination are essential if we want the programmer to be able to express a term like S concisely.</p>
+<p>Now let's take a look at the abstraction elimination algorithm used in the compiler.</p>
+<p>The basic idea is that we visit the lambda expressions in a typed expression tree in a bottom-up fashion. When we reach a lambda expression <code>v =&gt; b</code>, we have a variable <code>v</code>, a variable type <code>V</code>, a lambda body <code>b</code> and a lambda body type <code>B</code>. We want to find a (pointfree) typed expression <code>p</code> of type <code>V -&gt; B</code> and to substitute this new expression in place of the lambda abstraction in the expression tree. We proceed by case analysis on the type of the body expression. Fortunately, just following the correct types will get us most of the way there.</p>
+<h2 id="case-1---the-body-expression-does-not-depend-on-the-variable-v">Case 1 - The body expression does not depend on the variable v</h2>
+<p>In this case, we can take <code>p = const b</code>.</p>
+<p>This is a canonical choice in the presence of the above type constraints. This case also covers constant expressions such as <code>id</code>, <code>inl</code>, <code>inr</code>, <code>outl</code>, and <code>outr</code>.</p>
+<h2 id="case-2---b-equals-v">Case 2 - b equals v</h2>
+<p>In this case, we can take <code>p = id</code>. Again, we are directed by the type constraints above, but this makes sense, because in this case the lambda expression in question is just <code>v =&gt; v</code>.</p>
+<h2 id="case-3---b-is-an-application">Case 3 - b is an application</h2>
+<p>Suppose <code>b = f x</code> and that <code>x</code> has type <code>T</code> so that <code>f</code> has type <code>T -&gt; B</code>.</p>
+<p>First, we eliminate the variable from the subexpressions <code>f</code> and <code>x</code> to get expressions <code>[f]</code> and <code>[x]</code> with types <code>V -&gt; T -&gt; B</code> and <code>V -&gt; T</code> respectively. We need to construct an expression <code>[f x]</code> of type <code>V -&gt; B</code>.</p>
+<p>We can uncurry <code>[f]</code> to get an expression of type <code>V . T -&gt; B</code>. Composing with <code>[x]</code> in the appropriate component of the product then gives an expression of the correct type:</p>
+<blockquote>
+<p>[f x] = uncurry [f] . (id, [x])</p>
+</blockquote>
+<h2 id="case-3---b-is-a-composition">Case 3 - b is a composition</h2>
+<p>Suppose <code>b = g . f</code> and that <code>f</code> and <code>g</code> have types <code>S -&gt; T</code> and <code>T -&gt; U</code> repectively.</p>
+<p>First, we eliminate the variable from the subexpressions <code>f</code> and <code>g</code> to get expressions <code>[f]</code> and <code>[g]</code> with types <code>V -&gt; S -&gt; T</code> and <code>V -&gt; T -&gt; U</code> respectively. We need to construct an expression <code>[g . f]</code> of type <code>V -&gt; S -&gt; U</code>.</p>
+<p>We can uncurry <code>[f]</code> and <code>[g]</code> to get expressions of type <code>V . S -&gt; T</code> and <code>V . T -&gt; U</code>.</p>
+<p>These are cokleisli arrows in the product comonad and can be composed to give an arrow of type <code>V . S -&gt; U</code>. Currying then gives the expression we need:</p>
+<blockquote>
+<p>[g . f] = curry ((uncurry [f]) . (outl, uncurry [g]))</p>
+</blockquote>
+<h2 id="case-4---b-is-a-constant-function">Case 4 - b is a constant function</h2>
+<p>Suppose <code>b = const x</code> and that <code>x</code> has type <code>T</code> so that <code>b</code> has type <code>B = T1 -&gt; T</code>.</p>
+<p>First, we eliminate the variable from the subexpression <code>x</code> to get expressions <code>[x]</code> with types <code>V -&gt; T</code>. We need to construct an expression <code>[const x]</code> of type <code>V -&gt; T1 -&gt; T</code>.</p>
+<p>Composing <code>[x]</code> with <code>outl</code> gives an expression of type <code>V . T1 -&gt; T</code>. Currying now gives the expression we need:</p>
+<blockquote>
+<p>[const x] = curry ([x] . outl)</p>
+</blockquote>
+<h2 id="case-5---b-is-a-curried-expression">Case 5 - b is a curried expression</h2>
+<p>Suppose <code>b = curry f</code> and that <code>f</code> has type <code>S . T -&gt; U</code> so that <code>b</code> has type <code>B = S -&gt; T -&gt; U</code>.</p>
+<p>First, we eliminate the variable from the subexpression <code>f</code> to get an expression <code>[f]</code> with type <code>V -&gt; S . T -&gt; U</code>. We need to construct an expression <code>[curry f]</code> of type <code>V -&gt; S -&gt; T -&gt; U</code>.</p>
+<p>Uncurrying <code>[f]</code> gives an expression of type <code>V . (S . T) -&gt; U</code>.</p>
+<p>At this point we need an auxilliary function which switches the order in which nested products are constructed:</p>
+<blockquote>
+<p>assocr : (V . S) . T -&gt; V . (S . T)</p>
+</blockquote>
+<p>Composing <code>uncurry [f]</code> with <code>assocr</code> and currying twice now gives the correct answer:</p>
+<blockquote>
+<p>[curry f] = curry curry (uncurry [f] . assocr)</p>
+</blockquote>
+<h2 id="case-6---b-is-a-function-into-a-product">Case 6 - b is a function into a product</h2>
+<p>Suppose <code>b = (f, g)</code> and that <code>f</code> and <code>g</code> have types <code>S -&gt; T</code> and <code>S -&gt; U</code> respectively so that <code>b</code> has type <code>B = S -&gt;  T . U</code>.</p>
+<p>First, we eliminate the variable from the subexpression <code>f</code> and <code>g</code> to get expressions <code>[f]</code> and <code>[g]</code> with types <code>V -&gt; S -&gt; T</code> and <code>V -&gt; S -&gt; U</code> respectively. We need to construct an expression <code>[(f, g)]</code> of type <code>V -&gt; S -&gt; T . U</code>.</p>
+<p>Uncurrying <code>[f]</code> and <code>[g]</code> gives expression with types <code>V . S -&gt; T</code> and <code>V . S -&gt; U</code>. We can therefore form a function into the product <code>T . U</code>.</p>
+<p>Currying now gives the correct answer:</p>
+<blockquote>
+<p>[(f, g)] = curry (uncurry [f], uncurry [g])</p>
+</blockquote>
+<h2 id="remaining-cases-and-wrapping-up">Remaining Cases and Wrapping Up</h2>
+<p>I have omitted the analysis for the remaining two cases: uncurried expressions and functions out of a sum. As in the case of a curried function, each requires the use of an auxilliary function. In the case of uncurried expressions, the function is <code>assocl</code>. Eliminating a variable from a function out of a sum requires the function <code>distr</code>. These functions have types:</p>
+<blockquote>
+<p>assocl : A . (B . C) -&gt; (A . B) . C</p>
+<p>distr : A . (B + C) -&gt; A . B + A . C</p>
+</blockquote>
+<p>One can write definitions for these functions using only the constructions mentioned above. The upshot is that a single elimination step does not cause us to leave the class of expressions for which we can perform abstraction elimination, and we can continue eliminating variables all the way up the expression tree to the root, at which point we have removed all lambda expressions from the tree, and we are left with an equivalent expression in point-free style.</p>
+<h2 id="references">References</h2>
+<p>[1] The Reader Monad and Abstraction Elimination, P. Pudlak, in The Monad.Reader Issue 17.te</p>
+
+            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
+        </div>
+    </body>
+</html>
