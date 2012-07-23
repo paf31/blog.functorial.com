@@ -28,6 +28,7 @@
 
             <div id="navigation">
                 <a href="../index.html">Home</a>
+                <a href="../feed.xml">RSS Feed</a>
             </div>
 
             <p>In the following, I will write a polykinded version of the combinators <code>fold</code> and <code>unfold</code>, along with three examples: folds for regular datatypes (specialized to kind <code>*</code>), folds for nested datatypes (specialized to kind <code>* -&gt; *</code>), and folds for mutually recursive data types (specialized to the product kind <code>(*, *)</code>). The approach should generalise easily enough to things such as types indexed by another kind (e.g. by specializing to kind <code>Nat -&gt; *</code>, using the <code>DataKinds</code> extension), or higher order nested datatypes (e.g. by specializing to kind <code>(* -&gt; *) -&gt; (* -&gt; *)</code>).</p>

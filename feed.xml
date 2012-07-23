@@ -29,7 +29,7 @@
     <guid>http://blog.functorial.com/posts/2012-02-21-Abstraction-Elimination-For-Linear-Lambda-Terms.html</guid>
 </item>
 <item>
-    <title>What if Haskell had (co)-eqiualizers?</title>
+    <title>What if Haskell had (co)-equalizers?</title>
     <link>http://blog.functorial.com/posts/2012-02-19-What-If-Haskell-Had-Equalizers.html</link>
     <description><![CDATA[A thought-experiment on the possibility of extending the Haskell type system with equalizers and coequalizers.]]></description>
     <pubDate>Sun, 19 Feb 2012 00:00:00 UT</pubDate>
