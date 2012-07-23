@@ -10,70 +10,70 @@
         <item>
     <title>Generalizing O(1) Snoc On Lists</title>
     <link>http://blog.functorial.com/posts/2012-06-17-Generalizing-Snoc.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[A generalization of snoc to traversable data structures]]></description>
     <pubDate>Sun, 17 Jun 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-06-17-Generalizing-Snoc.html</guid>
 </item>
 <item>
     <title>Haskell On Azure</title>
     <link>http://blog.functorial.com/posts/2012-04-29-Haskell-On-Azure.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[Running HappStack in an Azure worker role instance, and using the tablestorage cabal package.]]></description>
     <pubDate>Sun, 29 Apr 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-04-29-Haskell-On-Azure.html</guid>
 </item>
 <item>
     <title>Abstraction Elimination For Linear Lambda Terms</title>
     <link>http://blog.functorial.com/posts/2012-02-21-Abstraction-Elimination-For-Linear-Lambda-Terms.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[An abstraction elimination for linear lambda terms]]></description>
     <pubDate>Tue, 21 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-21-Abstraction-Elimination-For-Linear-Lambda-Terms.html</guid>
 </item>
 <item>
     <title>What if Haskell had (co)-eqiualizers?</title>
     <link>http://blog.functorial.com/posts/2012-02-19-What-If-Haskell-Had-Equalizers.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[A thought-experiment on the possibility of extending the Haskell type system with equalizers and coequalizers.]]></description>
     <pubDate>Sun, 19 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-19-What-If-Haskell-Had-Equalizers.html</guid>
 </item>
 <item>
     <title>Typing Linear Lambda Terms</title>
     <link>http://blog.functorial.com/posts/2012-02-12-Typing-Linear-Lambda-Terms.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[An encoding of linear lambda terms in Haskell which prevents the expression of invalid terms.]]></description>
     <pubDate>Sun, 12 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-12-Typing-Linear-Lambda-Terms.html</guid>
 </item>
 <item>
     <title>Doubly-Recursive Functions, Generically</title>
     <link>http://blog.functorial.com/posts/2012-02-12-Doubly-Recursive-Functions-Generically.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[A generic formulation of 'doubly-recursive' functions in Haskell]]></description>
     <pubDate>Sun, 12 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-12-Doubly-Recursive-Functions-Generically.html</guid>
 </item>
 <item>
     <title>Solving Constraints Generically</title>
     <link>http://blog.functorial.com/posts/2012-02-06-Solving-Constraints-Generically.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[Generalizing constraint solving algorithms over arbitrary term algebras.]]></description>
     <pubDate>Mon, 06 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-06-Solving-Constraints-Generically.html</guid>
 </item>
 <item>
     <title>Fun With PolyKinds: Polykinded Folds</title>
     <link>http://blog.functorial.com/posts/2012-02-02-Polykinded-Folds.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[Generalizing folds and unfolds to other kinds using the PolyKinds GHC Extension..]]></description>
     <pubDate>Thu, 02 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-02-Polykinded-Folds.html</guid>
 </item>
 <item>
     <title>Enumerating Permutations</title>
     <link>http://blog.functorial.com/posts/2011-12-28-Enumerating-Permutations.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[Deriving the 'next permutation' using equational reasoning in Haskell]]></description>
     <pubDate>Wed, 28 Dec 2011 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2011-12-28-Enumerating-Permutations.html</guid>
 </item>
 <item>
     <title>Typechecking a Purity Program</title>
     <link>http://blog.functorial.com/posts/2011-05-02-Typechecking-A-Purity-Program.html</link>
-    <description><![CDATA[$description$]]></description>
+    <description><![CDATA[An explanation of the typechecking algorithm in the Purity programming language]]></description>
     <pubDate>Mon, 02 May 2011 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2011-05-02-Typechecking-A-Purity-Program.html</guid>
 </item>
