@@ -6,8 +6,15 @@
         <description><![CDATA[]]></description>
         <atom:link href="http://blog.functorial.com/feed.xml" rel="self"
                    type="application/rss+xml" />
-        <lastBuildDate>Sun, 22 Jul 2012 00:00:00 UT</lastBuildDate>
+        <lastBuildDate>Sat, 04 Aug 2012 00:00:00 UT</lastBuildDate>
         <item>
+    <title>Testing Random Properties With Type Classes</title>
+    <link>http://blog.functorial.com/posts/2012-08-04-Testing-Random-Properties-With-Type-Classes.html</link>
+    <description><![CDATA[Using type classes to test QuickCheck properties involving random number generation.]]></description>
+    <pubDate>Sat, 04 Aug 2012 00:00:00 UT</pubDate>
+    <guid>http://blog.functorial.com/posts/2012-08-04-Testing-Random-Properties-With-Type-Classes.html</guid>
+</item>
+<item>
     <title>What Makes the Free Monad Free?</title>
     <link>http://blog.functorial.com/posts/2012-07-22-What-Makes-The-Free-Monad-Free.html</link>
     <description><![CDATA[An explanation of the term 'free' monad in terms of adjunctions.]]></description>
@@ -69,13 +76,6 @@
     <description><![CDATA[Generalizing folds and unfolds to other kinds using the PolyKinds GHC Extension..]]></description>
     <pubDate>Thu, 02 Feb 2012 00:00:00 UT</pubDate>
     <guid>http://blog.functorial.com/posts/2012-02-02-Polykinded-Folds.html</guid>
-</item>
-<item>
-    <title>Enumerating Permutations</title>
-    <link>http://blog.functorial.com/posts/2011-12-28-Enumerating-Permutations.html</link>
-    <description><![CDATA[Deriving the 'next permutation' using equational reasoning in Haskell]]></description>
-    <pubDate>Wed, 28 Dec 2011 00:00:00 UT</pubDate>
-    <guid>http://blog.functorial.com/posts/2011-12-28-Enumerating-Permutations.html</guid>
 </item>
 
     </channel> 
