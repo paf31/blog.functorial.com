@@ -56,8 +56,8 @@
 
 <span class="kw">import</span> <span class="dt">Data.Function</span> (on)
 <span class="kw">import</span> <span class="dt">Data.List</span> (maximumBy)</code></pre>
-<h2 id="longest-common-subsequences-and-largest-common-subsequences">Longest Common Subsequences and Largest Common Subsequences</h2>
-<p>The <code>diff</code> function can be specified as follows: for lists <code>xs</code> and <code>ys</code> find the shortest edit sequence taking <code>xs</code> to <code>ys</code>. An edit sequence is a list of list modifications (removing elements of the first list and inserting elements of the second list). The dual optimization problem is to find the longest common subsequence of the two input lists. If we can solve one problem, then we can solve the other as well.</p>
+<h2 id="longest-common-subsequences-and-largest-common-substructures">Longest Common Subsequences and Largest Common Substructures</h2>
+<p>The <code>diff</code> function can be specified as follows: for lists <code>xs</code> and <code>ys</code>, find the shortest edit sequence taking <code>xs</code> to <code>ys</code>. We can reduce the problem to finding the longest common subsequence of <code>xs</code> and <code>ys</code>: to obtain the least common subsequence, first remove a subset of elements from <code>xs</code>, and then to obtain <code>ys</code>, insert a subset of elements of <code>ys</code> into the least common subsequence.</p>
 <p>Ignoring optimization for the time being, let's take this as our starting point. We'll generalize the longest common subsequence to the largest common substructure.</p>
 <p>First, let's examine the inductive definition of all subsequences of a list:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">subsequences ::</span> [a] <span class="ot">-&gt;</span> [[a]]
@@ -199,7 +199,7 @@ patch old (inserts, deletes) <span class="fu">=</span> <span class="fu">foldr</s
   unwrap x (<span class="dt">Skip</span> ctx<span class="fu">:</span>cs) <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> plugIn (unwrap (childAt (runRec x) ctx) cs) ctx
   unwrap x (<span class="dt">Take</span> ctx<span class="fu">:</span>cs) <span class="fu">=</span> unwrap (childAt (runRec x) ctx) cs
   unwrap _ (<span class="dt">Replace</span> x y<span class="fu">:</span>cs) <span class="fu">=</span> unwrap x cs</code></pre>
-<p>The functions <code>plugIn</code> and <code>childAt</code> play a key role, since we need to be able to glue structures together and take them apart again based on the content of the changset.</p>
+<p>The functions <code>plugIn</code> and <code>childAt</code> play a key role, since we need to be able to glue structures together and take them apart again based on the content of the changeset.</p>
 <p>We can verify using the examples above (and others) that <code>diff</code> and <code>patch</code> satisfy the required laws <code>patch x $ diff x y = y</code> and <code>diff x $ patch x p = p</code>.</p>
 <h2 id="optimization">Optimization</h2>
 <p>The function <code>diff</code> above does its job, but has exponential complexity in the size of its input, due to the need to generate all substructures.</p>
