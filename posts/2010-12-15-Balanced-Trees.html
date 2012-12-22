@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Value Lifting, Bounded Existentials and the Visitor Pattern</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Value Lifting, Bounded Existentials and the Visitor Pattern</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>Suppose we want to define a type of balanced binary trees in C#. That is, we want to define a type <code>Balanced&lt;T&gt;</code> of trees such that it is a type error to attempt to create a tree in <code>Balanced&lt;T&gt;</code> which has nodes at different depths. How might we go about this?</p>
+            <h2>Value Lifting, Bounded Existentials and the Visitor Pattern</h2>
+
+<p><small>by Phil Freeman on 2010/12/15</small></p>
+
+<hr></hr>
+
+<p>Suppose we want to define a type of balanced binary trees in C#. That is, we want to define a type <code>Balanced&lt;T&gt;</code> of trees such that it is a type error to attempt to create a tree in <code>Balanced&lt;T&gt;</code> which has nodes at different depths. How might we go about this?</p>
 <p>We could use nested datatypes. For example,</p>
 <blockquote>
 <p>Balanced T = T + Balanced (Pair T)</p>
@@ -216,6 +229,24 @@ public static BalancedTree&lt;T&gt; Forget&lt;T, N&gt;(this BalancedTree&lt;T, N
 <p>treeOfUnknownDepth.Flatten();</p>
 <p>[ 1, 2, 3, 4, 5, 6, 7, 8 ]</p>
 </blockquote>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

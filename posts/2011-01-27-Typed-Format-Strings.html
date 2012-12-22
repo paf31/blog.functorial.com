@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Strongly-Typed Format Strings</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Strongly-Typed Format Strings</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>The <code>string.Format</code> method is very useful for pretty-printing data:</p>
+            <h2>Strongly-Typed Format Strings</h2>
+
+<p><small>by Phil Freeman on 2011-01-27</small></p>
+
+<hr></hr>
+
+<p>The <code>string.Format</code> method is very useful for pretty-printing data:</p>
 <blockquote>
 <p>string.Format(&quot;{0},{1} (Born {2:d})&quot;, &quot;Smith&quot;, &quot;John&quot;, new DateTime(1900, 1, 1))</p>
 <p>Smith, John (Born 1/1/1900)</p>
@@ -264,6 +277,24 @@ class CollectValuesVisitor : ValuesVisitor&lt;object[]&gt;
 }</code></pre>
 <h2 id="references">References</h2>
 <p>[1] Functional Unparsing by Olivier Danvy, 1998.</p>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

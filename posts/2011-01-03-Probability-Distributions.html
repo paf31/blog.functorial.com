@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - LINQ to Probability Distributions</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>LINQ to Probability Distributions</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>Here is an example of an interesting monad which I have not seen expressed anywhere using LINQ's extension methods.</p>
+            <h2>LINQ to Probability Distributions</h2>
+
+<p><small>by Phil Freeman on 2011/01/03</small></p>
+
+<hr></hr>
+
+<p>Here is an example of an interesting monad which I have not seen expressed anywhere using LINQ's extension methods.</p>
 <h2 id="probability-distributions">Probability Distributions</h2>
 <p>Define a probability distribution with entries in type T as a list of outcomes with probabilities:</p>
 <pre><code>public class Outcome&lt;T&gt;
@@ -195,6 +208,24 @@ var roll = from heads in coinToss
 </blockquote>
 <h2 id="references">References</h2>
 <p>[1] Probabilistic Functional Programming In Haskell (M. Erwig, S. Kollmansberger, 2006)</p>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Typechecking a Purity Program</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Typechecking a Purity Program</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>The Purity compiler uses a modified version of Algorithm W to verify the type safety of its programs. I am going to write a little about the common implementation of Algorithm W in the simply typed lambda calculus, and then its relationship with the Purity typechecking algorithm.</p>
+            <h2>Typechecking a Purity Program</h2>
+
+<p><small>by Phil Freeman on 2011/05/02</small></p>
+
+<hr></hr>
+
+<p>The Purity compiler uses a modified version of Algorithm W to verify the type safety of its programs. I am going to write a little about the common implementation of Algorithm W in the simply typed lambda calculus, and then its relationship with the Purity typechecking algorithm.</p>
 <h2 id="algorithm-w">Algorithm W</h2>
 <p>Algorithm W is a bottom-up constraint-based type inference algorithm for the simply-typed lambda calculus enriched with polymorphic let expressions. The algorithm generates a set of type constraints from an untyped term using the Robinson Unification method. If unification fails at any point then the expression cannot be typed.</p>
 <p>In the second phase of the algorithm, the generated constraints are solved to yield the final typed expression.</p>
@@ -154,6 +167,24 @@ T3 = T4 -&gt; T5</code></pre>
 <pre><code>{T0 : T2 -&gt; T4 -&gt; T5 ; T1 : T2 -&gt; T4 ; T3 = T4 -&gt; T5}</code></pre>
 <p>and the type of the final expression is determined to be</p>
 <pre><code>forall Ti . (T2 -&gt; T4 -&gt; T5) -&gt; (T2 -&gt; T4) -&gt; T4 -&gt; T5 </code></pre>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

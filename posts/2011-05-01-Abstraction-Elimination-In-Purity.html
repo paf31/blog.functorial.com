@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Abstraction Elimination in Purity</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Abstraction Elimination in Purity</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>I'd like to write a little bit about the process of abstraction elimation in the Purity language. Abstraction elimination is the process by which lambda expressions get transformed into point-free code.</p>
+            <h2>Abstraction Elimination in Purity</h2>
+
+<p><small>by Phil Freeman on 2012/05/01</small></p>
+
+<hr></hr>
+
+<p>I'd like to write a little bit about the process of abstraction elimation in the Purity language. Abstraction elimination is the process by which lambda expressions get transformed into point-free code.</p>
 <p>This is beneficial to the programmer because programming in a point-free style is not always practical. In a lot of cases, it is much more intuitive to think in terms of variables and closures.</p>
 <p>Abstraction elimination is useful from the compiler's perspective for the opposite reason: we don't have to worry about things like closures and variables when generating executable code for an expression: we only have to concern ourselves with functions and function composition.</p>
 <p>Consider a simple example using lambda expressions - the following snippet defines the S combinator:</p>
@@ -116,6 +129,24 @@
 <p>One can write definitions for these functions using only the constructions mentioned above. The upshot is that a single elimination step does not cause us to leave the class of expressions for which we can perform abstraction elimination, and we can continue eliminating variables all the way up the expression tree to the root, at which point we have removed all lambda expressions from the tree, and we are left with an equivalent expression in point-free style.</p>
 <h2 id="references">References</h2>
 <p>[1] The Reader Monad and Abstraction Elimination, P. Pudlak, in The Monad.Reader Issue 17.te</p>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

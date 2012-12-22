@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - The Ins and Outs of Fixed Point Types</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>The Ins and Outs of Fixed Point Types</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>The purpose of this note is to derive the \(F\)-(co-)algebra structures on the least and greatest fixed points of \(F\) expressed in terms of universal and existential types. The method also extends to mutually recursive types by virtue of the fact that these types are the fixed points of functors on the power category \(\mathbb{C}^n\) for some \(n\), as explained in my last post.</p>
+            <h2>The Ins and Outs of Fixed Point Types</h2>
+
+<p><small>by Phil Freeman on 2011/02/17</small></p>
+
+<hr></hr>
+
+<p>The purpose of this note is to derive the \(F\)-(co-)algebra structures on the least and greatest fixed points of \(F\) expressed in terms of universal and existential types. The method also extends to mutually recursive types by virtue of the fact that these types are the fixed points of functors on the power category \(\mathbb{C}^n\) for some \(n\), as explained in my last post.</p>
 <h2 id="least-fixed-points">Least Fixed Points</h2>
 <p>We defined the least fixed point of \(F\) by identifying an inhabitant with its fold function <code>cata</code>:</p>
 <p>\(\mu F = \forall T. (F T \rightarrow T) \rightarrow T\)</p>
@@ -99,6 +112,24 @@ Func&lt;Even, Even, Even&gt; mult = (e1, e2) =&gt; e1.Cata&lt;Even, Even&gt;(
         ? zero
         : add(e2, f1.Pred),
     f2 =&gt; add(e2, f2.Pred));</code></pre>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

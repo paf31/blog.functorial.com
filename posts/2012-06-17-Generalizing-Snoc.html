@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Generalizing O(1) Snoc On Lists</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Generalizing O(1) Snoc On Lists</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>I've recently been thinking about how to generalize an efficient version of the <code>snoc</code> operation on lists.</p>
+            <h2>Generalizing O(1) Snoc On Lists</h2>
+
+<p><small>by Phil Freeman on 2012/06/17</small></p>
+
+<hr></hr>
+
+<p>I've recently been thinking about how to generalize an efficient version of the <code>snoc</code> operation on lists.</p>
 <p>Specifically, one can represent lists by identifying them with their fold functions:</p>
 <pre><code>-- data List a = List { fold :: forall r. r -&gt; (a -&gt; r -&gt; r) -&gt; r }</code></pre>
 <p>This representation, as in the case of difference lists, admits efficient versions of the cons operation at both ends of the list:</p>
@@ -145,6 +158,24 @@ gappend f x <span class="fu">=</span> <span class="dt">Rec</span> cata' <span cl
 <p>On trees, <code>gappend</code> replaces each <code>Tip</code> with a new tree:</p>
 <pre><code>-- flattenTree $ gappend (const test3) test3
 -- [1,3,2,4,1,1,3,2,4,3,1,3,2,4,2,1,3,2,4,4,1,3,2,4]</code></pre>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

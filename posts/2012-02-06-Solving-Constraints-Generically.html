@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Solving Constraints Generically</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Solving Constraints Generically</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>In this post, I'd like to revisit Algorithm W, which I discussed when I wrote about Purity's typechecker.</p>
+            <h2>Solving Constraints Generically</h2>
+
+<p><small>by Phil Freeman on 2012/02/06</small></p>
+
+<hr></hr>
+
+<p>In this post, I'd like to revisit Algorithm W, which I discussed when I wrote about Purity's typechecker.</p>
 <p>Recalling the approach taken before, a term was typed by collecting constraints between unknown type variables by traversing the term in question, and then solving those constraints by substitution. This time I'd like to generalize the second part of the algorithm, to solve constraints over any type functor by substitution.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE EmptyDataDecls #-}</span>
 <span class="ot">{-# LANGUAGE RankNTypes #-}</span>
@@ -169,6 +182,24 @@ k <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&g
 <p>ghci&gt; solve (generateConstraints k) 3</p>
 <p>(0 -&gt; (1 -&gt; 0))</p>
 </blockquote>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

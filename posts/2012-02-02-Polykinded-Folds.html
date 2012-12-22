@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Fun With PolyKinds: Polykinded Folds</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Fun With PolyKinds: Polykinded Folds</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>In the following, I will write a polykinded version of the combinators <code>fold</code> and <code>unfold</code>, along with three examples: folds for regular datatypes (specialized to kind <code>*</code>), folds for nested datatypes (specialized to kind <code>* -&gt; *</code>), and folds for mutually recursive data types (specialized to the product kind <code>(*, *)</code>). The approach should generalise easily enough to things such as types indexed by another kind (e.g. by specializing to kind <code>Nat -&gt; *</code>, using the <code>DataKinds</code> extension), or higher order nested datatypes (e.g. by specializing to kind <code>(* -&gt; *) -&gt; (* -&gt; *)</code>).</p>
+            <h2>Fun With PolyKinds: Polykinded Folds</h2>
+
+<p><small>by Phil Freeman on 2012/02/02</small></p>
+
+<hr></hr>
+
+<p>In the following, I will write a polykinded version of the combinators <code>fold</code> and <code>unfold</code>, along with three examples: folds for regular datatypes (specialized to kind <code>*</code>), folds for nested datatypes (specialized to kind <code>* -&gt; *</code>), and folds for mutually recursive data types (specialized to the product kind <code>(*, *)</code>). The approach should generalise easily enough to things such as types indexed by another kind (e.g. by specializing to kind <code>Nat -&gt; *</code>, using the <code>DataKinds</code> extension), or higher order nested datatypes (e.g. by specializing to kind <code>(* -&gt; *) -&gt; (* -&gt; *)</code>).</p>
 <p>The following will compile in the new GHC 7.4.1 release. We require the following GHC extensions:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE GADTs #-}</span>
 <span class="ot">{-# LANGUAGE PolyKinds #-}</span>
@@ -193,6 +206,24 @@ pairUp xs <span class="fu">=</span> <span class="kw">let</span> (<span class="dt
   psi (<span class="dt">FSucc2</span> x (<span class="dt">K21</span> xss)) <span class="fu">=</span> <span class="dt">K22</span> (x, xss) 
 
 test <span class="fu">=</span> <span class="dt">Succ1</span> <span class="dv">0</span> <span class="fu">$</span> <span class="dt">Succ2</span> <span class="dv">1</span> <span class="fu">$</span> <span class="dt">Succ1</span> <span class="dv">2</span> <span class="fu">$</span> <span class="dt">Succ2</span> <span class="dv">3</span> <span class="fu">$</span> <span class="dt">Succ1</span> <span class="dv">4</span> <span class="fu">$</span> <span class="dt">Succ2</span> <span class="dv">5</span> <span class="dt">Zero</span></code></pre>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

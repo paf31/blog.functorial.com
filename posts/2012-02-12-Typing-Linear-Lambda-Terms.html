@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Typing Linear Lambda Terms</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Typing Linear Lambda Terms</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>In this post, I'd like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I'd like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
+            <h2>Typing Linear Lambda Terms</h2>
+
+<p><small>by Phil Freeman on 2012/02/12</small></p>
+
+<hr></hr>
+
+<p>In this post, I'd like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I'd like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
 <p>For example, the combinator <code>K x y = x</code> should be disallowed because the variable <code>y</code> is never used, and the combinator <code>S x y z = x z (y z)</code> should be disallowed because the variable <code>z</code> is used more than once.</p>
 <p>The combinators <code>S</code> and <code>K</code> form a basis for the set of unrestricted lambda terms, so one should ask, is there anything interesting left after they are removed? Indeed, one can find a useful basis for the class of linear lambda terms, which we will express in Haskell below.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators #-}</span>
@@ -89,6 +102,24 @@ c <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&g
 --  In the return type of a call of `Var'
 --  In the expression: Var x</code></pre>
 <p>This error indicates that we have one too many type variables left over at the node of the tree where <code>Var x</code> appears.</p>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>

@@ -3,7 +3,6 @@
 <html>
     <head>
         <title>functorial.com - Enumerating Permutations</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"></link>
         <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
         <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
 
@@ -37,15 +36,29 @@
         </script>
     </head>
     <body>
-        <div id="wrapper">
-            <h1>Enumerating Permutations</h1>
+        <div id="header">
+            <div class="centered" style="padding: 20px;">
+                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
 
+                <p>Type Theory and Programming Languages Blog</p>
+            </div>
+    
+            <div id="splitter"></div>
+        </div>
+    
+        <div class="centered" style="padding: 20px;">
             <div id="navigation">
                 <a href="../index.html">Home</a>
                 <a href="../feed.xml">RSS Feed</a>
             </div>
 
-            <p>Consider the following Haskell function which enumerates permutations of a given length:</p>
+            <h2>Enumerating Permutations</h2>
+
+<p><small>by Phil Freeman on 2011/12/28</small></p>
+
+<hr></hr>
+
+<p>Consider the following Haskell function which enumerates permutations of a given length:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE GADTs #-}</span>
 <span class="ot">{-# LANGUAGE PolyKinds #-}</span>
 
@@ -280,6 +293,24 @@ nextPerm1 (<span class="dt">Insert</span> (<span class="dt">LeqSucc</span> n) p)
 <pre><code>-- nextPerm1 :: forall (n :: Nat). Perm n -&gt; Perm n</code></pre>
 <p>That is, <code>nextPerm1</code> preserves the rank of its argument.</p>
 <p>Compile the source in this post with GHC 7.4 or later.</p>
+
+<hr></hr>
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'functorial'; 
+
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
+    
+
 
             <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
         </div>
