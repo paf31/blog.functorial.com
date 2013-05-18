@@ -62,7 +62,7 @@
 <p>Let's recap the definition of a free monad.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE Rank2Types #-}</span>
 
-<span class="kw">import</span> <span class="dt">Control.Monad</span> (join)
+<span class="kw">import</span> Control.Monad (join)
 
 <span class="kw">data</span> <span class="dt">Free</span> f a <span class="fu">=</span> <span class="dt">Return</span> a <span class="fu">|</span> <span class="dt">Bind</span> (f (<span class="dt">Free</span> f a))</code></pre>
 <p>The free monad for a functor <code>f</code> is given by the fixed point of the bifunctor <code>X -&gt; A -&gt; F (X + A)</code> where the fixed point is taken over <code>X</code>.</p>

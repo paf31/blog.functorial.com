@@ -62,10 +62,10 @@
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE GADTs #-}</span>
 <span class="ot">{-# LANGUAGE PolyKinds #-}</span>
 
-<span class="kw">import</span> <span class="dt">Data.List</span>
+<span class="kw">import</span> Data.List
 
 perms <span class="dv">0</span> <span class="fu">=</span> [[]]
-perms n <span class="fu">=</span> [ insertAt i n p <span class="fu">|</span> p <span class="ot">&lt;-</span> perms (n <span class="fu">-</span> <span class="dv">1</span>), i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>n<span class="dv">-1</span>] ]
+perms n <span class="fu">=</span> [ insertAt i n p <span class="fu">|</span> p <span class="ot">&lt;-</span> perms (n <span class="fu">-</span> <span class="dv">1</span>), i <span class="ot">&lt;-</span> [<span class="dv">0</span><span class="fu">..</span>n<span class="fu">-</span><span class="dv">1</span>] ]
 
 insertAt <span class="dv">0</span> x xs <span class="fu">=</span> x<span class="fu">:</span>xs
 insertAt n x (x'<span class="fu">:</span>xs) <span class="fu">=</span> x'<span class="fu">:</span>xs' <span class="kw">where</span> xs' <span class="fu">=</span> insertAt (n <span class="fu">-</span> <span class="dv">1</span>) x xs</code></pre>

@@ -63,16 +63,16 @@
 <p>I've chosen to use a combination of the Happstack web server and blaze-html to build a very simple note-taking web application, but it should be possible to switch out the particular web server easily.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
 
-<span class="kw">import</span> <span class="dt">Data.Maybe</span>
-<span class="kw">import</span> <span class="dt">Control.Monad</span>
-<span class="kw">import</span> <span class="dt">Control.Monad.Trans</span>
-<span class="kw">import</span> <span class="dt">System.Time</span>
-<span class="kw">import</span> <span class="dt">System.Directory</span>
-<span class="kw">import</span> <span class="dt">Happstack.Server</span>
-<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Text.Blaze.Html4.Strict</span> <span class="kw">as</span> <span class="dt">H</span>
-<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Text.Blaze.Html4.Strict.Attributes</span> <span class="kw">as</span> <span class="dt">A</span>
-<span class="kw">import</span> <span class="dt">Network.TableStorage</span>
-<span class="kw">import</span> <span class="dt">Text.Blaze</span> ((<span class="fu">!</span>), toValue)</code></pre>
+<span class="kw">import</span> Data.Maybe
+<span class="kw">import</span> Control.Monad
+<span class="kw">import</span> Control.Monad.Trans
+<span class="kw">import</span> System.Time
+<span class="kw">import</span> System.Directory
+<span class="kw">import</span> Happstack.Server
+<span class="kw">import</span> <span class="kw">qualified</span> Text.Blaze.Html4.Strict <span class="kw">as</span> H
+<span class="kw">import</span> <span class="kw">qualified</span> Text.Blaze.Html4.Strict.Attributes <span class="kw">as</span> A
+<span class="kw">import</span> Network.TableStorage
+<span class="kw">import</span> Text.Blaze ((!), toValue)</code></pre>
 <p>Let's define the account we are going to be using. An account consists of a service endpoint, an account name and the account's secret key.</p>
 <p>For now, we'll use the development account, so you will need to have the Windows Azure storage emulator running on your development machine.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">account ::</span> <span class="dt">Account</span>

@@ -71,10 +71,10 @@
 <p>We'll need these imports and extensions:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes, DeriveFunctor, DeriveFoldable, DeriveTraversable #-}</span>
 
-<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Void</span> <span class="kw">as</span> <span class="dt">V</span>
-<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Monoid</span> <span class="kw">as</span> <span class="dt">M</span>
-<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Foldable</span> <span class="kw">as</span> <span class="dt">F</span>
-<span class="kw">import</span> <span class="kw">qualified</span> <span class="dt">Data.Traversable</span> <span class="kw">as</span> <span class="dt">T</span></code></pre>
+<span class="kw">import</span> <span class="kw">qualified</span> Data.Void <span class="kw">as</span> V
+<span class="kw">import</span> <span class="kw">qualified</span> Data.Monoid <span class="kw">as</span> M
+<span class="kw">import</span> <span class="kw">qualified</span> Data.Foldable <span class="kw">as</span> F
+<span class="kw">import</span> <span class="kw">qualified</span> Data.Traversable <span class="kw">as</span> T</code></pre>
 <p>First, let's generalize the type <code>List</code> given above to any type constructor <code>f</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Rec</span> f <span class="fu">=</span> <span class="dt">Rec</span> {<span class="ot"> cata ::</span> forall r<span class="fu">.</span> (f r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> r }</code></pre>
 <p>The <code>cons</code> operation is easily generalized - <code>Rec f</code> is an initial <code>f</code>-algebra, and the algebra map gives the generalization of <code>cons</code>:</p>
