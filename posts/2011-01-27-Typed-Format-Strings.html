@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Strongly-Typed Format Strings</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Strongly-Typed Format Strings</h2>
-
-<p><small>by Phil Freeman on 2011-01-27</small></p>
-
-<hr></hr>
-
-<p>The <code>string.Format</code> method is very useful for pretty-printing data:</p>
+<html><head><title>functorial.com - Strongly-Typed Format Strings</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Strongly-Typed Format Strings</h2><p><small>by Phil Freeman on 2011/01/27</small></p><hr><p>The <code>string.Format</code> method is very useful for pretty-printing data:</p>
 <blockquote>
 <p>string.Format(&quot;{0},{1} (Born {2:d})&quot;, &quot;Smith&quot;, &quot;John&quot;, new DateTime(1900, 1, 1))</p>
 <p>Smith, John (Born 1/1/1900)</p>
@@ -136,7 +93,7 @@ class CompositeValues&lt;T1, T2&gt; : FormatStringValues&lt;CompositeShape&lt;T1
     public string Value { get; set; } 
 
     public LiteralFormatString(string value) { Value = value; }
-
+    
     public StringBuilder Append(StringBuilder builder, 
          FormatStringValues&lt;LiteralShape&gt; values)
     {
@@ -159,15 +116,15 @@ class VariableFormatString&lt;T&gt; : FormatString&lt;VariableShape&lt;T&gt;&gt;
         return builder.Append(Formatter(((VariableValues&lt;T&gt;) values).Value));
     }
 }
-
+ 
 class CompositeFormatString&lt;T1, T2&gt; : FormatString&lt;CompositeShape&lt;T1, T2&gt;&gt;
      where T1 : FormatStringShape
      where T2 : FormatStringShape
 {
     public FormatString&lt;T1&gt; Left { get; set; }
-
+    
     public FormatString&lt;T2&gt; Right{ get; set; }
-
+     
     public CompositeFormatString(FormatString&lt;T1&gt; left, 
         FormatString&lt;T2&gt; right)
     {
@@ -239,7 +196,7 @@ interface FormatStringVisitor&lt;R&gt;
     {
         return &quot;{&quot; + index++ + &quot;}&quot;;
     }
-
+    
     public string VisitComposite&lt;T1, T2&gt;(CompositeFormatString&lt;T1, T2&gt; c)
         where T1 : FormatStringShape
         where T2 : FormatStringShape
@@ -278,26 +235,11 @@ class CollectValuesVisitor : ValuesVisitor&lt;object[]&gt;
 }</code></pre>
 <h2 id="references">References</h2>
 <p>[1] Functional Unparsing by Olivier Danvy, 1998.</p>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

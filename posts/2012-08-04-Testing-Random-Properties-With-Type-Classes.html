@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Testing Random Properties With Type Classes</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Testing Random Properties With Type Classes</h2>
-
-<p><small>by Phil Freeman on 2012/08/04</small></p>
-
-<hr></hr>
-
-<p>Consider this common technical interview question:</p>
+<html><head><title>functorial.com - Testing Random Properties With Type Classes</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Testing Random Properties With Type Classes</h2><p><small>by Phil Freeman on 2012/08/04</small></p><hr><p>Consider this common technical interview question:</p>
 <pre><code>Given a stream of bytes whose length is unknown, select a random byte from the stream using O(1) memory.</code></pre>
 <p>I chose this example because it is a non-trivial example of a problem involving random number generation.</p>
 <p>One naive solution would be to store all of the bytes in a list in memory, waiting for the stream to close. This violates the last requirement of the problem though, which asks for a solution with constant memory utilization.</p>
@@ -84,26 +41,26 @@ cons a s <span class="fu">=</span> <span class="dt">Stream</span> <span class="f
 <span class="ot">fromList ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a
 fromList <span class="fu">=</span> <span class="fu">foldr</span> cons empty
 
-<span class="ot">fromList' ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">NonEmptyStream</span> m a
-fromList' (x<span class="fu">:</span>xs) <span class="fu">=</span> (x, fromList xs)</code></pre>
+<span class="ot">fromList&#39; ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">NonEmptyStream</span> m a
+fromList&#39; (x<span class="fu">:</span>xs) <span class="fu">=</span> (x, fromList xs)</code></pre>
 <p>Here, the monad <code>m</code> is used to represent the side effect of waiting for the next element in the <code>Stream</code>.</p>
 <p>With that, we might aim to find a function of the following type:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">select' ::</span> <span class="dt">NonEmptyStream</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">select&#39; ::</span> <span class="dt">NonEmptyStream</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code></pre>
 <p>After a bit of thought, one arrives at the following solution:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">select' (a, s) <span class="fu">=</span> select'' (<span class="fu">return</span> a) <span class="dv">1</span> s <span class="kw">where</span>
-<span class="ot">  select'' ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a
-  select'' a n s <span class="fu">=</span> <span class="kw">do</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">select&#39; (a, s) <span class="fu">=</span> select&#39;&#39; (<span class="fu">return</span> a) <span class="dv">1</span> s <span class="kw">where</span>
+<span class="ot">  select&#39;&#39; ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a
+  select&#39;&#39; a n s <span class="fu">=</span> <span class="kw">do</span>
     next <span class="ot">&lt;-</span> runStream s
     <span class="kw">case</span> next <span class="kw">of</span> 
       <span class="kw">Nothing</span> <span class="ot">-&gt;</span> a
-      <span class="kw">Just</span> (a', s') <span class="ot">-&gt;</span> select'' someA (n <span class="fu">+</span> <span class="dv">1</span>) s' <span class="kw">where</span>
+      <span class="kw">Just</span> (a&#39;, s&#39;) <span class="ot">-&gt;</span> select&#39;&#39; someA (n <span class="fu">+</span> <span class="dv">1</span>) s&#39; <span class="kw">where</span>
         someA <span class="fu">=</span> <span class="kw">do</span> i <span class="ot">&lt;-</span> randomRIO (<span class="dv">0</span>, n) 
-                   <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">return</span> a'
+                   <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">return</span> a&#39;
                              _ <span class="ot">-&gt;</span> a</code></pre>
 <p>The idea is to keep two accumulator parameters - the first of type <code>IO a</code> represents some value of type <code>a</code> chosen with uniform probability from the values seen so far. The second of type <code>Int</code> is the number of values seen so far.</p>
 <p>If we reach the end of the list, we return the first accumulated value. If not, we choose the new value with probability <code>1/n</code> and the value we had already chosen with probability <code>(n-1)/n</code>.</p>
 <p>We can try this out in GHCi and the results look uniform enough:</p>
-<pre><code>ghci&gt; forM [1..10] $ const $ select' $ fromList' [1..10]
+<pre><code>ghci&gt; forM [1..10] $ const $ select&#39; $ fromList&#39; [1..10]
 [10,4,5,5,3,4,9,8,10,4]</code></pre>
 <p>Now you'd like to write some QuickCheck properties to verify that the results are indeed uniform.</p>
 <p>The problem is that the function <code>select'</code> works in the IO monad, and is inherently non-deterministic. We could replace the use of <code>randomRIO</code> with a deterministic random function using a seed value, but then we would not be able to guarantee full coverage of the code. How many random samples would it take to gain confidence that your function indeed performs as expected?</p>
@@ -136,18 +93,18 @@ normalize d <span class="fu">=</span> <span class="dt">Dist</span> <span class="
   uniform (l, u) <span class="fu">=</span> <span class="dt">Dist</span> [ (<span class="dv">1</span> <span class="fu">%</span> (<span class="fu">toInteger</span> <span class="fu">$</span> u <span class="fu">-</span> l <span class="fu">+</span> <span class="dv">1</span>), i) <span class="fu">|</span> i <span class="ot">&lt;-</span> [l<span class="fu">..</span>u] ]</code></pre>
 <p>We can now rewrite the function <code>select'</code> in such a way that it works over an arbitrary monad in <code>MonadRandom</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">select ::</span> (<span class="kw">Functor</span> m, <span class="kw">Monad</span> m, <span class="kw">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> <span class="dt">NonEmptyStream</span> m a <span class="ot">-&gt;</span> m (r a)
-select (a, s) <span class="fu">=</span> select' (<span class="fu">return</span> a) <span class="dv">1</span> s <span class="kw">where</span>
-<span class="ot">  select' ::</span> (<span class="kw">Functor</span> m, <span class="kw">Monad</span> m, <span class="kw">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> r a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a <span class="ot">-&gt;</span> m (r a)
-  select' r n s <span class="fu">=</span> <span class="kw">do</span>
+select (a, s) <span class="fu">=</span> select&#39; (<span class="fu">return</span> a) <span class="dv">1</span> s <span class="kw">where</span>
+<span class="ot">  select&#39; ::</span> (<span class="kw">Functor</span> m, <span class="kw">Monad</span> m, <span class="kw">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> r a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a <span class="ot">-&gt;</span> m (r a)
+  select&#39; r n s <span class="fu">=</span> <span class="kw">do</span>
     next <span class="ot">&lt;-</span> runStream s
     <span class="kw">case</span> next <span class="kw">of</span> 
       <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> r
-      <span class="kw">Just</span> (a, s') <span class="ot">-&gt;</span> select' r1 (n <span class="fu">+</span> <span class="dv">1</span>) s' <span class="kw">where</span>
+      <span class="kw">Just</span> (a, s&#39;) <span class="ot">-&gt;</span> select&#39; r1 (n <span class="fu">+</span> <span class="dv">1</span>) s&#39; <span class="kw">where</span>
         r1 <span class="fu">=</span> <span class="kw">do</span> i <span class="ot">&lt;-</span> uniform (<span class="dv">0</span>, n) 
                 <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">return</span> a
                           _ <span class="ot">-&gt;</span> r</code></pre>
 <p>The new function <code>select</code> works just like <code>select'</code>, except that the result has an extra monadic layer:</p>
-<pre><code>ghci&gt; forM [1..10] $ const $ join $ select $ fromList' [1..10]
+<pre><code>ghci&gt; forM [1..10] $ const $ join $ select $ fromList&#39; [1..10]
 [4,9,3,6,9,9,1,6,7,6]</code></pre>
 <p>However, now we can specialize <code>select</code> to the <code>Dist</code> monad for the purposes of testing our QuickCheck properties.</p>
 <p>The idea is that since <code>select</code> is universally quantified in the monad <code>r</code>, we cannot cheat and use any specific knowledge we have about <code>r</code> to make our tests pass. If a test passes for one instance of <code>MonadRandom</code>, then we would expect the test to pass for any sensible instance of <code>MonadRandom</code>.</p>
@@ -159,32 +116,17 @@ testAllValuesPresent xs <span class="fu">=</span>
     <span class="fu">$</span> runDist
     <span class="fu">$</span> runIdentity
     <span class="fu">$</span> select 
-    <span class="fu">$</span> fromList' xs</code></pre>
+    <span class="fu">$</span> fromList&#39; xs</code></pre>
 <p>We can test this property using QuickCheck:</p>
 <pre><code>ghci&gt; quickCheck testAllValuesPresent
 +++ OK, passed 100 tests.</code></pre>
 <p>Looks good. We could also write properties to verify that the choice is indeed uniform.</p>
 <p>So by replacing the specific monad <code>IO</code> and working in the typeclass <code>MonadRandom</code>, we've recovered testability for our random functions.</p>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

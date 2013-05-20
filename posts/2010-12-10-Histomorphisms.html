@@ -1,84 +1,50 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Histomorphisms, Dynamic Programming and the Knapsack Problem</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Histomorphisms, Dynamic Programming and the Knapsack Problem</h2>
-
-<p><small>by Phil Freeman on 2010/12/10</small></p>
-
-<hr></hr>
-
-<p>Histomorphisms generalize the concept of course-of-value iteration to arbitrary recursive data types. They are useful for expressing solutions to problems which depend optimally on solutions to structurally smaller problems. That is, histomorphisms are useful for applying the concepts of dynamic programming over recursive datatypes.</p>
+<html><head><title>functorial.com - Histomorphisms, Dynamic Programming and the Knapsack Problem</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Histomorphisms, Dynamic Programming and the Knapsack Problem</h2><p><small>by Phil Freeman on 2010/12/10</small></p><hr><p>Histomorphisms generalize the concept of course-of-value iteration to arbitrary recursive data types. They are useful for expressing solutions to problems which depend optimally on solutions to structurally smaller problems. That is, histomorphisms are useful for applying the concepts of dynamic programming over recursive datatypes.</p>
 <p>Using some the methods in my previous posts, we can express histomorphisms in C# over a fixed recursive data type in a type-safe way. In a language such as Haskell, we can generalize the method so that it applies to any recursive data type, but in C# the lack of type-level functions prevents us from doing so.</p>
-<p>First, a little theory. Recall the definition of catamorphism as the unique \(F\)-algebra morphism from the initial \(F\)-algebra:</p>
-<p>\(\require{AMSmath} \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex} \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}} \begin{array}{ccc} F \mu_F&amp; \ra{F (|\phi|)} &amp; F A \\ \da{in} &amp; &amp; \da{\phi} \\ \mu_F&amp; \ras{(|\phi|)} &amp; A \end{array}\)</p>
-<p>We want to use answers to subproblems to generate﻿ the solution to the full problem. That is, we want to use the values of \((|\phi|) x\) for structurally smaller values \(x\) of \(\mu_F\).</p>
-<p>In order to use intermediate results, we replace the recursive data structure with one which is structurally similar, but which also stores the partially calculated results. That structure is given by the cofree comonad over \(F\), denoted here \(\operatorname{CoFree}_F\):</p>
-<p>\(\operatorname{CoFree}_F X = \nu ( Y \rightarrow X \times F Y )\)</p>
-<p>Here, we've replaced the functor \(F\) with the functor \(Y \rightarrow X \times F Y\), which carries an extra \(X\) at each step of the recursion.</p>
-<p>We can think of an element of \(\operatorname{CoFree}_F X\) as an \(X\)-annotated version of the recursive data type \(\mu_F\).</p>
+<p>First, a little theory. Recall the definition of catamorphism as the unique <span class="math"><em>F</em></span>-algebra morphism from the initial <span class="math"><em>F</em></span>-algebra:</p>
+<p><span class="math">$\require{AMSmath}     \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex}     \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex}     \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}}     \begin{array}{ccc}       F \mu_F&amp; \ra{F (|\phi|)} &amp; F A \\       \da{in} &amp; &amp; \da{\phi} \\       \mu_F&amp; \ras{(|\phi|)} &amp; A     \end{array}$</span></p>
+<p>We want to use answers to subproblems to generate﻿ the solution to the full problem. That is, we want to use the values of <span class="math">(∣<em>ϕ</em>∣)<em>x</em></span> for structurally smaller values <span class="math"><em>x</em></span> of <span class="math"><em>μ</em><sub><em>F</em></sub></span>.</p>
+<p>In order to use intermediate results, we replace the recursive data structure with one which is structurally similar, but which also stores the partially calculated results. That structure is given by the cofree comonad over <span class="math"><em>F</em></span>, denoted here <span class="math">$\operatorname{CoFree}_F$</span>:</p>
+<p><span class="math">$\operatorname{CoFree}_F X = \nu ( Y \rightarrow X \times F Y )$</span></p>
+<p>Here, we've replaced the functor <span class="math"><em>F</em></span> with the functor <span class="math"><em>Y</em> → <em>X</em> × <em>F</em><em>Y</em></span>, which carries an extra <span class="math"><em>X</em></span> at each step of the recursion.</p>
+<p>We can think of an element of <span class="math">$\operatorname{CoFree}_F X$</span> as an <span class="math"><em>X</em></span>-annotated version of the recursive data type <span class="math"><em>μ</em><sub><em>F</em></sub></span>.</p>
 <p>The diagram above now becomes:</p>
-<p>\(\require{AMSmath} \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex} \newcommand{\las}[1]{\kern-1.5ex\xleftarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex} \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}} \begin{array}{ccc} F \mu_F &amp; \ra{F (|\epsilon|)} &amp; F \operatorname{CoFree}_F X &amp; \ra{[\phi, id]} &amp; X \times F \operatorname{CoFree}_F X \\ \da{\operatorname{in}} &amp; &amp; \da{\epsilon} &amp; &amp; \da{id} \\ \mu_F &amp; \ras{(|\epsilon|)} &amp; \operatorname{CoFree}_F X &amp; \las{\operatorname{out}} &amp; X \times \operatorname{CoFree}_F X \end{array}\)</p>
+<p><br /><span class="math">$\require{AMSmath}
+    \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex}
+    \newcommand{\las}[1]{\kern-1.5ex\xleftarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex}
+    \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex}
+    \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}}
+    \begin{array}{ccc}
+      F \mu_F &amp; \ra{F (|\epsilon|)} &amp; F \operatorname{CoFree}_F X &amp; \ra{[\phi, id]} &amp; X \times F \operatorname{CoFree}_F X \\
+      \da{\operatorname{in}} &amp; &amp; \da{\epsilon} &amp; &amp; \da{id} \\
+      \mu_F &amp; \ras{(|\epsilon|)} &amp; \operatorname{CoFree}_F X &amp; \las{\operatorname{out}} &amp; X \times \operatorname{CoFree}_F X
+    \end{array}$</span><br /></p>
 <p>The left square is a catamorphism, where the algebra morphism is defined by the commutativity of the right square.</p>
-<p>Composing with the map \(extract :: \operatorname{CoFree}_F X \rightarrow X\) gives the desired map histo \(\phi :: \mu_F \rightarrow X\).</p>
-<p>\(\operatorname{histo} \phi\) is given by following the arrows around the top of the diagram: first we apply the histomorphism to a structurally smaller value of \(\mu F\) before using \(\phi\) to accumulate results from structurally smaller values, saving the result along with previous results, and then extracting the final result from the comonad.</p>
+<p>Composing with the map <span class="math">$extract :: \operatorname{CoFree}_F X \rightarrow X$</span> gives the desired map histo <span class="math"><em>ϕ</em>: : <em>μ</em><sub><em>F</em></sub> → <em>X</em></span>.</p>
+<p><span class="math">$\operatorname{histo} \phi$</span> is given by following the arrows around the top of the diagram: first we apply the histomorphism to a structurally smaller value of <br /><span class="math"><em>μ</em><em>F</em></span><br /> before using <span class="math"><em>ϕ</em></span> to accumulate results from structurally smaller values, saving the result along with previous results, and then extracting the final result from the comonad.</p>
 <p>Now, let's express this in C#. Note, the lack of memoized functions in C# makes the following implementation non-optimal. It is provided simply to illustrate the ideas presented above.</p>
-<p>We are going to solve the knapsack problem, a problem which is particularly amenable to a dynamic programming solution, and whose solution is expressible as a histomorphism. The problem is stated as follows: given a collection of \(n\) objects of weights \(w_1, \dots, w_n\) and values \(v_1, \dots, v_n\), find the maximum total value \(\operatorname{KS}(W)\) of a set of objects which can be carried in a knapsack capable of carrying a maximum weight \(W\).</p>
-<p>Notice that \(\operatorname{KS}(0)=0\), being the total value of the only set of objects which can be carried in a knapsack of maximum weight zero, the empty set.</p>
-<p>Also, for \(W \lt 0\), we can calculate \(\operatorname{KS}(W)\) based on \(\operatorname{KS}(n)\) for \(n \lt W\), as follows:</p>
-<p>\(\operatorname{KS}(W) = ( \operatorname{KS}(W - 1), v1 + \operatorname{KS}(W - w1), \dots, vn + \operatorname{KS}(W - wn) )\)</p>
-<p>The domain of our histomorphism is going to be the natural numbers, the least fixed point of the functor \(F X = 1 + X\). The codomain will be the primitive C# type int. First, let's define the natural numbers:</p>
+<p>We are going to solve the knapsack problem, a problem which is particularly amenable to a dynamic programming solution, and whose solution is expressible as a histomorphism. The problem is stated as follows: given a collection of <span class="math"><em>n</em></span> objects of weights <span class="math"><em>w</em><sub>1</sub>, …, <em>w</em><sub><em>n</em></sub></span> and values <span class="math"><em>v</em><sub>1</sub>, …, <em>v</em><sub><em>n</em></sub></span>, find the maximum total value <span class="math">$\operatorname{KS}(W)$</span> of a set of objects which can be carried in a knapsack capable of carrying a maximum weight <span class="math"><em>W</em></span>.</p>
+<p>Notice that <span class="math">$\operatorname{KS}(0)=0$</span>, being the total value of the only set of objects which can be carried in a knapsack of maximum weight zero, the empty set.</p>
+<p>Also, for <span class="math"><em>W</em> &lt; 0</span>, we can calculate <span class="math">$\operatorname{KS}(W)$</span> based on <span class="math">$\operatorname{KS}(n)$</span> for <span class="math"><em>n</em> &lt; <em>W</em></span>, as follows:</p>
+<p><span class="math">$\operatorname{KS}(W) = ( \operatorname{KS}(W - 1), v1 + \operatorname{KS}(W - w1), \dots, vn + \operatorname{KS}(W - wn) )$</span></p>
+<p>The domain of our histomorphism is going to be the natural numbers, the least fixed point of the functor <span class="math"><em>F</em><em>X</em> = 1 + <em>X</em></span>. The codomain will be the primitive C# type int. First, let's define the natural numbers:</p>
 <pre><code>class NatF&lt;T&gt;
 {
     public Either&lt;Unit, T&gt; Data;
@@ -113,7 +79,7 @@ interface CoFreeNat&lt;L&gt;
 {
     R Apply&lt;R&gt;(CoFreeNatFunc&lt;L, R&gt; f);
 }</code></pre>
-<p>Here we've given the name <code>CoFreeNatF</code> to the functor defining the cofree comonad over \(F\), and <code>ECoFreeNatF</code> to the term \(X \times (X \rightarrow \operatorname{CoFree}_{Nat} X)\) appearing inside the existential type defining <code>CoFreeNat</code> as a greatest fixed point type.</p>
+<p>Here we've given the name <code>CoFreeNatF</code> to the functor defining the cofree comonad over <span class="math"><em>F</em></span>, and <code>ECoFreeNatF</code> to the term <span class="math">$X \times (X \rightarrow \operatorname{CoFree}_{Nat} X)$</span> appearing inside the existential type defining <code>CoFreeNat</code> as a greatest fixed point type.</p>
 <p>With those definitions, and the definition of a catamorphism given here, we can define a histomorphism as follows:</p>
 <pre><code>public static Func&lt;Nat, L&gt; Histo&lt;L&gt;(Func&lt;NatF&lt;CoFreeNat&lt;L&gt;&gt;, L&gt; histoSeed)
 {
@@ -134,7 +100,7 @@ interface CoFreeNat&lt;L&gt;
 <blockquote>
 <p>extract :: CoFreeNat L -&gt; L</p>
 </blockquote>
-<p>\(\operatorname{out}\) lets us combine a previously calculated value and a value in the comonad to give a new value in the comonad. It is the arrow on the bottom of the right hand square in the diagram above.</p>
+<p><span class="math">$\operatorname{out}$</span> lets us combine a previously calculated value and a value in the comonad to give a new value in the comonad. It is the arrow on the bottom of the right hand square in the diagram above.</p>
 <p>We have to divide into two cases, the zero case and the successor case. Here we use the class names Node and Chain respectively:</p>
 <pre><code>class Node&lt;L&gt; : CoFreeNat&lt;L&gt;
 {
@@ -284,29 +250,14 @@ var solution = Histo&lt;int&gt;(seed);</code></pre>
 <p>Eager readers may want to try the following:</p>
 <ul>
 <li>Generalize the above to handle an arbitrary set of weights and values.</li>
-<li>Express the fibonnaci sequence \(\operatorname{fib } 0 = \operatorname{fib } 1 = 1, \operatorname{fib } n = \operatorname{fib }(n - 1) + \operatorname{fib }(n - 2)\) for \(n &gt; 1\) as a histomorphism.</li>
+<li>Express the fibonnaci sequence <span class="math">$\operatorname{fib } 0 = \operatorname{fib } 1 = 1, \operatorname{fib } n = \operatorname{fib }(n - 1) + \operatorname{fib }(n - 2)$</span> for <span class="math"><em>n</em> &gt; 1</span> as a histomorphism.</li>
 <li>Define histomorphisms over another recursive data type such as binary trees or lists.</li>
 </ul>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

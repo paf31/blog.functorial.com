@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Greatest Fixed Points Part 2 - The Conaturals</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Greatest Fixed Points Part 2 - The Conaturals</h2>
-
-<p><small>by Phil Freeman on 2010/12/06</small></p>
-
-<hr></hr>
-
-<p>As a continuation of my last post on the encoding of greatest fixed point types, I'd like to give a treatment of another interesting greatest fixed point type - the conatural numbers, the greatest fixed point of the functor</p>
+<html><head><title>functorial.com - Greatest Fixed Points Part 2 - The Conaturals</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Greatest Fixed Points Part 2 - The Conaturals</h2><p><small>by Phil Freeman on 2010/12/06</small></p><hr><p>As a continuation of my last post on the encoding of greatest fixed point types, I'd like to give a treatment of another interesting greatest fixed point type - the conatural numbers, the greatest fixed point of the functor</p>
 <blockquote>
 <p>F (X) = 1 + X</p>
 </blockquote>
@@ -147,26 +104,11 @@ class ConatInfinity : Conat
                 t1 =&gt; Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;.inr(Tuple.Create&lt;T1, T2&gt;(t1, p.Item2)));
     }
 }</code></pre>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Doubly-Recursive Functions, Generically</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Doubly-Recursive Functions, Generically</h2>
-
-<p><small>by Phil Freeman on 2012/02/12</small></p>
-
-<hr></hr>
-
-<p>Consider the following recursive function definitions. What do they have in common?</p>
+<html><head><title>functorial.com - Doubly-Recursive Functions, Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Doubly-Recursive Functions, Generically</h2><p><small>by Phil Freeman on 2012/02/12</small></p><hr><p>Consider the following recursive function definitions. What do they have in common?</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- equals 0 0 = True</span>
 <span class="co">-- equals 0 n = False</span>
 <span class="co">-- equals n 0 = False</span>
@@ -93,11 +50,11 @@ unfold psi <span class="fu">=</span> <span class="dt">In</span> <span class="fu"
 <p>since we cannot eliminate the summands <code>a</code> and <code>b</code> from the existential using only the function of type <code>a -&gt; b -&gt; x</code>.</p>
 <p>Let's name the three unit constructors here <code>ZZ</code>, <code>ZS</code> and <code>SZ</code> depending on the two multiplicands from which they originated in the above isomorphism.</p>
 <p>Now we can define a function equals':</p>
-<pre><code>-- equals' :: (Nat # Nat) t -&gt; t
--- equals' ZZ = True
--- equals' ZS = False
--- equals' SZ = False
--- equals' SS t = t</code></pre>
+<pre><code>-- equals&#39; :: (Nat # Nat) t -&gt; t
+-- equals&#39; ZZ = True
+-- equals&#39; ZS = False
+-- equals&#39; SZ = False
+-- equals&#39; SS t = t</code></pre>
 <p>This looks a lot like the definition of <code>equals</code> given at the top of the article.</p>
 <p>With this motivating case out of the way, we now want to use a function of type <code>(f # g) t -&gt; t</code> to define a doubly recursive function over arbitrary functors <code>f</code> and <code>g</code>:</p>
 <pre><code>-- (f # g) t -&gt; t ~ (exists a b. (a -&gt; b -&gt; x) (f a) (g b)) -&gt; t
@@ -111,45 +68,30 @@ parFold phi x y <span class="fu">=</span> (phi <span class="fu">$</span> parFold
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">parUnfold ::</span> (forall a b<span class="fu">.</span> (x <span class="ot">-&gt;</span> (a, b)) <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> (f a, g b)) <span class="ot">-&gt;</span> x <span class="ot">-&gt;</span> (<span class="dt">Rec</span> f, <span class="dt">Rec</span> g)
 parUnfold psi x <span class="fu">=</span> <span class="kw">let</span> (a, b) <span class="fu">=</span> (psi <span class="fu">$</span> parUnfold psi) x <span class="kw">in</span> (<span class="dt">In</span> a, <span class="dt">In</span> b)</code></pre>
 <p>Now we can define the <code>equals</code> and <code>unify</code> functions above as instances of <code>parFold</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">equals <span class="fu">=</span> parFold equals' <span class="kw">where</span>
-  equals' _ <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">True</span>
-  equals' _ <span class="dt">Zero</span> _ <span class="fu">=</span> <span class="kw">False</span>
-  equals' _ _ <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
-  equals' f (<span class="dt">Succ</span> x) (<span class="dt">Succ</span> y) <span class="fu">=</span> f x y
+<pre class="sourceCode haskell"><code class="sourceCode haskell">equals <span class="fu">=</span> parFold equals&#39; <span class="kw">where</span>
+  equals&#39; _ <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">True</span>
+  equals&#39; _ <span class="dt">Zero</span> _ <span class="fu">=</span> <span class="kw">False</span>
+  equals&#39; _ _ <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
+  equals&#39; f (<span class="dt">Succ</span> x) (<span class="dt">Succ</span> y) <span class="fu">=</span> f x y
 
 <span class="kw">data</span> <span class="dt">Ty</span> t <span class="fu">=</span> <span class="dt">Unknown</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">Arrow</span> t t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)
 
-unify <span class="fu">=</span> parFold unify' <span class="kw">where</span>
-  unify' _ (<span class="dt">Unknown</span> n) (<span class="dt">Unknown</span> m) <span class="fu">=</span> <span class="kw">Just</span> [(n, m)]
-  unify' f (<span class="dt">Arrow</span> x y) (<span class="dt">Arrow</span> z w) <span class="fu">=</span> <span class="kw">do</span> cs1 <span class="ot">&lt;-</span> (f x z); cs2 <span class="ot">&lt;-</span> (f y w); <span class="fu">return</span> <span class="fu">$</span> cs1 <span class="fu">++</span> cs2
-  unify' _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
+unify <span class="fu">=</span> parFold unify&#39; <span class="kw">where</span>
+  unify&#39; _ (<span class="dt">Unknown</span> n) (<span class="dt">Unknown</span> m) <span class="fu">=</span> <span class="kw">Just</span> [(n, m)]
+  unify&#39; f (<span class="dt">Arrow</span> x y) (<span class="dt">Arrow</span> z w) <span class="fu">=</span> <span class="kw">do</span> cs1 <span class="ot">&lt;-</span> (f x z); cs2 <span class="ot">&lt;-</span> (f y w); <span class="fu">return</span> <span class="fu">$</span> cs1 <span class="fu">++</span> cs2
+  unify&#39; _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
 <p>The third example shows that the two recursive structures do not have to be defined over the same base functor:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">List</span> a t <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Cons</span> a t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)
 
-elementAt <span class="fu">=</span> parFold elementAt' <span class="kw">where</span>
-  elementAt' _ <span class="dt">Zero</span> (<span class="dt">Cons</span> a t) <span class="fu">=</span> <span class="kw">Just</span> a
-  elementAt' f (<span class="dt">Succ</span> n) (<span class="dt">Cons</span> a t) <span class="fu">=</span> f n t
-  elementAt' _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+elementAt <span class="fu">=</span> parFold elementAt&#39; <span class="kw">where</span>
+  elementAt&#39; _ <span class="dt">Zero</span> (<span class="dt">Cons</span> a t) <span class="fu">=</span> <span class="kw">Just</span> a
+  elementAt&#39; f (<span class="dt">Succ</span> n) (<span class="dt">Cons</span> a t) <span class="fu">=</span> f n t
+  elementAt&#39; _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

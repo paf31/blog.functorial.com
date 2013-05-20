@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Typechecking a Purity Program</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Typechecking a Purity Program</h2>
-
-<p><small>by Phil Freeman on 2011/05/02</small></p>
-
-<hr></hr>
-
-<p>The Purity compiler uses a modified version of Algorithm W to verify the type safety of its programs. I am going to write a little about the common implementation of Algorithm W in the simply typed lambda calculus, and then its relationship with the Purity typechecking algorithm.</p>
+<html><head><title>functorial.com - Typechecking a Purity Program</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Typechecking a Purity Program</h2><p><small>by Phil Freeman on 2011/05/02</small></p><hr><p>The Purity compiler uses a modified version of Algorithm W to verify the type safety of its programs. I am going to write a little about the common implementation of Algorithm W in the simply typed lambda calculus, and then its relationship with the Purity typechecking algorithm.</p>
 <h2 id="algorithm-w">Algorithm W</h2>
 <p>Algorithm W is a bottom-up constraint-based type inference algorithm for the simply-typed lambda calculus enriched with polymorphic let expressions. The algorithm generates a set of type constraints from an untyped term using the Robinson Unification method. If unification fails at any point then the expression cannot be typed.</p>
 <p>In the second phase of the algorithm, the generated constraints are solved to yield the final typed expression.</p>
@@ -110,8 +67,8 @@ generate-constraints (v, e) = (e[v], [])
 
 generate-constraints (v =&gt; t, e) =  
   let T = new unknown type in 
-  let e' = e :: [v : T] in
-  let (T1, C1) = generate-constraints t e' in (T -&gt; T1, C1) 
+  let e&#39; = e :: [v : T] in
+  let (T1, C1) = generate-constraints t e&#39; in (T -&gt; T1, C1) 
 
 ...</code></pre>
 <h2 id="solving-constraints">Solving Constraints</h2>
@@ -128,8 +85,8 @@ solve-constraints [] _ = []
  
 solve-constraints ((x, T0) :: cs) s =
   let s0 = replace x, with T0 in s
-  let cs' = [c1 | c1 &lt;- substitute (x, T0) c0 ; c0 &lt;- cs]
-  solve-constraints cs' s0  </code></pre>
+  let cs&#39; = [c1 | c1 &lt;- substitute (x, T0) c0 ; c0 &lt;- cs]
+  solve-constraints cs&#39; s0  </code></pre>
 <p>where</p>
 <pre><code>substitute Constraint -&gt; Constraint -&gt; [Constraint]
 
@@ -168,26 +125,11 @@ T3 = T4 -&gt; T5</code></pre>
 <pre><code>{T0 : T2 -&gt; T4 -&gt; T5 ; T1 : T2 -&gt; T4 ; T3 = T4 -&gt; T5}</code></pre>
 <p>and the type of the final expression is determined to be</p>
 <pre><code>forall Ti . (T2 -&gt; T4 -&gt; T5) -&gt; (T2 -&gt; T4) -&gt; T4 -&gt; T5 </code></pre>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

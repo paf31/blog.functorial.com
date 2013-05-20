@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Typing Linear Lambda Terms</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Typing Linear Lambda Terms</h2>
-
-<p><small>by Phil Freeman on 2012/02/12</small></p>
-
-<hr></hr>
-
-<p>In this post, I'd like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I'd like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
+<html><head><title>functorial.com - Typing Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Typing Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/12</small></p><hr><p>In this post, I'd like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I'd like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
 <p>For example, the combinator <code>K x y = x</code> should be disallowed because the variable <code>y</code> is never used, and the combinator <code>S x y z = x z (y z)</code> should be disallowed because the variable <code>z</code> is used more than once.</p>
 <p>The combinators <code>S</code> and <code>K</code> form a basis for the set of unrestricted lambda terms, so one should ask, is there anything interesting left after they are removed? Indeed, one can find a useful basis for the class of linear lambda terms, which we will express in Haskell below.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators #-}</span>
@@ -69,20 +26,20 @@
 <p>The thing which prevents <code>S</code> from being an inhabitant of our desired type is that the variable occurs on each side of the application <code>(x z) (y z)</code>.</p>
 <p>We need to ensure that each variable only occurs on one side of each application, and this motivates the following definition of a splitting of a set of variables <code>s</code> into two disjoint sets <code>v1</code>, <code>v2</code> of variables whose union is <code>s</code>. The only splitting of the empty set is <code>E</code>, the empty splitting, and one can obtain a splitting of <code>(v:vs)</code> from a splitting of <code>vs</code> by adding <code>v</code> to either the left set <code>v1</code> or to the right set <code>v2</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Splitting</span> v1 v2 s <span class="kw">where</span>
-  <span class="dt">E</span><span class="ot"> ::</span> <span class="dt">Splitting</span> <span class="ch">'[] '</span>[] <span class="ch">'[]</span>
-  <span class="dt">L</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> (x <span class="ch">': xs) ys (x '</span><span class="fu">:</span> s)
-  <span class="dt">R</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> xs (y <span class="ch">': ys) (y '</span><span class="fu">:</span> s)</code></pre>
+  <span class="dt">E</span><span class="ot"> ::</span> <span class="dt">Splitting</span> <span class="ch">&#39;[] &#39;</span>[] <span class="ch">&#39;[]</span>
+  <span class="dt">L</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> (x <span class="ch">&#39;: xs) ys (x &#39;</span><span class="fu">:</span> s)
+  <span class="dt">R</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> xs (y <span class="ch">&#39;: ys) (y &#39;</span><span class="fu">:</span> s)</code></pre>
 <p>With that, here is the definition of the set of linear lambda terms. The definition looks similar to a definition of unrestricted lambda terms, modulo extra type constraints.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Lin</span> vars <span class="kw">where</span>
-  <span class="dt">Var</span><span class="ot"> ::</span> v <span class="ot">-&gt;</span> <span class="dt">Lin</span> (v <span class="ch">': '</span>[])
+  <span class="dt">Var</span><span class="ot"> ::</span> v <span class="ot">-&gt;</span> <span class="dt">Lin</span> (v <span class="ch">&#39;: &#39;</span>[])
   <span class="dt">App</span><span class="ot"> ::</span> <span class="dt">Splitting</span> vs ws s <span class="ot">-&gt;</span> <span class="dt">Lin</span> vs <span class="ot">-&gt;</span> <span class="dt">Lin</span> ws <span class="ot">-&gt;</span> <span class="dt">Lin</span> s
-  <span class="dt">Abs</span><span class="ot"> ::</span> (forall v<span class="fu">.</span> v <span class="ot">-&gt;</span> <span class="dt">Lin</span> (v <span class="ch">': vars)) -&gt; Lin vars</span></code></pre>
+  <span class="dt">Abs</span><span class="ot"> ::</span> (forall v<span class="fu">.</span> v <span class="ot">-&gt;</span> <span class="dt">Lin</span> (v <span class="ch">&#39;: vars)) -&gt; Lin vars</span></code></pre>
 <p>The type parameter vars has kind <code>[*]</code> and represents the bound variables appearing in the term.</p>
 <p>An abstraction introduces a new bound variable, and quantification over the type of the new bound variable prevents the user from constructing invalid terms by instantiating a <code>Var</code> for a different variable type <code>v</code>.</p>
 <p>An application splits the set of bound variables into two pieces. Constructing an application term requires the user to specify the splitting explictly as an argument.</p>
 <p>A variable can only be constructed in the context of a single bound variable - this disallows terms such as <code>K</code> where we have a bound variable left over.</p>
 <p>Finally, a closed linear lambda term is a linear lambda term with no free variables:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Closed</span> <span class="fu">=</span> <span class="dt">Lin</span> <span class="ch">'[]</span></code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Closed</span> <span class="fu">=</span> <span class="dt">Lin</span> <span class="ch">&#39;[]</span></code></pre>
 <p>Now we can express some linear lambda terms. The identity is the simplest example:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">-- I x = x</span>
 i <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="fu">-</span><span class="dt">Var</span> x)</code></pre>
@@ -96,33 +53,18 @@ c <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&g
 <pre><code>-- K x y = x
 -- k = Abs (\x -&gt; Abs (\y -&gt; Var x))
 --
---  Couldn't match expected type `(:) * var vars0'
---              with actual type `[] *'
+--  Couldn&#39;t match expected type `(:) * var vars0&#39;
+--              with actual type `[] *&#39;
 --  Expected type: Lin ((:) * var1 ((:) * var vars0))
 --    Actual type: Lin ((:) * var1 ([] *))
---  In the return type of a call of `Var'
+--  In the return type of a call of `Var&#39;
 --  In the expression: Var x</code></pre>
 <p>This error indicates that we have one too many type variables left over at the node of the tree where <code>Var x</code> appears.</p>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

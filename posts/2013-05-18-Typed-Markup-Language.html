@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - A Typed Markup Language Based On Haskell</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>A Typed Markup Language Based On Haskell</h2>
-
-<p><small>by Phil Freeman on 2013/05/18</small></p>
-
-<hr></hr>
-
-<p>In this post, I'm going to implement a simple markup language including a parser and type checker. The language's syntax will be based on Haskell's syntax, and the type system will look a little bit like System F.</p>
+<html><head><title>functorial.com - A Typed Markup Language Based On Haskell</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>A Typed Markup Language Based On Haskell</h2><p><small>by Phil Freeman on 2013/05/18</small></p><hr><p>In this post, I'm going to implement a simple markup language including a parser and type checker. The language's syntax will be based on Haskell's syntax, and the type system will look a little bit like System F.</p>
 <p>Why am I interested in implementing such a markup language? Well, markup languages like JSON are good at describing the values in a dataset, but not their types, and XML extends this by allowing you to specify a schema, which corresponds to a set of typing rules. Languages like XAML allow you to extend this idea even futher by using an actual type system as a sort of global schema, and then extending the expressiveness of the language with things like subclass polymorphism.</p>
 <p>In my opinion, XAML is great for quickly bootstrapping a DSL without having to worry about parsing, but the lack of generics makes it impossible to encode some simple constraints in the schema. I often find myself wanting a markup language which looks like Haskell and which uses similar typing rules.</p>
 <p>The simplicity of the language below allows for a very simple implementation: typing is a simple bottom-up pass over a term.</p>
@@ -174,7 +131,7 @@ tmBracket <span class="fu">=</span> lexeme <span class="fu">$</span> parens tm
 <span class="ot">tm ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
 tm <span class="fu">=</span> E.buildExpressionParser 
      [ [ <span class="dt">E.Infix</span> (<span class="fu">return</span> <span class="dt">TmApp</span>) <span class="dt">E.AssocLeft</span> ]
-	 , [ <span class="dt">E.Infix</span> (((<span class="fu">.</span>) <span class="dt">TmApp</span> <span class="fu">.</span> <span class="dt">TmApp</span>) <span class="fu">&lt;$&gt;</span> between (symbol <span class="st">&quot;`&quot;</span>) (symbol <span class="st">&quot;`&quot;</span>) tmAtom) <span class="dt">E.AssocLeft</span> ]
+     , [ <span class="dt">E.Infix</span> (((<span class="fu">.</span>) <span class="dt">TmApp</span> <span class="fu">.</span> <span class="dt">TmApp</span>) <span class="fu">&lt;$&gt;</span> between (symbol <span class="st">&quot;`&quot;</span>) (symbol <span class="st">&quot;`&quot;</span>) tmAtom) <span class="dt">E.AssocLeft</span> ]
      , [ <span class="dt">E.Infix</span> (symbol <span class="st">&quot;$&quot;</span> <span class="fu">&gt;&gt;</span> <span class="fu">return</span> <span class="dt">TmApp</span>) <span class="dt">E.AssocRight</span> ]  ]
      (tmBracket <span class="fu">&lt;|&gt;</span> tmStr <span class="fu">&lt;|&gt;</span> tmInt <span class="fu">&lt;|&gt;</span> try tmName <span class="fu">&lt;|&gt;</span> tmAtom)</code></pre>
 <p>and parsers for types:</p>
@@ -257,9 +214,9 @@ renameAll key (<span class="dt">TyVar</span> v) <span class="fu">=</span> <span 
   m <span class="ot">&lt;-</span> S.get
   <span class="kw">case</span> <span class="fu">lookup</span> (v, key) m <span class="kw">of</span>
     <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
-	  <span class="kw">let</span> name <span class="fu">=</span> unusedName (<span class="fu">map</span> <span class="fu">snd</span> m)
-	  S.modify <span class="fu">$</span> (<span class="fu">:</span>) ((v, key), name)
-	  <span class="fu">return</span> <span class="fu">$</span> <span class="dt">TyVar</span> name
+      <span class="kw">let</span> name <span class="fu">=</span> unusedName (<span class="fu">map</span> <span class="fu">snd</span> m)
+      S.modify <span class="fu">$</span> (<span class="fu">:</span>) ((v, key), name)
+      <span class="fu">return</span> <span class="fu">$</span> <span class="dt">TyVar</span> name
     <span class="kw">Just</span> name <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">TyVar</span> name
 renameAll key (<span class="dt">TyApp</span> t1 t2) <span class="fu">=</span> <span class="dt">TyApp</span> <span class="fu">&lt;$&gt;</span> renameAll key t1 <span class="fu">&lt;*&gt;</span> renameAll key t2
 renameAll key (<span class="dt">TyArr</span> t1 t2) <span class="fu">=</span> <span class="dt">TyArr</span> <span class="fu">&lt;$&gt;</span> renameAll key t1 <span class="fu">&lt;*&gt;</span> renameAll key t2
@@ -276,9 +233,9 @@ typeOf ctx (<span class="dt">TmApp</span> t1 t2) <span class="fu">=</span> <span
   tyArg <span class="ot">&lt;-</span> typeOf ctx t2
   tyFun <span class="ot">&lt;-</span> typeOf ctx t1
   <span class="fu">flip</span> S.evalState [] <span class="fu">$</span> <span class="kw">do</span> 
-    tyFun' <span class="ot">&lt;-</span> renameAll <span class="kw">True</span> tyFun
-    tyArg' <span class="ot">&lt;-</span> renameAll <span class="kw">False</span> tyArg
-    <span class="fu">return</span> <span class="fu">$</span> specialize tyFun' tyArg'
+    tyFun&#39; <span class="ot">&lt;-</span> renameAll <span class="kw">True</span> tyFun
+    tyArg&#39; <span class="ot">&lt;-</span> renameAll <span class="kw">False</span> tyArg
+    <span class="fu">return</span> <span class="fu">$</span> specialize tyFun&#39; tyArg&#39;
   
 <span class="ot">typesOf ::</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">Tm</span>)] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)]
 typesOf _ [] <span class="fu">=</span> <span class="fu">return</span> []
@@ -353,10 +310,10 @@ replace i x (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> <s
 
 <span class="ot">occursCheck ::</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> ()
 occursCheck i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> <span class="fu">return</span> ()
-occursCheck i x <span class="fu">=</span> occursCheck' i x <span class="kw">where</span>
-  occursCheck' i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> <span class="fu">fail</span> <span class="st">&quot;Occurs check failed during kind checking&quot;</span>
-  occursCheck' i (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> occursCheck' i k1 <span class="fu">&gt;&gt;</span> occursCheck' i k2
-  occursCheck' _ _ <span class="fu">=</span> <span class="fu">return</span> ()</code></pre>
+occursCheck i x <span class="fu">=</span> occursCheck&#39; i x <span class="kw">where</span>
+  occursCheck&#39; i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> <span class="fu">fail</span> <span class="st">&quot;Occurs check failed during kind checking&quot;</span>
+  occursCheck&#39; i (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> occursCheck&#39; i k1 <span class="fu">&gt;&gt;</span> occursCheck&#39; i k2
+  occursCheck&#39; _ _ <span class="fu">=</span> <span class="fu">return</span> ()</code></pre>
 <p>Constraint generation happens by unification. The <code>unify</code> function takes two kinds and generates the constraints imposed by their equality, or returns a unification error.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">KindConstraint</span> <span class="fu">=</span> (<span class="dt">Unknown</span>, <span class="dt">Kind</span>)
 
@@ -371,11 +328,11 @@ unifyKinds k1 k2 <span class="fu">=</span> <span class="fu">fail</span> <span cl
 <p>The general constraint generation function works bottom-up over the structure of a type:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generateConstraints ::</span> (<span class="kw">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m [<span class="dt">KindConstraint</span>]
 generateConstraints ty <span class="fu">=</span> <span class="kw">do</span>
-  (cs, n) <span class="ot">&lt;-</span> generateConstraints' ty
+  (cs, n) <span class="ot">&lt;-</span> generateConstraints&#39; ty
   <span class="fu">return</span> <span class="fu">$</span> (n, <span class="dt">KindStar</span>) <span class="fu">:</span> cs
   <span class="kw">where</span>
-<span class="ot">  generateConstraints' ::</span> (<span class="kw">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m ([<span class="dt">KindConstraint</span>], <span class="dt">Unknown</span>)
-  generateConstraints' (<span class="dt">TyVar</span> v) <span class="fu">=</span> <span class="kw">do</span>
+<span class="ot">  generateConstraints&#39; ::</span> (<span class="kw">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m ([<span class="dt">KindConstraint</span>], <span class="dt">Unknown</span>)
+  generateConstraints&#39; (<span class="dt">TyVar</span> v) <span class="fu">=</span> <span class="kw">do</span>
     (m, _) <span class="ot">&lt;-</span> S.get
     <span class="kw">case</span> <span class="fu">lookup</span> v m <span class="kw">of</span>
       <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
@@ -383,7 +340,7 @@ generateConstraints ty <span class="fu">=</span> <span class="kw">do</span>
         S.modify <span class="fu">$</span> (<span class="fu">:</span>) (v, n) <span class="fu">***</span> <span class="fu">id</span>
         <span class="fu">return</span> ([], n)
       <span class="kw">Just</span> unk <span class="ot">-&gt;</span> <span class="fu">return</span> ([], unk)
-  generateConstraints' (<span class="dt">TyCon</span> s) <span class="fu">=</span> <span class="kw">do</span>
+  generateConstraints&#39; (<span class="dt">TyCon</span> s) <span class="fu">=</span> <span class="kw">do</span>
     (m, _) <span class="ot">&lt;-</span> S.get
     <span class="kw">case</span> <span class="fu">lookup</span> s m <span class="kw">of</span>
       <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
@@ -391,9 +348,9 @@ generateConstraints ty <span class="fu">=</span> <span class="kw">do</span>
         S.modify <span class="fu">$</span> (<span class="fu">:</span>) (s, n) <span class="fu">***</span> <span class="fu">id</span>
         <span class="fu">return</span> ([], n)
       <span class="kw">Just</span> unk <span class="ot">-&gt;</span> <span class="fu">return</span> ([], unk)
-  generateConstraints' (<span class="dt">TyApp</span> ty1 ty2) <span class="fu">=</span> <span class="kw">do</span>
-    (c1, n1) <span class="ot">&lt;-</span> generateConstraints' ty1
-    (c2, n2) <span class="ot">&lt;-</span> generateConstraints' ty2
+  generateConstraints&#39; (<span class="dt">TyApp</span> ty1 ty2) <span class="fu">=</span> <span class="kw">do</span>
+    (c1, n1) <span class="ot">&lt;-</span> generateConstraints&#39; ty1
+    (c2, n2) <span class="ot">&lt;-</span> generateConstraints&#39; ty2
     thisName <span class="ot">&lt;-</span> newUnknown
     <span class="kw">let</span> newConstraint <span class="fu">=</span> (n1, <span class="dt">KindArr</span> (<span class="dt">KindUnknown</span> n2) (<span class="dt">KindUnknown</span> thisName))
     <span class="fu">return</span> <span class="fu">$</span> ((newConstraint<span class="fu">:</span>c1) <span class="fu">++</span> c2, thisName)
@@ -402,13 +359,13 @@ generateConstraints ty <span class="fu">=</span> <span class="kw">do</span>
 newUnknown <span class="fu">=</span> S.modify (<span class="fu">id</span> <span class="fu">***</span> (<span class="fu">+</span><span class="dv">1</span>)) <span class="fu">&gt;&gt;</span> S.get <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="fu">snd</span></code></pre>
 <p>Constraints are solved by substitution using <code>replace</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">solve ::</span> [<span class="dt">KindConstraint</span>] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">SolutionSet</span>
-solve cs <span class="fu">=</span> solve' cs <span class="dt">KindUnknown</span> <span class="kw">where</span>
-  solve' [] ss <span class="fu">=</span> <span class="fu">return</span> ss
-  solve' (c<span class="fu">@</span>(i, x)<span class="fu">:</span>cs) ss <span class="fu">=</span> <span class="kw">do</span>
+solve cs <span class="fu">=</span> solve&#39; cs <span class="dt">KindUnknown</span> <span class="kw">where</span>
+  solve&#39; [] ss <span class="fu">=</span> <span class="fu">return</span> ss
+  solve&#39; (c<span class="fu">@</span>(i, x)<span class="fu">:</span>cs) ss <span class="fu">=</span> <span class="kw">do</span>
     occursCheck i x
-    cs' <span class="ot">&lt;-</span> substConstraints c cs
-    <span class="kw">let</span> ss' <span class="fu">=</span> substSolutionSet c ss
-    solve' cs' ss'
+    cs&#39; <span class="ot">&lt;-</span> substConstraints c cs
+    <span class="kw">let</span> ss&#39; <span class="fu">=</span> substSolutionSet c ss
+    solve&#39; cs&#39; ss&#39;
   substConstraints c [] <span class="fu">=</span> <span class="fu">return</span> []
   substConstraints (i, x) ((j, y)<span class="fu">:</span> cs) 
     <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> (<span class="fu">++</span>) <span class="fu">&lt;$&gt;</span> substConstraints (i, x) cs <span class="fu">&lt;*&gt;</span> unifyKinds x y
@@ -416,22 +373,22 @@ solve cs <span class="fu">=</span> solve' cs <span class="dt">KindUnknown</span>
   substSolutionSet (i, x) <span class="fu">=</span> (<span class="fu">.</span>) (replace i x)</code></pre>
 <p>Now we can write the kind checker. The <code>applications</code> function splits an arrow type into parts, so that kind checking can work on each part.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">applications ::</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> [<span class="dt">Ty</span>]
-applications t <span class="fu">=</span> applications' t [] <span class="kw">where</span>
-  applications' (<span class="dt">TyArr</span> t1 t2) <span class="fu">=</span> applications' t1 <span class="fu">.</span> applications' t2
-  applications' t <span class="fu">=</span> (<span class="fu">:</span>) t
+applications t <span class="fu">=</span> applications&#39; t [] <span class="kw">where</span>
+  applications&#39; (<span class="dt">TyArr</span> t1 t2) <span class="fu">=</span> applications&#39; t1 <span class="fu">.</span> applications&#39; t2
+  applications&#39; t <span class="fu">=</span> (<span class="fu">:</span>) t
 
 <span class="ot">kindCheck ::</span> [<span class="dt">Ty</span>] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Kind</span>)]
-kindCheck <span class="fu">=</span> <span class="fu">uncurry</span> kindCheck' 
+kindCheck <span class="fu">=</span> <span class="fu">uncurry</span> kindCheck&#39; 
   <span class="fu">.</span> (solve <span class="fu">***</span> <span class="fu">id</span>) 
   <span class="fu">.</span> (<span class="fu">concat</span> <span class="fu">***</span> <span class="fu">fst</span>) 
   <span class="fu">.</span> <span class="fu">flip</span> S.runState ([], <span class="dv">0</span>) 
   <span class="fu">.</span> <span class="fu">flip</span> forM generateConstraints 
   <span class="fu">.</span> <span class="fu">concatMap</span> applications
   <span class="kw">where</span>
-<span class="ot">  kindCheck' ::</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">SolutionSet</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">Unknown</span>)] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Kind</span>)]
-  kindCheck' ss unks <span class="fu">=</span> <span class="kw">do</span>
-    ss' <span class="ot">&lt;-</span> ss
-    <span class="fu">return</span> <span class="fu">$</span> <span class="fu">map</span> (<span class="fu">id</span> <span class="fu">***</span> ss') unks</code></pre>
+<span class="ot">  kindCheck&#39; ::</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">SolutionSet</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">Unknown</span>)] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Kind</span>)]
+  kindCheck&#39; ss unks <span class="fu">=</span> <span class="kw">do</span>
+    ss&#39; <span class="ot">&lt;-</span> ss
+    <span class="fu">return</span> <span class="fu">$</span> <span class="fu">map</span> (<span class="fu">id</span> <span class="fu">***</span> ss&#39;) unks</code></pre>
 <p>Let's try it out.</p>
 <pre><code>ghci&gt; parseErr schema exampleSchema &gt;&gt;= fmap (map (id *** prettyKind)) . kindCheck . map snd
 Right [
@@ -443,26 +400,11 @@ Right [
   (&quot;a&quot;, &quot;*&quot;),
   (&quot;Z&quot;, &quot;k10&quot;),
   (&quot;List&quot;, &quot;k10 -&gt; * -&gt; *&quot;) ]</code></pre>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>

@@ -1,65 +1,22 @@
-<!DOCTYPE html>
-
-<html>
-    <head>
-        <title>functorial.com - Solving Constraints Generically</title>
-        <link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"></link>
-        <link rel="stylesheet" type="text/css" href="../css/default.css"></link>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-
-        <script type="text/x-mathjax-config"> 
-            MathJax.Hub.Config({
-                config: ["MMLorHTML.js"],
-                jax: ["input/TeX"],
-                extensions: ["tex2jax.js"],
-                TeX: { 
-                    extensions: ["AMSmath.js", "AMSsymbols.js", "noErrors.js","noUndefined.js"] 
-                },
-                tex2jax: {
-                    inlineMath: [['$','$'], ['\\(','\\)']]
-                }
-            }); 
-        </script> 
-        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script> 
-
-        <script type="text/javascript">
-        
-          var _gaq = _gaq || [];
-          _gaq.push(['_setAccount', 'UA-33896432-1']);
-          _gaq.push(['_trackPageview']);
-        
-          (function() {
-            var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-            ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-            var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-          })();
-        
-        </script>
-    </head>
-    <body>
-        <div id="header">
-            <div class="centered">
-                <h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1>
-
-                <p>Type Theory and Programming Languages Blog</p>
-            </div>
-    
-            <div id="splitter"></div>
-        </div>
-    
-        <div class="centered">
-            <div id="navigation">
-                <a href="../index.html">Home</a>
-                <a href="../feed.xml">RSS Feed</a>
-            </div>
-
-            <h2>Solving Constraints Generically</h2>
-
-<p><small>by Phil Freeman on 2012/02/06</small></p>
-
-<hr></hr>
-
-<p>In this post, I'd like to revisit Algorithm W, which I discussed when I wrote about Purity's typechecker.</p>
+<html><head><title>functorial.com - Solving Constraints Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+    config: ['MMLorHTML.js'],
+    jax: ['input/TeX'],
+    extensions: ['tex2jax.js'],
+    TeX: {
+        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
+    },
+    tex2jax: {
+        inlineMath: [['$','$'], ['\(','\)']]
+    }
+</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Solving Constraints Generically</h2><p><small>by Phil Freeman on 2012/02/06</small></p><hr><p>In this post, I'd like to revisit Algorithm W, which I discussed when I wrote about Purity's typechecker.</p>
 <p>Recalling the approach taken before, a term was typed by collecting constraints between unknown type variables by traversing the term in question, and then solving those constraints by substitution. This time I'd like to generalize the second part of the algorithm, to solve constraints over any type functor by substitution.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE EmptyDataDecls #-}</span>
 <span class="ot">{-# LANGUAGE RankNTypes #-}</span>
@@ -87,12 +44,12 @@
 replace i x <span class="fu">=</span> <span class="fu">flip</span> (<span class="fu">&gt;&gt;=</span>) (\j <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> j <span class="kw">then</span> x <span class="kw">else</span> <span class="dt">Return</span> j)</code></pre>
 <p><code>solve</code> takes a set of constraints and returns a solution set. It does so by repeatedly substituting the first constraint into the remaining constraints, and into the solution set, removing one unknown at a time. As it does so, it may be necessary to unify one or more types, generating further constraints. These are added to the queue of constraints still to be solved.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">solve ::</span> (<span class="kw">Functor</span> f, <span class="dt">Unifiable</span> f) <span class="ot">=&gt;</span> [<span class="dt">Constraint</span> f] <span class="ot">-&gt;</span> <span class="dt">SolutionSet</span> f
-solve cs <span class="fu">=</span> solve' cs <span class="dt">Return</span> <span class="kw">where</span>
-  solve' [] ss <span class="fu">=</span> ss
-  solve' (c<span class="fu">:</span>cs) ss <span class="fu">=</span> 
-    <span class="kw">let</span> cs' <span class="fu">=</span> substConstraints c cs <span class="kw">in</span>
-    <span class="kw">let</span> ss' <span class="fu">=</span> substSolutionSet c ss <span class="kw">in</span>
-    solve' cs' ss'
+solve cs <span class="fu">=</span> solve&#39; cs <span class="dt">Return</span> <span class="kw">where</span>
+  solve&#39; [] ss <span class="fu">=</span> ss
+  solve&#39; (c<span class="fu">:</span>cs) ss <span class="fu">=</span> 
+    <span class="kw">let</span> cs&#39; <span class="fu">=</span> substConstraints c cs <span class="kw">in</span>
+    <span class="kw">let</span> ss&#39; <span class="fu">=</span> substSolutionSet c ss <span class="kw">in</span>
+    solve&#39; cs&#39; ss&#39;
   substConstraints c [] <span class="fu">=</span> []
   substConstraints (i, x) ((j, y)<span class="fu">:</span> cs) 
     <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> (substConstraints (i, x) cs) <span class="fu">++</span> (unify x y)
@@ -154,21 +111,21 @@ add e i <span class="fu">=</span> <span class="dt">Env</span> (<span class="fu">
 next <span class="fu">=</span> <span class="dt">Context</span> (\i <span class="ot">-&gt;</span> (i, i <span class="fu">+</span> <span class="dv">1</span>))</code></pre>
 <p>Now that we have all of the required pieces, we can implement generateConstraints, which takes a term and generates a set of constraints. We can use the method above to solve for the types of all subterms. The method works by assigning names to all subterms in a bottom-up fashion, and adding constraints between those names where necessary.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generateConstraints ::</span> <span class="dt">Closed</span> <span class="ot">-&gt;</span> [<span class="dt">Constraint</span> <span class="dt">Type</span>]
-generateConstraints t <span class="fu">=</span> <span class="kw">let</span> ((cs, _), _) <span class="fu">=</span> runContext (generateConstraints' nil t) <span class="dv">0</span> <span class="kw">in</span> cs <span class="kw">where</span>
-<span class="ot">  generateConstraints' ::</span> <span class="dt">Env</span> a <span class="ot">-&gt;</span> <span class="dt">Term</span> a <span class="ot">-&gt;</span> <span class="dt">Context</span> ([<span class="dt">Constraint</span> <span class="dt">Type</span>], <span class="dt">Unknown</span>)
-  generateConstraints' env (<span class="dt">Var</span> a) <span class="fu">=</span> <span class="kw">do</span>
+generateConstraints t <span class="fu">=</span> <span class="kw">let</span> ((cs, _), _) <span class="fu">=</span> runContext (generateConstraints&#39; nil t) <span class="dv">0</span> <span class="kw">in</span> cs <span class="kw">where</span>
+<span class="ot">  generateConstraints&#39; ::</span> <span class="dt">Env</span> a <span class="ot">-&gt;</span> <span class="dt">Term</span> a <span class="ot">-&gt;</span> <span class="dt">Context</span> ([<span class="dt">Constraint</span> <span class="dt">Type</span>], <span class="dt">Unknown</span>)
+  generateConstraints&#39; env (<span class="dt">Var</span> a) <span class="fu">=</span> <span class="kw">do</span>
     <span class="kw">let</span> (<span class="kw">Just</span> n) <span class="fu">=</span> find env a
     <span class="fu">return</span> ([], n)
-  generateConstraints' env (<span class="dt">App</span> t1 t2) <span class="fu">=</span> <span class="kw">do</span>
-    (c1, n1) <span class="ot">&lt;-</span> generateConstraints' env t1
-    (c2, n2) <span class="ot">&lt;-</span> generateConstraints' env t2
+  generateConstraints&#39; env (<span class="dt">App</span> t1 t2) <span class="fu">=</span> <span class="kw">do</span>
+    (c1, n1) <span class="ot">&lt;-</span> generateConstraints&#39; env t1
+    (c2, n2) <span class="ot">&lt;-</span> generateConstraints&#39; env t2
     thisName <span class="ot">&lt;-</span> next
     <span class="kw">let</span> newConstraint <span class="fu">=</span> (n1, <span class="dt">Wrap</span> (<span class="dt">Arrow</span> (<span class="dt">Return</span> n2) (<span class="dt">Return</span> thisName)))
     <span class="fu">return</span> ((newConstraint<span class="fu">:</span>c1) <span class="fu">++</span> c2, thisName)
-  generateConstraints' env (<span class="dt">Abs</span> f) <span class="fu">=</span> <span class="kw">do</span>
+  generateConstraints&#39; env (<span class="dt">Abs</span> f) <span class="fu">=</span> <span class="kw">do</span>
     varName <span class="ot">&lt;-</span> next
     <span class="kw">let</span> newenv <span class="fu">=</span> add env varName
-    (cs, n) <span class="ot">&lt;-</span> generateConstraints' newenv (f ())
+    (cs, n) <span class="ot">&lt;-</span> generateConstraints&#39; newenv (f ())
     thisName <span class="ot">&lt;-</span> next
     <span class="kw">let</span> newConstraint <span class="fu">=</span> (thisName, <span class="dt">Wrap</span> (<span class="dt">Arrow</span> (<span class="dt">Return</span> varName) (<span class="dt">Return</span> n)))
     <span class="fu">return</span> ((newConstraint<span class="fu">:</span>cs), thisName)</code></pre>
@@ -183,26 +140,11 @@ k <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&g
 <p>ghci&gt; solve (generateConstraints k) 3</p>
 <p>(0 -&gt; (1 -&gt; 0))</p>
 </blockquote>
-
-<hr></hr>
-
-<div id="disqus_thread"></div>
-<script type="text/javascript">
-    var disqus_shortname = 'functorial'; 
-
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a>
-    
-
-
-            <small>Built using <a href="http://jaspervdj.be/hakyll/">Hakyll</a></small>
-        </div>
-    </body>
-</html>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
