@@ -1,3 +1,4 @@
+<!DOCTYPE HTML>
 <html><head><title>functorial.com - A Lemma on Fixed Points</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
     config: ['MMLorHTML.js'],
     jax: ['input/TeX'],
@@ -8,6 +9,7 @@
     tex2jax: {
         inlineMath: [['$','$'], ['\(','\)']]
     }
+});
 </script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33896432-1']);
 _gaq.push(['_trackPageview']);
@@ -19,32 +21,32 @@ _gaq.push(['_trackPageview']);
 </script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>A Lemma on Fixed Points</h2><p><small>by Phil Freeman on 2011/01/27</small></p><hr><p>I was reading some of my older notes on least fixed point types and found this. It's hardly groundbreaking I'm sure you'll agree, but I thought it was quite a nice little result.</p>
 <h2 id="lemma">Lemma</h2>
 <p>Suppose</p>
-<p><span class="math"><em>F</em>: (<em>X</em>, <em>Y</em>) → (<em>F</em><sub>1</sub><em>X</em>, <em>F</em><sub>2</sub>(<em>X</em>, <em>Y</em>))</span></p>
+<p><span class="math"><em>F</em>:&#8198;(<em>X</em>,&#8198;<em>Y</em>)&#8196;&#8594;&#8196;(<em>F</em><sub>1</sub><em>X</em>,&#8198;<em>F</em><sub>2</sub>(<em>X</em>,&#8198;<em>Y</em>))</span></p>
 <p>is a functor with an initial algebra. Then the initial algebra is isomorphic to</p>
-<p><span class="math"><em>μ</em><sub><em>F</em></sub> ≅ (<em>μ</em><em>F</em><sub>1</sub>, <em>μ</em>(<em>X</em> → <em>F</em><sub>2</sub>(<em>μ</em><em>F</em><sub>1</sub>, <em>X</em>)))</span></p>
+<p><span class="math"><em>&#956;</em><sub><em>F</em></sub>&#8196;&#8773;&#8196;(<em>&#956;</em><em>F</em><sub>1</sub>,&#8198;<em>&#956;</em>(<em>X</em>&#8196;&#8594;&#8196;<em>F</em><sub>2</sub>(<em>&#956;</em><em>F</em><sub>1</sub>,&#8198;<em>X</em>)))</span></p>
 <p>when all defined terms exist.</p>
 <h2 id="example">Example</h2>
-<p>Let <span class="math"><em>F</em>(<em>X</em>, <em>Y</em>) = (1 + <em>X</em>, 1 + <em>X</em> × <em>Y</em>)</span>.</p>
+<p>Let <span class="math"><em>F</em>(<em>X</em>,&#8198;<em>Y</em>)&#8196;=&#8196;(1&#8197;+&#8197;<em>X</em>,&#8198;1&#8197;+&#8197;<em>X</em>&#8197;&#215;&#8197;<em>Y</em>)</span>.</p>
 <p>By the lemma we have</p>
-<p><span class="math"><em>μ</em><em>F</em> = (<em>μ</em>(<em>X</em> → 1 + <em>X</em>), <em>μ</em>(<em>Y</em> → 1 + <em>Y</em> × <em>μ</em>(<em>X</em> → 1 + <em>X</em>)))</span></p>
-<p>That is, <span class="math"><em>μ</em><em>F</em> = (N, [N])</span>.</p>
+<p><span class="math"><em>&#956;</em><em>F</em>&#8196;=&#8196;(<em>&#956;</em>(<em>X</em>&#8196;&#8594;&#8196;1&#8197;+&#8197;<em>X</em>),&#8198;<em>&#956;</em>(<em>Y</em>&#8196;&#8594;&#8196;1&#8197;+&#8197;<em>Y</em>&#8197;&#215;&#8197;<em>&#956;</em>(<em>X</em>&#8196;&#8594;&#8196;1&#8197;+&#8197;<em>X</em>)))</span></p>
+<p>That is, <span class="math"><em>&#956;</em><em>F</em>&#8196;=&#8196;(N,&#8198;[N])</span>.</p>
 <h2 id="proof">Proof</h2>
-<p>We show that the term on the right of the isomorphism relation is an initial <span class="math"><em>F</em></span>-algebra. Then, by uniqueness, it must be isomorphic to <span class="math"><em>μ</em><em>F</em></span>.</p>
+<p>We show that the term on the right of the isomorphism relation is an initial <span class="math"><em>F</em></span>-algebra. Then, by uniqueness, it must be isomorphic to <span class="math"><em>&#956;</em><em>F</em></span>.</p>
 <p>Let</p>
-<p><span class="math"><em>χ</em>(<em>X</em>) = <em>F</em><sub>2</sub>(<em>μ</em><em>F</em><sub>1</sub>, <em>X</em>)</span></p>
-<p>First we show that <span class="math">(<em>μ</em><em>F</em><sub>1</sub>, <em>μ</em><em>χ</em>)</span> is an <span class="math"><em>F</em></span>-algebra. The algebra morphism is</p>
+<p><span class="math"><em>&#967;</em>(<em>X</em>)&#8196;=&#8196;<em>F</em><sub>2</sub>(<em>&#956;</em><em>F</em><sub>1</sub>,&#8198;<em>X</em>)</span></p>
+<p>First we show that <span class="math">(<em>&#956;</em><em>F</em><sub>1</sub>,&#8198;<em>&#956;</em><em>&#967;</em>)</span> is an <span class="math"><em>F</em></span>-algebra. The algebra morphism is</p>
 <p><span class="math">$\begin{array}{ccc}   F (\mu F_1, \mu \chi) &amp; =           &amp; (F_1 \mu F_1, F_2 (\mu F_1, \mu \chi)) \\                         &amp; =           &amp; (F_1 \mu F_1, \chi (\mu \chi)) \\                         &amp; \rightarrow &amp; (\mu F_1, \mu \chi) \end{array}$</span></p>
-<p>where the two components of the final map are the initial algebra morphisms for <span class="math"><em>μ</em><em>F</em><sub>1</sub></span> and <span class="math"><em>μ</em><em>χ</em></span>.</p>
-<p>It is required to prove that <span class="math">(<em>μ</em><em>F</em><sub>1</sub>, <em>μ</em><em>χ</em>)</span> is an initial algebra, that is, for any <span class="math"><em>F</em></span>-algebra <span class="math"><em>F</em><em>A</em> → <em>A</em></span>, there is a unique morphism of algebras <span class="math">(<em>μ</em><em>F</em><sub>1</sub>, <em>μ</em><em>χ</em>) → <em>A</em></span>.</p>
-<p>We seek morphisms <span class="math"><em>μ</em><em>F</em><sub>1</sub> → <em>π</em><sub>1</sub><em>A</em></span> and <span class="math"><em>μ</em><em>χ</em> → <em>π</em><sub>2</sub><em>A</em></span> such that the following diagrams commute:</p>
+<p>where the two components of the final map are the initial algebra morphisms for <span class="math"><em>&#956;</em><em>F</em><sub>1</sub></span> and <span class="math"><em>&#956;</em><em>&#967;</em></span>.</p>
+<p>It is required to prove that <span class="math">(<em>&#956;</em><em>F</em><sub>1</sub>,&#8198;<em>&#956;</em><em>&#967;</em>)</span> is an initial algebra, that is, for any <span class="math"><em>F</em></span>-algebra <span class="math"><em>F</em><em>A</em>&#8196;&#8594;&#8196;<em>A</em></span>, there is a unique morphism of algebras <span class="math">(<em>&#956;</em><em>F</em><sub>1</sub>,&#8198;<em>&#956;</em><em>&#967;</em>)&#8196;&#8594;&#8196;<em>A</em></span>.</p>
+<p>We seek morphisms <span class="math"><em>&#956;</em><em>F</em><sub>1</sub>&#8196;&#8594;&#8196;<em>&#960;</em><sub>1</sub><em>A</em></span> and <span class="math"><em>&#956;</em><em>&#967;</em>&#8196;&#8594;&#8196;<em>&#960;</em><sub>2</sub><em>A</em></span> such that the following diagrams commute:</p>
 <p><span class="math">$\require{AMSmath}     \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex}     \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex}     \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}}     \begin{array}{ccc}       F_1 \mu F_1&amp; \ra{} &amp; F_1 \pi_1 A \\       \da{\operatorname{out}} &amp; &amp; \da{\phi} \\       \mu F_1&amp; \ras{} &amp; \pi_1 A     \end{array}     \begin{array}{ccc}       \chi \mu \chi &amp; \ra{} &amp; \chi \pi_2 A \\       \da{\operatorname{out}} &amp; &amp; \da{} \\       \mu \chi&amp; \ras{\pi_2 A} &amp; \pi_2 A     \end{array}$</span></p>
-<p>The first morphism is determined uniquely by the definition of <span class="math"><em>μ</em><em>F</em><sub>1</sub></span>.</p>
-<p>We just need to show that <span class="math"><em>π</em><sub>2</sub><em>A</em></span> is a <span class="math"><em>χ</em></span>-algebra. Then, the second morphism is given uniquely by the definition of <span class="math"><em>μ</em><em>χ</em></span>.</p>
+<p>The first morphism is determined uniquely by the definition of <span class="math"><em>&#956;</em><em>F</em><sub>1</sub></span>.</p>
+<p>We just need to show that <span class="math"><em>&#960;</em><sub>2</sub><em>A</em></span> is a <span class="math"><em>&#967;</em></span>-algebra. Then, the second morphism is given uniquely by the definition of <span class="math"><em>&#956;</em><em>&#967;</em></span>.</p>
 <p>We have morphisms</p>
 <p><span class="math">$\begin{array}{ccc}   f       &amp; :: &amp; \mu F_1 \rightarrow \pi_1 A \\   \pi_2 a &amp; :: &amp; F_2 (\pi_1 A, \pi_2 A) \rightarrow \pi_2 A \end{array}$</span></p>
 <p>which compose to give</p>
 <p><span class="math">$\begin{array}{ccc}   \chi \pi_2 A &amp; =           &amp; F_2 (\mu F_1, \pi_2 A) \\                &amp; \rightarrow &amp; F_2 (\pi_1 A, \pi_2 A) \\                &amp; \rightarrow &amp; \pi_2 A \end{array}$</span></p>
-<p>﻿This completes the proof.</p>
+<p>&#65279;This completes the proof.</p>
 <hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
 /* * * DON'T EDIT BELOW THIS LINE * * */
 (function() {

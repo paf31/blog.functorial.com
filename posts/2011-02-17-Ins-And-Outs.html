@@ -1,3 +1,4 @@
+<!DOCTYPE HTML>
 <html><head><title>functorial.com - The Ins and Outs of Fixed Point Types</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
     config: ['MMLorHTML.js'],
     jax: ['input/TeX'],
@@ -8,6 +9,7 @@
     tex2jax: {
         inlineMath: [['$','$'], ['\(','\)']]
     }
+});
 </script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33896432-1']);
 _gaq.push(['_trackPageview']);
@@ -19,7 +21,7 @@ _gaq.push(['_trackPageview']);
 </script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>The Ins and Outs of Fixed Point Types</h2><p><small>by Phil Freeman on 2011/02/17</small></p><hr><p>The purpose of this note is to derive the <span class="math"><em>F</em></span>-(co-)algebra structures on the least and greatest fixed points of <span class="math"><em>F</em></span> expressed in terms of universal and existential types. The method also extends to mutually recursive types by virtue of the fact that these types are the fixed points of functors on the power category <span class="math">C<sup><em>n</em></sup></span> for some <span class="math"><em>n</em></span>, as explained in my last post.</p>
 <h2 id="least-fixed-points">Least Fixed Points</h2>
 <p>We defined the least fixed point of <span class="math"><em>F</em></span> by identifying an inhabitant with its fold function <code>cata</code>:</p>
-<p><span class="math"><em>μ</em><em>F</em> = ∀ <em>T</em>. (<em>F</em><em>T</em> → <em>T</em>) → <em>T</em></span></p>
+<p><span class="math"><em>&#956;</em><em>F</em>&#8196;=&#8196;&#8704;&#8198;<em>T</em>.&#8198;(<em>F</em><em>T</em>&#8196;&#8594;&#8196;<em>T</em>)&#8196;&#8594;&#8196;<em>T</em></span></p>
 <p>We are also given a mapping on arrows:</p>
 <p><span class="math">$\operatorname{fmap} :: \forall S T. (S \rightarrow T) \rightarrow FS \rightarrow FT$</span></p>
 <p>The goal is to define an algebra structure and a coalgebra structure on this type:</p>
@@ -36,11 +38,11 @@ _gaq.push(['_trackPageview']);
 <h2 id="greatest-fixed-points">Greatest Fixed Points</h2>
 <p>The case of greatest fixed points is exactly dual. We defined the greatest fixed point as</p>
 <p><span class="math">$\begin{array}{ccc}   \nu F &amp; = &amp; \exists T. T \times (T \rightarrow F T) \\         &amp; = &amp; \forall R. (\forall T. T \rightarrow (T \rightarrow FT) \rightarrow R) \rightarrow R \end{array}$</span></p>
-<p>Here we have constructed <span class="math"><em>ν</em><em>F</em></span> by identifying an inhabitant with its unfold function <code>ana</code>:</p>
+<p>Here we have constructed <span class="math"><em>&#957;</em><em>F</em></span> by identifying an inhabitant with its unfold function <code>ana</code>:</p>
 <p><span class="math">$\operatorname{ana} :: \forall T. T \rightarrow (T \rightarrow FT) \rightarrow \nu F$</span></p>
 <p>Again we want to define algebra and coalgebra structures:</p>
 <p><span class="math">$\begin{array}{ccc}   \operatorname{in}  &amp; :: &amp; \nu F   \rightarrow F \nu F\\   \operatorname{out} &amp; :: &amp; F \nu F \rightarrow   \nu F \end{array}$</span></p>
-<p>This time we will start with the coalgebra structure. The only way we can get something of type <span class="math"><em>F</em><em>ν</em><em>F</em></span> is to unpack the existential type:</p>
+<p>This time we will start with the coalgebra structure. The only way we can get something of type <span class="math"><em>F</em><em>&#957;</em><em>F</em></span> is to unpack the existential type:</p>
 <blockquote>
 <p>in x = let x = (T, t, f) in fmap (\y. ana y f) (f t)</p>
 </blockquote>

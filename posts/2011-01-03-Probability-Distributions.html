@@ -1,14 +1,5 @@
-<html><head><title>functorial.com - LINQ to Probability Distributions</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
-    config: ['MMLorHTML.js'],
-    jax: ['input/TeX'],
-    extensions: ['tex2jax.js'],
-    TeX: {
-        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
-    },
-    tex2jax: {
-        inlineMath: [['$','$'], ['\(','\)']]
-    }
-</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
+<!DOCTYPE HTML>
+<html><head><title>functorial.com - LINQ to Probability Distributions</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33896432-1']);
 _gaq.push(['_trackPageview']);
 (function() {
@@ -74,7 +65,7 @@ public class Distribution&lt;T&gt;
         s(p.Value).Outcomes.Select(p1 =&gt;
             new Outcome&lt;T&gt;(p1.Value, p.Probability * p1.Probability))));
 }</code></pre>
-<p>Here we are simply applying the rule <span class="math"><em>P</em>(<em>A</em>and <em>B</em>) = <em>P</em>(<em>A</em>∣<em>B</em>) × <em>P</em>(<em>B</em>)</span>.</p>
+<p>Here we are simply applying the rule <span class="math"><em>P</em>(<em>A</em>and <em>B</em>)&#8196;=&#8196;<em>P</em>(<em>A</em>&#8739;<em>B</em>)&#8197;&#215;&#8197;<em>P</em>(<em>B</em>)</span>.</p>
 <p>Distributions also form a monad-with-zero - for every type T, there is an empty distribution with values in T:</p>
 <pre><code>public static Distribution&lt;T&gt; Empty&lt;T&gt;()
 {
