@@ -1,5 +1,5 @@
-<!DOCTYPE HTML> 
-<html><head><title>functorial.com - Mutually Recursive Types and Functions</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
+<!DOCTYPE HTML>
+<html><head><title>functorial.com - Mutually Recursive Types and Functions</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="../css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
     config: ['MMLorHTML.js'],
     jax: ['input/TeX'],
     extensions: ['tex2jax.js'],
@@ -7,7 +7,7 @@
         extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
     },
     tex2jax: {
-        inlineMath: [['$','$'], ['\(','\)']]
+        inlineMath: [['$','$'], ['\\(','\\)']]
     }
 });
 </script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
@@ -18,14 +18,14 @@ _gaq.push(['_trackPageview']);
   ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
   var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
-</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Mutually Recursive Types and Functions</h2><p><small>by Phil Freeman on 2011/02/16</small></p><hr><p>The methods used in my previous posts (here and here) to encode least and greatest fixed points using universal and existential types can be extended to encode least and greatest fixed points of functors on product categories which correspond to mutually recursive types. Catamorphisms and anamorphisms for these types are mutually recursive functions.</p>
+</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Mutually Recursive Types and Functions</h2><p><small>by Phil Freeman on 2011/02/16</small></p><hr><p>The methods used in my previous posts (here and here) to encode least and greatest fixed points using universal and existential types can be extended to encode least and greatest fixed points of functors on product categories which correspond to mutually recursive types. Catamorphisms and anamorphisms for these types are mutually recursive functions.</p>
 <h2 id="example">Example</h2>
-<p>If <span class="math">C</span> is our usual category of types then we work over <span class="math">C<sup>2</sup></span>, the category whose objects are pairs of objects of <span class="math">C</span> and whose morphisms are pairs of morphisms of <span class="math">C</span> between the appropriate objects.</p>
-<p>Consider the endofunctor on <span class="math">C<sup>2</sup></span> given by <span class="math"><em>F</em>(<em>X</em>,&#8198;<em>Y</em>)&#8196;=&#8196;(1&#8197;+&#8197;<em>Y</em>,&#8198;<em>X</em>)</span></p>
-<p>The least fixed point of this functor is a pair of types <span class="math">(Even,&#8198;Odd)</span> such that</p>
-<p><span class="math">$\begin{array}{ccc}   \text{Even} &amp; = &amp; 1 + \text{Odd} \\   \text{Odd}  &amp; = &amp; \text{Even} \end{array}$</span></p>
+<p>If <span class="math">\(\mathbb{C}\)</span> is our usual category of types then we work over <span class="math">\(\mathbb{C}^2\)</span>, the category whose objects are pairs of objects of <span class="math">\(\mathbb{C}\)</span> and whose morphisms are pairs of morphisms of <span class="math">\(\mathbb{C}\)</span> between the appropriate objects.</p>
+<p>Consider the endofunctor on <span class="math">\(\mathbb{C}^2\)</span> given by <span class="math">\(F (X, Y) = (1 + Y, X)\)</span></p>
+<p>The least fixed point of this functor is a pair of types <span class="math">\((\text{Even}, \text{Odd})\)</span> such that</p>
+<p><span class="math">\(\begin{array}{ccc}   \text{Even} &amp; = &amp; 1 + \text{Odd} \\   \text{Odd}  &amp; = &amp; \text{Even} \end{array}\)</span></p>
 <p>We can interpret this pair of types as the even and odd natural numbers.</p>
-<p>We can express the functor <span class="math"><em>F</em></span> as a pair of functors in the category of types <span class="math">C</span>:</p>
+<p>We can express the functor <span class="math">\(F\)</span> as a pair of functors in the category of types <span class="math">\(\mathbb{C}\)</span>:</p>
 <pre><code>class F1&lt;X, Y&gt;
 {
     public bool IsZero { get; set; }
@@ -47,7 +47,7 @@ class F2&lt;X, Y&gt;
 
     public F2(X pred) { Pred = pred; }
 }</code></pre>
-<p>Now, using the encoding <span class="math"><em>&#956;</em><em>F</em>&#8196;=&#8196;&#8704;&#8198;<em>T</em>.&#8198;(<em>F</em><em>T</em>&#8196;&#8594;&#8196;<em>T</em>)&#8196;&#8594;&#8196;<em>T</em></span> and the fact that an arrow in <span class="math">C<sup>2</sup></span> is just a pair of arrows in <span class="math">C</span>, we have the definition:</p>
+<p>Now, using the encoding <span class="math">\(\mu F = \forall T. (F T \rightarrow T) \rightarrow T\)</span> and the fact that an arrow in <span class="math">\(\mathbb{C}^2\)</span> is just a pair of arrows in <span class="math">\(\mathbb{C}\)</span>, we have the definition:</p>
 <pre><code>interface Even
 {
     X Cata&lt;X, Y&gt;(Func&lt;F1&lt;X, Y&gt;, X&gt; f1, Func&lt;F2&lt;X, Y&gt;, Y&gt; f2);
@@ -58,7 +58,7 @@ interface Odd
     Y Cata&lt;X, Y&gt;(Func&lt;F1&lt;X, Y&gt;, X&gt; f1, Func&lt;F2&lt;X, Y&gt;, Y&gt; f2);
 }</code></pre>
 <p>Similarly, using the encoding for greatest fixed points:</p>
-<p><span class="math">$\begin{array}{ccc}   \nu F &amp; = &amp; \exists T. T \times (T \rightarrow F T) \\         &amp; = &amp; \forall R. (\forall T. T \rightarrow (T \rightarrow FT) \rightarrow R) \rightarrow R \end{array}$</span></p>
+<p><span class="math">\(\begin{array}{ccc}   \nu F &amp; = &amp; \exists T. T \times (T \rightarrow F T) \\         &amp; = &amp; \forall R. (\forall T. T \rightarrow (T \rightarrow FT) \rightarrow R) \rightarrow R \end{array}\)</span></p>
 <p>we have the definitions</p>
 <pre><code>interface CoEvenFunc&lt;R&gt;
 {

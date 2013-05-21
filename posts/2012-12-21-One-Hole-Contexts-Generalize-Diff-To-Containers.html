@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - One-Hole Contexts Generalize Diff To Containers</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
+<html><head><title>functorial.com - One-Hole Contexts Generalize Diff To Containers</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="../css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33896432-1']);
 _gaq.push(['_trackPageview']);
 (function() {
@@ -7,7 +7,7 @@ _gaq.push(['_trackPageview']);
   ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
   var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
-</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>One-Hole Contexts Generalize Diff To Containers</h2><p><small>by Phil Freeman on 2012/12/21</small></p><hr><p>Text-based diff is of limited usefulness for analysing changes to a large code base over time. I've wondered for a while how one might generalize the <code>diff</code> and <code>patch</code> functions on lists to more general data structures such as abstract syntax trees.</p>
+</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>One-Hole Contexts Generalize Diff To Containers</h2><p><small>by Phil Freeman on 2012/12/21</small></p><hr><p>Text-based diff is of limited usefulness for analysing changes to a large code base over time. I've wondered for a while how one might generalize the <code>diff</code> and <code>patch</code> functions on lists to more general data structures such as abstract syntax trees.</p>
 <p>It's pretty easy to write down a version of the <code>diff</code> function for, say, binary trees, but less simple to write a function which works generically across multiple data types. As usual, I spent a while thinking about this before realizing the problem had already been solved ([1], [2]). I'm still quite happy with the approach I came up with, and I think it's sufficiently interesting to write about here anyway.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TypeFamilies #-}</span>
 <span class="ot">{-# LANGUAGE StandaloneDeriving #-}</span>
@@ -198,7 +198,7 @@ diffList old<span class="fu">@</span>(x<span class="fu">:</span>xs) new<span cla
 <p>There are still some issues remaining with this implementation, such as the lack of memoization and the incorrect handling of containers with multiple non-recursive constructors, or structures with no common substructures.</p>
 <p>It would also be interesting to explore the extension to mutually recursive types, such as the types of statements and expressions in an abstract syntax tree.</p>
 <h2 id="references">References</h2>
-<ol style="list-style-type: decimal">
+<ol type="1">
 <li>Package Data.Generic.Diff on Hackage</li>
 <li>Generic type-safe diff and patch for families of datatypes by Eelco Lempsick, 2009</li>
 <li>The Derivative of a Regular Type is its Type of One-Hole Contexts by Conor McBride</li>

@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Generalizing O(1) Snoc On Lists</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="/css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
+<html><head><title>functorial.com - Generalizing O(1) Snoc On Lists</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="../css/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
 _gaq.push(['_setAccount', 'UA-33896432-1']);
 _gaq.push(['_trackPageview']);
 (function() {
@@ -7,7 +7,7 @@ _gaq.push(['_trackPageview']);
   ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
   var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
-</script></head><body><div id="header"><div class="centered"><h1><a href="/index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="/index.html">Home</a>&nbsp;<a href="/feed.xml">RSS Feed</a></div><h2>Generalizing O(1) Snoc On Lists</h2><p><small>by Phil Freeman on 2012/06/17</small></p><hr><p>I've recently been thinking about how to generalize an efficient version of the <code>snoc</code> operation on lists.</p>
+</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Generalizing O(1) Snoc On Lists</h2><p><small>by Phil Freeman on 2012/06/17</small></p><hr><p>I've recently been thinking about how to generalize an efficient version of the <code>snoc</code> operation on lists.</p>
 <p>Specifically, one can represent lists by identifying them with their fold functions:</p>
 <pre><code>-- data List a = List { fold :: forall r. r -&gt; (a -&gt; r -&gt; r) -&gt; r }</code></pre>
 <p>This representation, as in the case of difference lists, admits efficient versions of the cons operation at both ends of the list:</p>
