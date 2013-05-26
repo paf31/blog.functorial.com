@@ -4,6 +4,13 @@
     <link>http://blog.functorial.com</link>
     <description>functorial</description>
     <item>
+      <title>Teaching Haskell To Juggle</title>
+      <link>http://blog.functorial.com/posts/2013-05-23-Teaching-Haskell-To-Juggle.html</link>
+      <description></description>
+      <guid isPermaLink="true">http://blog.functorial.com/posts/2013-05-23-Teaching-Haskell-To-Juggle.html</guid>
+      <pubDate>Sat, 25 May 2013 00:05:1369440000 GMT</pubDate>
+    </item>
+    <item>
       <title>A Typed Markup Language Based On Haskell</title>
       <link>http://blog.functorial.com/posts/2013-05-18-Typed-Markup-Language.html</link>
       <description>A simple markup language inspired by Haskell, including a type checker and parser.</description>
@@ -199,7 +206,7 @@
       <guid isPermaLink="true">http://blog.functorial.com/posts/2010-12-04-Existential-Types.html</guid>
       <pubDate>Sat, 04 Dec 2010 00:12:1291420800 GMT</pubDate>
     </item>
-    <pubDate>Tue, 21 May 2013 01:05:1369101190 GMT</pubDate>
-    <lastBuildDate>Tue, 21 May 2013 01:05:1369101190 GMT</lastBuildDate>
+    <pubDate>Sun, 26 May 2013 03:05:1369539016 GMT</pubDate>
+    <lastBuildDate>Sun, 26 May 2013 03:05:1369539016 GMT</lastBuildDate>
   </channel>
 </rss>
