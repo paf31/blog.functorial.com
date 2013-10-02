@@ -23,30 +23,30 @@ _gaq.push(['_trackPageview']);
 
 <span class="kw">type</span> <span class="dt">NonEmptyStream</span> m a <span class="fu">=</span> (a, <span class="dt">Stream</span> m a)
 
-<span class="ot">empty ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Stream</span> m a
-empty <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">$</span> <span class="fu">return</span> <span class="kw">Nothing</span>
+<span class="ot">empty ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> <span class="dt">Stream</span> m a
+empty <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">$</span> return <span class="dt">Nothing</span>
 
-<span class="ot">cons ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a
-cons a s <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">$</span> <span class="fu">return</span> <span class="fu">$</span> <span class="kw">Just</span> (a, s)
+<span class="ot">cons ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a
+cons a s <span class="fu">=</span> <span class="dt">Stream</span> <span class="fu">$</span> return <span class="fu">$</span> <span class="dt">Just</span> (a, s)
 
-<span class="ot">fromList ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a
-fromList <span class="fu">=</span> <span class="fu">foldr</span> cons empty
+<span class="ot">fromList ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a
+fromList <span class="fu">=</span> foldr cons empty
 
-<span class="ot">fromList&#39; ::</span> (<span class="kw">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">NonEmptyStream</span> m a
+<span class="ot">fromList&#39; ::</span> (<span class="dt">Monad</span> m) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">NonEmptyStream</span> m a
 fromList&#39; (x<span class="fu">:</span>xs) <span class="fu">=</span> (x, fromList xs)</code></pre>
 <p>Here, the monad <code>m</code> is used to represent the side effect of waiting for the next element in the <code>Stream</code>.</p>
 <p>With that, we might aim to find a function of the following type:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">select&#39; ::</span> <span class="dt">NonEmptyStream</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a</code></pre>
 <p>After a bit of thought, one arrives at the following solution:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">select&#39; (a, s) <span class="fu">=</span> select&#39;&#39; (<span class="fu">return</span> a) <span class="dv">1</span> s <span class="kw">where</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">select&#39; (a, s) <span class="fu">=</span> select&#39;&#39; (return a) <span class="dv">1</span> s <span class="kw">where</span>
 <span class="ot">  select&#39;&#39; ::</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> <span class="dt">IO</span> a <span class="ot">-&gt;</span> <span class="dt">IO</span> a
   select&#39;&#39; a n s <span class="fu">=</span> <span class="kw">do</span>
     next <span class="ot">&lt;-</span> runStream s
     <span class="kw">case</span> next <span class="kw">of</span> 
-      <span class="kw">Nothing</span> <span class="ot">-&gt;</span> a
-      <span class="kw">Just</span> (a&#39;, s&#39;) <span class="ot">-&gt;</span> select&#39;&#39; someA (n <span class="fu">+</span> <span class="dv">1</span>) s&#39; <span class="kw">where</span>
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> a
+      <span class="dt">Just</span> (a&#39;, s&#39;) <span class="ot">-&gt;</span> select&#39;&#39; someA (n <span class="fu">+</span> <span class="dv">1</span>) s&#39; <span class="kw">where</span>
         someA <span class="fu">=</span> <span class="kw">do</span> i <span class="ot">&lt;-</span> randomRIO (<span class="dv">0</span>, n) 
-                   <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">return</span> a&#39;
+                   <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> return a&#39;
                              _ <span class="ot">-&gt;</span> a</code></pre>
 <p>The idea is to keep two accumulator parameters - the first of type <code>IO a</code> represents some value of type <code>a</code> chosen with uniform probability from the values seen so far. The second of type <code>Int</code> is the number of values seen so far.</p>
 <p>If we reach the end of the list, we return the first accumulated value. If not, we choose the new value with probability <code>1/n</code> and the value we had already chosen with probability <code>(n-1)/n</code>.</p>
@@ -57,42 +57,42 @@ fromList&#39; (x<span class="fu">:</span>xs) <span class="fu">=</span> (x, fromL
 <p>The problem is that the function <code>select'</code> works in the IO monad, and is inherently non-deterministic. We could replace the use of <code>randomRIO</code> with a deterministic random function using a seed value, but then we would not be able to guarantee full coverage of the code. How many random samples would it take to gain confidence that your function indeed performs as expected?</p>
 <p>The trick is to replace the <code>IO</code> monad with some monad living in a suitable typeclass.</p>
 <p>Let's replace the call to <code>randomRIO</code> with a call to the new function <code>uniform</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="kw">Monad</span> r) <span class="ot">=&gt;</span> <span class="dt">MonadRandom</span> r <span class="kw">where</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> (<span class="dt">Monad</span> r) <span class="ot">=&gt;</span> <span class="dt">MonadRandom</span> r <span class="kw">where</span>
 <span class="ot">  uniform ::</span> (<span class="dt">Int</span>, <span class="dt">Int</span>) <span class="ot">-&gt;</span> r <span class="dt">Int</span></code></pre>
 <p>The new typeclass <code>MonadRandom</code> has at least one inhabitant that we know of, which is <code>IO</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">MonadRandom</span> <span class="dt">IO</span> <span class="kw">where</span>
   uniform <span class="fu">=</span> randomRIO</code></pre>
 <p>Now instead of working with random values, let's identify the values with their probability distributions. This way, we do not lose any information by selecting a single value from the distribution.</p>
 <p>Introduce the type <code>Dist a</code>, of probability distributions with values in type <code>a</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Dist</span> a <span class="fu">=</span> <span class="dt">Dist</span> {<span class="ot"> runDist ::</span> [(<span class="dt">Rational</span>, a)] } <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Dist</span> a <span class="fu">=</span> <span class="dt">Dist</span> {<span class="ot"> runDist ::</span> [(<span class="dt">Rational</span>, a)] } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)</code></pre>
 <p>I've written about <code>Dist</code>'s <code>Monad</code> instance before, when I wrote about LINQ to Probability Distributions in C#:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="kw">Functor</span> <span class="dt">Dist</span> <span class="kw">where</span>
-  <span class="fu">fmap</span> f (<span class="dt">Dist</span> xs) <span class="fu">=</span> <span class="dt">Dist</span> <span class="fu">$</span> <span class="fu">fmap</span> (\(p, x) <span class="ot">-&gt;</span> (p, f x)) xs
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Dist</span> <span class="kw">where</span>
+  fmap f (<span class="dt">Dist</span> xs) <span class="fu">=</span> <span class="dt">Dist</span> <span class="fu">$</span> fmap (\(p, x) <span class="ot">-&gt;</span> (p, f x)) xs
 
-<span class="kw">instance</span> <span class="kw">Monad</span> <span class="dt">Dist</span> <span class="kw">where</span>
-  <span class="fu">return</span> x <span class="fu">=</span> <span class="dt">Dist</span> [(<span class="dv">1</span>, x)]
+<span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Dist</span> <span class="kw">where</span>
+  return x <span class="fu">=</span> <span class="dt">Dist</span> [(<span class="dv">1</span>, x)]
   (<span class="dt">Dist</span> xs) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> normalize <span class="fu">$</span> <span class="dt">Dist</span> <span class="fu">$</span> <span class="kw">do</span>
     (p, x) <span class="ot">&lt;-</span> xs
     (q, y) <span class="ot">&lt;-</span> runDist <span class="fu">$</span> f x
-    <span class="fu">return</span> <span class="fu">$</span> (p <span class="fu">*</span> q, y)</code></pre>
+    return <span class="fu">$</span> (p <span class="fu">*</span> q, y)</code></pre>
 <p>The function <code>normalize</code> appearing the definition of <code>&gt;&gt;=</code> ensures that the probabilities in the distribution sum to 1:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">normalize ::</span> <span class="dt">Dist</span> a <span class="ot">-&gt;</span> <span class="dt">Dist</span> a
-normalize d <span class="fu">=</span> <span class="dt">Dist</span> <span class="fu">$</span> <span class="fu">fmap</span> (\(p, a) <span class="ot">-&gt;</span> (p <span class="fu">/</span> total, a)) <span class="fu">$</span> runDist d <span class="kw">where</span>
-  total <span class="fu">=</span> <span class="fu">sum</span> <span class="fu">$</span> <span class="fu">map</span> <span class="fu">fst</span> <span class="fu">$</span> runDist d</code></pre>
+normalize d <span class="fu">=</span> <span class="dt">Dist</span> <span class="fu">$</span> fmap (\(p, a) <span class="ot">-&gt;</span> (p <span class="fu">/</span> total, a)) <span class="fu">$</span> runDist d <span class="kw">where</span>
+  total <span class="fu">=</span> sum <span class="fu">$</span> map fst <span class="fu">$</span> runDist d</code></pre>
 <p>In fact, <code>Dist</code> is also an instance of <code>MonadRandom</code>. The <code>uniform</code> function just returns a uniform distribution, as one would expect:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">MonadRandom</span> <span class="dt">Dist</span> <span class="kw">where</span>
-  uniform (l, u) <span class="fu">=</span> <span class="dt">Dist</span> [ (<span class="dv">1</span> <span class="fu">%</span> (<span class="fu">toInteger</span> <span class="fu">$</span> u <span class="fu">-</span> l <span class="fu">+</span> <span class="dv">1</span>), i) <span class="fu">|</span> i <span class="ot">&lt;-</span> [l<span class="fu">..</span>u] ]</code></pre>
+  uniform (l, u) <span class="fu">=</span> <span class="dt">Dist</span> [ (<span class="dv">1</span> <span class="fu">%</span> (toInteger <span class="fu">$</span> u <span class="fu">-</span> l <span class="fu">+</span> <span class="dv">1</span>), i) <span class="fu">|</span> i <span class="ot">&lt;-</span> [l<span class="fu">..</span>u] ]</code></pre>
 <p>We can now rewrite the function <code>select'</code> in such a way that it works over an arbitrary monad in <code>MonadRandom</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">select ::</span> (<span class="kw">Functor</span> m, <span class="kw">Monad</span> m, <span class="kw">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> <span class="dt">NonEmptyStream</span> m a <span class="ot">-&gt;</span> m (r a)
-select (a, s) <span class="fu">=</span> select&#39; (<span class="fu">return</span> a) <span class="dv">1</span> s <span class="kw">where</span>
-<span class="ot">  select&#39; ::</span> (<span class="kw">Functor</span> m, <span class="kw">Monad</span> m, <span class="kw">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> r a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a <span class="ot">-&gt;</span> m (r a)
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">select ::</span> (<span class="dt">Functor</span> m, <span class="dt">Monad</span> m, <span class="dt">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> <span class="dt">NonEmptyStream</span> m a <span class="ot">-&gt;</span> m (r a)
+select (a, s) <span class="fu">=</span> select&#39; (return a) <span class="dv">1</span> s <span class="kw">where</span>
+<span class="ot">  select&#39; ::</span> (<span class="dt">Functor</span> m, <span class="dt">Monad</span> m, <span class="dt">Monad</span> r, <span class="dt">MonadRandom</span> r) <span class="ot">=&gt;</span> r a <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Stream</span> m a <span class="ot">-&gt;</span> m (r a)
   select&#39; r n s <span class="fu">=</span> <span class="kw">do</span>
     next <span class="ot">&lt;-</span> runStream s
     <span class="kw">case</span> next <span class="kw">of</span> 
-      <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="fu">return</span> r
-      <span class="kw">Just</span> (a, s&#39;) <span class="ot">-&gt;</span> select&#39; r1 (n <span class="fu">+</span> <span class="dv">1</span>) s&#39; <span class="kw">where</span>
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> return r
+      <span class="dt">Just</span> (a, s&#39;) <span class="ot">-&gt;</span> select&#39; r1 (n <span class="fu">+</span> <span class="dv">1</span>) s&#39; <span class="kw">where</span>
         r1 <span class="fu">=</span> <span class="kw">do</span> i <span class="ot">&lt;-</span> uniform (<span class="dv">0</span>, n) 
-                <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> <span class="fu">return</span> a
+                <span class="kw">case</span> i <span class="kw">of</span> <span class="dv">0</span> <span class="ot">-&gt;</span> return a
                           _ <span class="ot">-&gt;</span> r</code></pre>
 <p>The new function <code>select</code> works just like <code>select'</code>, except that the result has an extra monadic layer:</p>
 <pre><code>ghci&gt; forM [1..10] $ const $ join $ select $ fromList&#39; [1..10]
@@ -100,10 +100,10 @@ select (a, s) <span class="fu">=</span> select&#39; (<span class="fu">return</sp
 <p>However, now we can specialize <code>select</code> to the <code>Dist</code> monad for the purposes of testing our QuickCheck properties.</p>
 <p>The idea is that since <code>select</code> is universally quantified in the monad <code>r</code>, we cannot cheat and use any specific knowledge we have about <code>r</code> to make our tests pass. If a test passes for one instance of <code>MonadRandom</code>, then we would expect the test to pass for any sensible instance of <code>MonadRandom</code>.</p>
 <p>For example, let's write a property to check that selecting a random value from a <code>Stream</code> does not exclude any values:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">testAllValuesPresent ::</span> (<span class="kw">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">testAllValuesPresent ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
 testAllValuesPresent xs <span class="fu">=</span> 
-  <span class="fu">all</span> (<span class="fu">flip</span> <span class="fu">elem</span> values) xs <span class="kw">where</span>
-  values <span class="fu">=</span> <span class="fu">map</span> <span class="fu">snd</span> 
+  all (flip elem values) xs <span class="kw">where</span>
+  values <span class="fu">=</span> map snd 
     <span class="fu">$</span> runDist
     <span class="fu">$</span> runIdentity
     <span class="fu">$</span> select 

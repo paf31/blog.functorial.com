@@ -27,7 +27,7 @@ _gaq.push(['_trackPageview']);
 <span class="kw">import</span> <span class="kw">qualified</span> Control.Monad.State <span class="kw">as</span> S</code></pre>
 <h2 id="language-definition-and-examples">Language Definition and Examples</h2>
 <p>I would like separate languages for type declarations and values. Here are some examples of the sorts of things I would like to be able to write (note, not all of these are expected to pass the typechecker):</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">exampleSchema <span class="fu">=</span> <span class="fu">unlines</span> 
+<pre class="sourceCode haskell"><code class="sourceCode haskell">exampleSchema <span class="fu">=</span> unlines 
   [ <span class="st">&quot;Nil :: List Z a;&quot;</span>
   , <span class="st">&quot;Singleton :: a -&gt; List (S Z) a;&quot;</span>
   , <span class="st">&quot;Cons :: a -&gt; List n a -&gt; List (S n) a;&quot;</span>
@@ -44,7 +44,7 @@ example5 <span class="fu">=</span> <span class="st">&quot;x = Cons (Branch Tip 1
 example6 <span class="fu">=</span> <span class="st">&quot;x = 1 `Cons` (2 `Cons` (3 `Cons` Nil))&quot;</span> 
 example7 <span class="fu">=</span> <span class="st">&quot;x = 1 `Cons` Nil `Zip` (2 `Cons` Nil)&quot;</span> 
 example8 <span class="fu">=</span> <span class="st">&quot;x = Nil `Cons` Nil `Zip` ((Cons 1 $ Nil) `Cons` Nil)&quot;</span> 
-example9 <span class="fu">=</span> <span class="fu">unlines</span> 
+example9 <span class="fu">=</span> unlines 
   [ <span class="st">&quot;x = Nil;&quot;</span>
   , <span class="st">&quot;y = Cons x Nil;&quot;</span>
   , <span class="st">&quot;z = Cons y Nil&quot;</span> ]</code></pre>
@@ -56,13 +56,13 @@ example9 <span class="fu">=</span> <span class="fu">unlines</span>
   <span class="fu">|</span> <span class="dt">TmAtom</span> <span class="dt">String</span> 
   <span class="fu">|</span> <span class="dt">TmStr</span> <span class="dt">String</span> 
   <span class="fu">|</span> <span class="dt">TmInt</span> <span class="dt">Integer</span> 
-  <span class="fu">|</span> <span class="dt">TmApp</span> <span class="dt">Tm</span> <span class="dt">Tm</span> <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
+  <span class="fu">|</span> <span class="dt">TmApp</span> <span class="dt">Tm</span> <span class="dt">Tm</span> <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
 
 <span class="ot">prettyTm ::</span> <span class="dt">Tm</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 prettyTm (<span class="dt">TmName</span> s) <span class="fu">=</span> s
 prettyTm (<span class="dt">TmAtom</span> s) <span class="fu">=</span> s
-prettyTm (<span class="dt">TmStr</span> s) <span class="fu">=</span> <span class="fu">show</span> s
-prettyTm (<span class="dt">TmInt</span> n) <span class="fu">=</span> <span class="fu">show</span> n
+prettyTm (<span class="dt">TmStr</span> s) <span class="fu">=</span> show s
+prettyTm (<span class="dt">TmInt</span> n) <span class="fu">=</span> show n
 prettyTm (<span class="dt">TmApp</span> t1 t2<span class="fu">@</span>(<span class="dt">TmApp</span> _ _)) <span class="fu">=</span> prettyTm t1 <span class="fu">++</span> <span class="st">&quot; (&quot;</span> <span class="fu">++</span> prettyTm t2 <span class="fu">++</span> <span class="st">&quot;)&quot;</span>
 prettyTm (<span class="dt">TmApp</span> t1 t2) <span class="fu">=</span> prettyTm t1 <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> prettyTm t2
     
@@ -70,7 +70,7 @@ prettyTm (<span class="dt">TmApp</span> t1 t2) <span class="fu">=</span> prettyT
   <span class="fu">=</span> <span class="dt">TyCon</span> <span class="dt">String</span>
   <span class="fu">|</span> <span class="dt">TyApp</span> <span class="dt">Ty</span> <span class="dt">Ty</span>
   <span class="fu">|</span> <span class="dt">TyArr</span> <span class="dt">Ty</span> <span class="dt">Ty</span>
-  <span class="fu">|</span> <span class="dt">TyVar</span> <span class="dt">String</span> <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
+  <span class="fu">|</span> <span class="dt">TyVar</span> <span class="dt">String</span> <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
   
 <span class="ot">prettyTy ::</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
 prettyTy (<span class="dt">TyCon</span> s) <span class="fu">=</span> s
@@ -82,11 +82,11 @@ prettyTy (<span class="dt">TyArr</span> t1 t2) <span class="fu">=</span> prettyT
 <p>Now let's implement a parser. To keep things simple, I'm going to use the lexer generator from <code>Text.Parsec.Token</code>.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">languageDef ::</span> <span class="dt">P.LanguageDef</span> st
 languageDef <span class="fu">=</span> L.haskellStyle 
-  { P.opStart         <span class="fu">=</span> <span class="fu">fail</span> <span class="st">&quot;Operators are not supported&quot;</span>
-  , P.opLetter        <span class="fu">=</span> <span class="fu">fail</span> <span class="st">&quot;Operators are not supported&quot;</span>
+  { P.opStart         <span class="fu">=</span> fail <span class="st">&quot;Operators are not supported&quot;</span>
+  , P.opLetter        <span class="fu">=</span> fail <span class="st">&quot;Operators are not supported&quot;</span>
   , P.reservedNames   <span class="fu">=</span> []
   , P.reservedOpNames <span class="fu">=</span> []
-  , P.caseSensitive   <span class="fu">=</span> <span class="kw">True</span> }
+  , P.caseSensitive   <span class="fu">=</span> <span class="dt">True</span> }
   
 lexer             <span class="fu">=</span> P.makeTokenParser languageDef 
 identifier        <span class="fu">=</span> P.identifier lexer
@@ -105,40 +105,40 @@ identu <span class="fu">=</span> lookAhead upper <span class="fu">&gt;&gt;</span
 identl <span class="fu">=</span> lookAhead lower <span class="fu">&gt;&gt;</span> identifier</code></pre>
 <p>There are parsers for terms:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tmName ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
-tmName <span class="fu">=</span> lexeme <span class="fu">$</span> identl <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="dt">TmName</span>
+tmName <span class="fu">=</span> lexeme <span class="fu">$</span> identl <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">TmName</span>
   
 <span class="ot">tmAtom ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
-tmAtom <span class="fu">=</span> lexeme <span class="fu">$</span> identu <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="dt">TmAtom</span>
+tmAtom <span class="fu">=</span> lexeme <span class="fu">$</span> identu <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">TmAtom</span>
 
 <span class="ot">tmStr ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
-tmStr <span class="fu">=</span> lexeme <span class="fu">$</span> stringLiteral <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="dt">TmStr</span>
+tmStr <span class="fu">=</span> lexeme <span class="fu">$</span> stringLiteral <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">TmStr</span>
   
 <span class="ot">tmInt ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
-tmInt <span class="fu">=</span> lexeme <span class="fu">$</span> integer <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="dt">TmInt</span>
+tmInt <span class="fu">=</span> lexeme <span class="fu">$</span> integer <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">TmInt</span>
 
 <span class="ot">tmBracket ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
 tmBracket <span class="fu">=</span> lexeme <span class="fu">$</span> parens tm
   
 <span class="ot">tm ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Tm</span>
 tm <span class="fu">=</span> E.buildExpressionParser 
-     [ [ <span class="dt">E.Infix</span> (<span class="fu">return</span> <span class="dt">TmApp</span>) <span class="dt">E.AssocLeft</span> ]
+     [ [ <span class="dt">E.Infix</span> (return <span class="dt">TmApp</span>) <span class="dt">E.AssocLeft</span> ]
      , [ <span class="dt">E.Infix</span> (((<span class="fu">.</span>) <span class="dt">TmApp</span> <span class="fu">.</span> <span class="dt">TmApp</span>) <span class="fu">&lt;$&gt;</span> between (symbol <span class="st">&quot;`&quot;</span>) (symbol <span class="st">&quot;`&quot;</span>) tmAtom) <span class="dt">E.AssocLeft</span> ]
-     , [ <span class="dt">E.Infix</span> (symbol <span class="st">&quot;$&quot;</span> <span class="fu">&gt;&gt;</span> <span class="fu">return</span> <span class="dt">TmApp</span>) <span class="dt">E.AssocRight</span> ]  ]
+     , [ <span class="dt">E.Infix</span> (symbol <span class="st">&quot;$&quot;</span> <span class="fu">&gt;&gt;</span> return <span class="dt">TmApp</span>) <span class="dt">E.AssocRight</span> ]  ]
      (tmBracket <span class="fu">&lt;|&gt;</span> tmStr <span class="fu">&lt;|&gt;</span> tmInt <span class="fu">&lt;|&gt;</span> try tmName <span class="fu">&lt;|&gt;</span> tmAtom)</code></pre>
 <p>and parsers for types:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tyVar ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Ty</span>
-tyVar <span class="fu">=</span> lexeme <span class="fu">$</span> identl <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="dt">TyVar</span>
+tyVar <span class="fu">=</span> lexeme <span class="fu">$</span> identl <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">TyVar</span>
 
 <span class="ot">tyCon ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Ty</span>
-tyCon <span class="fu">=</span> lexeme <span class="fu">$</span> identu <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="dt">TyCon</span>
+tyCon <span class="fu">=</span> lexeme <span class="fu">$</span> identu <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> <span class="dt">TyCon</span>
   
 <span class="ot">tyBracket ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Ty</span>
 tyBracket <span class="fu">=</span> parens ty
   
 <span class="ot">ty ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u <span class="dt">Ty</span>
 ty <span class="fu">=</span> E.buildExpressionParser 
-     [ [ <span class="dt">E.Infix</span> (<span class="fu">return</span> <span class="dt">TyApp</span>) <span class="dt">E.AssocLeft</span> ]
-     , [ <span class="dt">E.Infix</span> (symbol <span class="st">&quot;-&gt;&quot;</span> <span class="fu">&gt;&gt;</span> <span class="fu">return</span> <span class="dt">TyArr</span>) <span class="dt">E.AssocRight</span> ] ]
+     [ [ <span class="dt">E.Infix</span> (return <span class="dt">TyApp</span>) <span class="dt">E.AssocLeft</span> ]
+     , [ <span class="dt">E.Infix</span> (symbol <span class="st">&quot;-&gt;&quot;</span> <span class="fu">&gt;&gt;</span> return <span class="dt">TyArr</span>) <span class="dt">E.AssocRight</span> ] ]
      (tyBracket <span class="fu">&lt;|&gt;</span> try tyVar <span class="fu">&lt;|&gt;</span> tyCon)</code></pre>
 <p>The parsers <code>tm</code> and <code>ty</code> are then used to construct top-level parsers <code>schema</code> for type declarations and <code>doc</code> for value declarations:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">valueDecl ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u (<span class="dt">String</span>, <span class="dt">Tm</span>)
@@ -146,103 +146,103 @@ valueDecl <span class="fu">=</span> <span class="kw">do</span>
   name <span class="ot">&lt;-</span> identl
   symbol <span class="st">&quot;=&quot;</span>
   t <span class="ot">&lt;-</span> tm
-  <span class="fu">return</span> (name, t)
+  return (name, t)
 
 <span class="ot">doc ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u [(<span class="dt">String</span>, <span class="dt">Tm</span>)]
 doc <span class="fu">=</span> <span class="kw">do</span>
   whiteSpace 
   ds <span class="ot">&lt;-</span> sepBy valueDecl (lexeme semi)
   eof
-  <span class="fu">return</span> ds
+  return ds
 
 <span class="ot">typeDecl ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u (<span class="dt">String</span>, <span class="dt">Ty</span>)
 typeDecl <span class="fu">=</span> <span class="kw">do</span>
   name <span class="ot">&lt;-</span> identu
   symbol <span class="st">&quot;::&quot;</span>
   t <span class="ot">&lt;-</span> ty
-  <span class="fu">return</span> (name, t)
+  return (name, t)
 
 <span class="ot">schema ::</span> <span class="dt">Parsec</span> <span class="dt">String</span> u [(<span class="dt">String</span>, <span class="dt">Ty</span>)]
 schema <span class="fu">=</span> <span class="kw">do</span>
   whiteSpace 
   ds <span class="ot">&lt;-</span> sepBy typeDecl (lexeme semi)
   eof
-  <span class="fu">return</span> ds</code></pre>
+  return ds</code></pre>
 <p>There is quite a bit going on here, but for the most part, the parser is assembled from reusable pieces in <code>Text.Parsec.Token</code> and some utility functions such as <code>sepBy</code>. The parser serves as a fairly good definition of the language syntax: the <code>tm</code> and <code>ty</code> parsers are just constructed using <code>buildExpressionParser</code> from the precedence tables for the term and type constructors respectively.</p>
 <h2 id="implementing-a-typechecker">Implementing a Typechecker</h2>
 <p>The next step is to write the typechecker. This is actually quite simple since there are no function types other than constructors, and all quantification over free type variables implicitly happens at the top level.</p>
 <p>The first step is to implement a unification function. This is very easy: types are either equal modulo variable substitution, or they do not unify at all:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">unify ::</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)]
-unify (<span class="dt">TyVar</span> s) (<span class="dt">TyVar</span> t) <span class="fu">=</span> <span class="fu">return</span> []
-unify (<span class="dt">TyVar</span> s) t <span class="fu">=</span> <span class="fu">return</span> [(s, t)]
-unify t (<span class="dt">TyVar</span> s) <span class="fu">=</span> <span class="fu">return</span> [(s, t)]
+unify (<span class="dt">TyVar</span> s) (<span class="dt">TyVar</span> t) <span class="fu">=</span> return []
+unify (<span class="dt">TyVar</span> s) t <span class="fu">=</span> return [(s, t)]
+unify t (<span class="dt">TyVar</span> s) <span class="fu">=</span> return [(s, t)]
 unify (<span class="dt">TyCon</span> ct1) (<span class="dt">TyCon</span> ct2) 
-  <span class="fu">|</span> ct1 <span class="fu">==</span> ct2 <span class="fu">=</span> <span class="fu">return</span> []
+  <span class="fu">|</span> ct1 <span class="fu">==</span> ct2 <span class="fu">=</span> return []
 unify (<span class="dt">TyApp</span> ty1 ty2) (<span class="dt">TyApp</span> ty3 ty4) <span class="fu">=</span> (<span class="fu">++</span>) <span class="fu">&lt;$&gt;</span> unify ty1 ty3 <span class="fu">&lt;*&gt;</span> unify ty2 ty4
 unify (<span class="dt">TyArr</span> ty1 ty2) (<span class="dt">TyArr</span> ty3 ty4) <span class="fu">=</span> (<span class="fu">++</span>) <span class="fu">&lt;$&gt;</span> unify ty1 ty3 <span class="fu">&lt;*&gt;</span> unify ty2 ty4
-unify t1 t2 <span class="fu">=</span> <span class="kw">Left</span> <span class="fu">$</span> <span class="st">&quot;Cannot unify &quot;</span> <span class="fu">++</span> prettyTy t1 <span class="fu">++</span> <span class="st">&quot; with &quot;</span> <span class="fu">++</span> prettyTy t2</code></pre>
+unify t1 t2 <span class="fu">=</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Cannot unify &quot;</span> <span class="fu">++</span> prettyTy t1 <span class="fu">++</span> <span class="st">&quot; with &quot;</span> <span class="fu">++</span> prettyTy t2</code></pre>
 <p>Type variable substitution is also a simple pattern match:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">subst ::</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)] <span class="ot">-&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">Ty</span>
-subst vs v<span class="fu">@</span>(<span class="dt">TyVar</span> s) <span class="fu">=</span> <span class="fu">maybe</span> v <span class="fu">id</span> <span class="fu">$</span> <span class="fu">lookup</span> s vs
+subst vs v<span class="fu">@</span>(<span class="dt">TyVar</span> s) <span class="fu">=</span> maybe v id <span class="fu">$</span> lookup s vs
 subst vs (<span class="dt">TyApp</span> t1 t2) <span class="fu">=</span> <span class="dt">TyApp</span> (subst vs t1) (subst vs t2)
 subst vs (<span class="dt">TyArr</span> t1 t2) <span class="fu">=</span> <span class="dt">TyArr</span> (subst vs t1) (subst vs t2)
 subst _ t <span class="fu">=</span> t</code></pre>
 <p>One important function which is used in the typechecker is <code>specialize</code>, which is used to apply a polymorphic function to an argument. The idea is that <code>specialize f x</code> should return the most general type of <code>f x</code>. The helper function <code>isFunction</code> is used to ensure that each type variable was unified with at most one type.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">isFunction ::</span> (<span class="kw">Eq</span> dom, <span class="kw">Eq</span> cod) <span class="ot">=&gt;</span> [(dom, cod)] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
-isFunction <span class="fu">=</span> <span class="fu">all</span> ((<span class="fu">==</span> <span class="dv">1</span>) <span class="fu">.</span> <span class="fu">length</span> <span class="fu">.</span> nub <span class="fu">.</span> <span class="fu">map</span> <span class="fu">snd</span>) <span class="fu">.</span> groupBy ((<span class="fu">==</span>) <span class="ot">`on`</span> <span class="fu">fst</span>)
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">isFunction ::</span> (<span class="dt">Eq</span> dom, <span class="dt">Eq</span> cod) <span class="ot">=&gt;</span> [(dom, cod)] <span class="ot">-&gt;</span> <span class="dt">Bool</span>
+isFunction <span class="fu">=</span> all ((<span class="fu">==</span> <span class="dv">1</span>) <span class="fu">.</span> length <span class="fu">.</span> nub <span class="fu">.</span> map snd) <span class="fu">.</span> groupBy ((<span class="fu">==</span>) <span class="ot">`on`</span> fst)
   
 <span class="ot">specialize ::</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">Ty</span>
 specialize (<span class="dt">TyArr</span> t1 t2) t3 <span class="fu">=</span> <span class="kw">do</span>
   vs <span class="ot">&lt;-</span> unify t1 t3
   guard <span class="fu">$</span> isFunction vs
-  <span class="fu">return</span> <span class="fu">$</span> subst vs t2
-specialize t _ <span class="fu">=</span> <span class="kw">Left</span> <span class="fu">$</span> <span class="st">&quot;Expected a function, found &quot;</span> <span class="fu">++</span> prettyTy t</code></pre>
+  return <span class="fu">$</span> subst vs t2
+specialize t _ <span class="fu">=</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Expected a function, found &quot;</span> <span class="fu">++</span> prettyTy t</code></pre>
 <p>We need one more helper function, which is used to rename free variables in a polymorphic type. This is used to make sure type variables do not overlap when a function application gets typed.</p>
 <p>The <code>renameAll</code> function gives new names to all of the free type variables appearing in a type, using an association list to store the currently-generated names:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">renameAll ::</span> (<span class="kw">Eq</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">S.State</span> [((<span class="dt">String</span>, a), <span class="dt">String</span>)] <span class="dt">Ty</span>
-renameAll _ t<span class="fu">@</span>(<span class="dt">TyCon</span> _) <span class="fu">=</span> <span class="fu">return</span> t
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">renameAll ::</span> (<span class="dt">Eq</span> a) <span class="ot">=&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> <span class="dt">S.State</span> [((<span class="dt">String</span>, a), <span class="dt">String</span>)] <span class="dt">Ty</span>
+renameAll _ t<span class="fu">@</span>(<span class="dt">TyCon</span> _) <span class="fu">=</span> return t
 renameAll key (<span class="dt">TyVar</span> v) <span class="fu">=</span> <span class="kw">do</span>
   m <span class="ot">&lt;-</span> S.get
-  <span class="kw">case</span> <span class="fu">lookup</span> (v, key) m <span class="kw">of</span>
-    <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
-      <span class="kw">let</span> name <span class="fu">=</span> unusedName (<span class="fu">map</span> <span class="fu">snd</span> m)
+  <span class="kw">case</span> lookup (v, key) m <span class="kw">of</span>
+    <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+      <span class="kw">let</span> name <span class="fu">=</span> unusedName (map snd m)
       S.modify <span class="fu">$</span> (<span class="fu">:</span>) ((v, key), name)
-      <span class="fu">return</span> <span class="fu">$</span> <span class="dt">TyVar</span> name
-    <span class="kw">Just</span> name <span class="ot">-&gt;</span> <span class="fu">return</span> <span class="fu">$</span> <span class="dt">TyVar</span> name
+      return <span class="fu">$</span> <span class="dt">TyVar</span> name
+    <span class="dt">Just</span> name <span class="ot">-&gt;</span> return <span class="fu">$</span> <span class="dt">TyVar</span> name
 renameAll key (<span class="dt">TyApp</span> t1 t2) <span class="fu">=</span> <span class="dt">TyApp</span> <span class="fu">&lt;$&gt;</span> renameAll key t1 <span class="fu">&lt;*&gt;</span> renameAll key t2
 renameAll key (<span class="dt">TyArr</span> t1 t2) <span class="fu">=</span> <span class="dt">TyArr</span> <span class="fu">&lt;$&gt;</span> renameAll key t1 <span class="fu">&lt;*&gt;</span> renameAll key t2
 
 <span class="ot">unusedName ::</span> [<span class="dt">String</span>] <span class="ot">-&gt;</span> <span class="dt">String</span>
-unusedName used <span class="fu">=</span> <span class="fu">head</span> <span class="fu">$</span> <span class="fu">map</span> ((<span class="st">&quot;t&quot;</span> <span class="fu">++</span>) <span class="fu">.</span> <span class="fu">show</span>) [<span class="dv">0</span><span class="fu">..</span>] \\ used</code></pre>
+unusedName used <span class="fu">=</span> head <span class="fu">$</span> map ((<span class="st">&quot;t&quot;</span> <span class="fu">++</span>) <span class="fu">.</span> show) [<span class="dv">0</span><span class="fu">..</span>] \\ used</code></pre>
 <p>We can now write the typechecker. It is a simple application of the <code>specialize</code> and <code>renameAll</code> helper functions:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">typeOf ::</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)] <span class="ot">-&gt;</span> <span class="dt">Tm</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">Ty</span>
-typeOf ctx (<span class="dt">TmName</span> s) <span class="fu">=</span> <span class="fu">maybe</span> (<span class="kw">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown name &quot;</span> <span class="fu">++</span> s) <span class="kw">Right</span> <span class="fu">$</span> <span class="fu">lookup</span> s ctx
-typeOf ctx (<span class="dt">TmAtom</span> s) <span class="fu">=</span> <span class="fu">maybe</span> (<span class="kw">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown constructor &quot;</span> <span class="fu">++</span> s) <span class="kw">Right</span> <span class="fu">$</span> <span class="fu">lookup</span> s ctx
-typeOf _ (<span class="dt">TmInt</span> _) <span class="fu">=</span> <span class="fu">return</span> (<span class="dt">TyCon</span> <span class="st">&quot;Int&quot;</span>)
-typeOf _ (<span class="dt">TmStr</span> _) <span class="fu">=</span> <span class="fu">return</span> (<span class="dt">TyCon</span> <span class="st">&quot;String&quot;</span>)
+typeOf ctx (<span class="dt">TmName</span> s) <span class="fu">=</span> maybe (<span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown name &quot;</span> <span class="fu">++</span> s) <span class="dt">Right</span> <span class="fu">$</span> lookup s ctx
+typeOf ctx (<span class="dt">TmAtom</span> s) <span class="fu">=</span> maybe (<span class="dt">Left</span> <span class="fu">$</span> <span class="st">&quot;Unknown constructor &quot;</span> <span class="fu">++</span> s) <span class="dt">Right</span> <span class="fu">$</span> lookup s ctx
+typeOf _ (<span class="dt">TmInt</span> _) <span class="fu">=</span> return (<span class="dt">TyCon</span> <span class="st">&quot;Int&quot;</span>)
+typeOf _ (<span class="dt">TmStr</span> _) <span class="fu">=</span> return (<span class="dt">TyCon</span> <span class="st">&quot;String&quot;</span>)
 typeOf ctx (<span class="dt">TmApp</span> t1 t2) <span class="fu">=</span> <span class="kw">do</span>
   tyArg <span class="ot">&lt;-</span> typeOf ctx t2
   tyFun <span class="ot">&lt;-</span> typeOf ctx t1
-  <span class="fu">flip</span> S.evalState [] <span class="fu">$</span> <span class="kw">do</span> 
-    tyFun&#39; <span class="ot">&lt;-</span> renameAll <span class="kw">True</span> tyFun
-    tyArg&#39; <span class="ot">&lt;-</span> renameAll <span class="kw">False</span> tyArg
-    <span class="fu">return</span> <span class="fu">$</span> specialize tyFun&#39; tyArg&#39;
+  flip S.evalState [] <span class="fu">$</span> <span class="kw">do</span> 
+    tyFun&#39; <span class="ot">&lt;-</span> renameAll <span class="dt">True</span> tyFun
+    tyArg&#39; <span class="ot">&lt;-</span> renameAll <span class="dt">False</span> tyArg
+    return <span class="fu">$</span> specialize tyFun&#39; tyArg&#39;
   
 <span class="ot">typesOf ::</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)] <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">Tm</span>)] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Ty</span>)]
-typesOf _ [] <span class="fu">=</span> <span class="fu">return</span> []
+typesOf _ [] <span class="fu">=</span> return []
 typesOf ctx ((name, tm)<span class="fu">:</span>tms) <span class="fu">=</span> <span class="kw">do</span>
   ty <span class="ot">&lt;-</span> typeOf  ctx tm
   <span class="kw">let</span> first <span class="fu">=</span> (name, ty)
   rest <span class="ot">&lt;-</span> typesOf (first<span class="fu">:</span>ctx) tms
-  <span class="fu">return</span> (first<span class="fu">:</span>rest)</code></pre>
+  return (first<span class="fu">:</span>rest)</code></pre>
 <p>Let's test the typechecker and parser on some of the examples at the top of the post:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">parseErr p <span class="fu">=</span> <span class="fu">either</span> (<span class="kw">Left</span> <span class="fu">.</span> <span class="fu">show</span>) <span class="kw">Right</span> <span class="fu">.</span> parse p <span class="st">&quot;&quot;</span>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">parseErr p <span class="fu">=</span> either (<span class="dt">Left</span> <span class="fu">.</span> show) <span class="dt">Right</span> <span class="fu">.</span> parse p <span class="st">&quot;&quot;</span>
   
 test sch val <span class="fu">=</span> <span class="kw">do</span>
   s <span class="ot">&lt;-</span> parseErr schema sch
   d <span class="ot">&lt;-</span> parseErr doc val
   tys <span class="ot">&lt;-</span> typesOf s d
-  <span class="fu">return</span> <span class="fu">$</span> <span class="fu">map</span> (<span class="fu">id</span> <span class="fu">***</span> prettyTy) tys</code></pre>
+  return <span class="fu">$</span> map (id <span class="fu">***</span> prettyTy) tys</code></pre>
 <pre><code>ghci&gt; test exampleSchema example1
 Left &quot;Cannot unify S Z with Z&quot;
 ghci&gt; test exampleSchema example2
@@ -253,7 +253,7 @@ Right [(&quot;x&quot;,&quot;Tree (S (S Z)) Int&quot;)]</code></pre>
 <p>There are a few other small additions to the language that I would like to make such as infix operators, kind checking, better error messages and support for other primitive types.</p>
 <h2 id="a-mini-language-for-relational-queries">A Mini Language For Relational Queries</h2>
 <p>As a more useful example, I've put together a minimal DSL for partially typed relational queries. The type system is used to make sure pairs of columns equated in joins have the same type, and to track the tables used in a query. Try replacing some of the constructors to see the ways in which the type system is used!</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">relationSchema <span class="fu">=</span> <span class="fu">unlines</span> 
+<pre class="sourceCode haskell"><code class="sourceCode haskell">relationSchema <span class="fu">=</span> unlines 
   [ <span class="st">&quot;UserID         :: Column User PK;&quot;</span>
   , <span class="st">&quot;UserName       :: Column User String;&quot;</span>
   , <span class="st">&quot;UserCompanyID  :: Column User PK;&quot;</span>
@@ -268,7 +268,7 @@ Right [(&quot;x&quot;,&quot;Tree (S (S Z)) Int&quot;)]</code></pre>
   , <span class="st">&quot;Nil            :: HList f;&quot;</span>
   , <span class="st">&quot;Cons           :: f t -&gt; HList f -&gt; HList f&quot;</span> ]
 
-relationExample <span class="fu">=</span> <span class="fu">unlines</span> 
+relationExample <span class="fu">=</span> unlines 
   [ <span class="st">&quot;query = Join&quot;</span>
   , <span class="st">&quot;          (Table (Cons UserName $ Cons UserCompanyID Nil))&quot;</span>
   , <span class="st">&quot;          (Table (Cons CompanyID $ Cons CompanyName Nil))&quot;</span>
@@ -284,10 +284,10 @@ Right [(&quot;query&quot;,&quot;Query (Cross (Table User) (Table Company))&quot;
 <span class="kw">data</span> <span class="dt">Kind</span>
   <span class="fu">=</span> <span class="dt">KindUnknown</span> <span class="dt">Unknown</span>
   <span class="fu">|</span> <span class="dt">KindStar</span>
-  <span class="fu">|</span> <span class="dt">KindArr</span> <span class="dt">Kind</span> <span class="dt">Kind</span> <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
+  <span class="fu">|</span> <span class="dt">KindArr</span> <span class="dt">Kind</span> <span class="dt">Kind</span> <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
   
 <span class="ot">prettyKind ::</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-prettyKind (<span class="dt">KindUnknown</span> n) <span class="fu">=</span> <span class="st">&quot;k&quot;</span> <span class="fu">++</span> <span class="fu">show</span> n
+prettyKind (<span class="dt">KindUnknown</span> n) <span class="fu">=</span> <span class="st">&quot;k&quot;</span> <span class="fu">++</span> show n
 prettyKind <span class="dt">KindStar</span> <span class="fu">=</span> <span class="st">&quot;*&quot;</span>
 prettyKind (<span class="dt">KindArr</span> k1<span class="fu">@</span>(<span class="dt">KindArr</span> _ _) k2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> prettyKind k1 <span class="fu">++</span> <span class="st">&quot;) -&gt; &quot;</span> <span class="fu">++</span> prettyKind k2
 prettyKind (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> prettyKind k1 <span class="fu">++</span> <span class="st">&quot; -&gt; &quot;</span> <span class="fu">++</span> prettyKind k2</code></pre>
@@ -295,72 +295,72 @@ prettyKind (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> pre
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">replace ::</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span>
 replace i x u<span class="fu">@</span>(<span class="dt">KindUnknown</span> j) 
   <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> x
-  <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> u
+  <span class="fu">|</span> otherwise <span class="fu">=</span> u
 replace _ _ <span class="dt">KindStar</span> <span class="fu">=</span> <span class="dt">KindStar</span>
 replace i x (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> <span class="dt">KindArr</span> (replace i x k1) (replace i x k2)
 
 <span class="ot">occursCheck ::</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> ()
-occursCheck i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> <span class="fu">return</span> ()
+occursCheck i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> return ()
 occursCheck i x <span class="fu">=</span> occursCheck&#39; i x <span class="kw">where</span>
-  occursCheck&#39; i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> <span class="fu">fail</span> <span class="st">&quot;Occurs check failed during kind checking&quot;</span>
+  occursCheck&#39; i (<span class="dt">KindUnknown</span> j) <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> fail <span class="st">&quot;Occurs check failed during kind checking&quot;</span>
   occursCheck&#39; i (<span class="dt">KindArr</span> k1 k2) <span class="fu">=</span> occursCheck&#39; i k1 <span class="fu">&gt;&gt;</span> occursCheck&#39; i k2
-  occursCheck&#39; _ _ <span class="fu">=</span> <span class="fu">return</span> ()</code></pre>
+  occursCheck&#39; _ _ <span class="fu">=</span> return ()</code></pre>
 <p>Constraint generation happens by unification. The <code>unify</code> function takes two kinds and generates the constraints imposed by their equality, or returns a unification error.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">KindConstraint</span> <span class="fu">=</span> (<span class="dt">Unknown</span>, <span class="dt">Kind</span>)
 
 <span class="kw">type</span> <span class="dt">SolutionSet</span> <span class="fu">=</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span>
 
 <span class="ot">unifyKinds ::</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">Kind</span> <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [<span class="dt">KindConstraint</span>]
-unifyKinds (<span class="dt">KindUnknown</span> i) x <span class="fu">=</span> <span class="fu">return</span> [(i, x)]
-unifyKinds x (<span class="dt">KindUnknown</span> i) <span class="fu">=</span> <span class="fu">return</span> [(i, x)]
-unifyKinds <span class="dt">KindStar</span> <span class="dt">KindStar</span> <span class="fu">=</span> <span class="fu">return</span>  []
+unifyKinds (<span class="dt">KindUnknown</span> i) x <span class="fu">=</span> return [(i, x)]
+unifyKinds x (<span class="dt">KindUnknown</span> i) <span class="fu">=</span> return [(i, x)]
+unifyKinds <span class="dt">KindStar</span> <span class="dt">KindStar</span> <span class="fu">=</span> return  []
 unifyKinds (<span class="dt">KindArr</span> k1 k2) (<span class="dt">KindArr</span> k3 k4) <span class="fu">=</span> (<span class="fu">++</span>) <span class="fu">&lt;$&gt;</span> unifyKinds k1 k3 <span class="fu">&lt;*&gt;</span> unifyKinds k2 k4
-unifyKinds k1 k2 <span class="fu">=</span> <span class="fu">fail</span> <span class="fu">$</span> <span class="st">&quot;Cannot unify &quot;</span> <span class="fu">++</span> <span class="fu">show</span> k1 <span class="fu">++</span> <span class="st">&quot; with &quot;</span> <span class="fu">++</span> <span class="fu">show</span> k2</code></pre>
+unifyKinds k1 k2 <span class="fu">=</span> fail <span class="fu">$</span> <span class="st">&quot;Cannot unify &quot;</span> <span class="fu">++</span> show k1 <span class="fu">++</span> <span class="st">&quot; with &quot;</span> <span class="fu">++</span> show k2</code></pre>
 <p>The general constraint generation function works bottom-up over the structure of a type:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generateConstraints ::</span> (<span class="kw">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m [<span class="dt">KindConstraint</span>]
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generateConstraints ::</span> (<span class="dt">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m [<span class="dt">KindConstraint</span>]
 generateConstraints ty <span class="fu">=</span> <span class="kw">do</span>
   (cs, n) <span class="ot">&lt;-</span> generateConstraints&#39; ty
-  <span class="fu">return</span> <span class="fu">$</span> (n, <span class="dt">KindStar</span>) <span class="fu">:</span> cs
+  return <span class="fu">$</span> (n, <span class="dt">KindStar</span>) <span class="fu">:</span> cs
   <span class="kw">where</span>
-<span class="ot">  generateConstraints&#39; ::</span> (<span class="kw">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m ([<span class="dt">KindConstraint</span>], <span class="dt">Unknown</span>)
+<span class="ot">  generateConstraints&#39; ::</span> (<span class="dt">Monad</span> m, <span class="dt">S.MonadState</span> ([(<span class="dt">String</span>, <span class="dt">Unknown</span>)], <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> m ([<span class="dt">KindConstraint</span>], <span class="dt">Unknown</span>)
   generateConstraints&#39; (<span class="dt">TyVar</span> v) <span class="fu">=</span> <span class="kw">do</span>
     (m, _) <span class="ot">&lt;-</span> S.get
-    <span class="kw">case</span> <span class="fu">lookup</span> v m <span class="kw">of</span>
-      <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+    <span class="kw">case</span> lookup v m <span class="kw">of</span>
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
         n <span class="ot">&lt;-</span> newUnknown
-        S.modify <span class="fu">$</span> (<span class="fu">:</span>) (v, n) <span class="fu">***</span> <span class="fu">id</span>
-        <span class="fu">return</span> ([], n)
-      <span class="kw">Just</span> unk <span class="ot">-&gt;</span> <span class="fu">return</span> ([], unk)
+        S.modify <span class="fu">$</span> (<span class="fu">:</span>) (v, n) <span class="fu">***</span> id
+        return ([], n)
+      <span class="dt">Just</span> unk <span class="ot">-&gt;</span> return ([], unk)
   generateConstraints&#39; (<span class="dt">TyCon</span> s) <span class="fu">=</span> <span class="kw">do</span>
     (m, _) <span class="ot">&lt;-</span> S.get
-    <span class="kw">case</span> <span class="fu">lookup</span> s m <span class="kw">of</span>
-      <span class="kw">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
+    <span class="kw">case</span> lookup s m <span class="kw">of</span>
+      <span class="dt">Nothing</span> <span class="ot">-&gt;</span> <span class="kw">do</span>
         n <span class="ot">&lt;-</span> newUnknown
-        S.modify <span class="fu">$</span> (<span class="fu">:</span>) (s, n) <span class="fu">***</span> <span class="fu">id</span>
-        <span class="fu">return</span> ([], n)
-      <span class="kw">Just</span> unk <span class="ot">-&gt;</span> <span class="fu">return</span> ([], unk)
+        S.modify <span class="fu">$</span> (<span class="fu">:</span>) (s, n) <span class="fu">***</span> id
+        return ([], n)
+      <span class="dt">Just</span> unk <span class="ot">-&gt;</span> return ([], unk)
   generateConstraints&#39; (<span class="dt">TyApp</span> ty1 ty2) <span class="fu">=</span> <span class="kw">do</span>
     (c1, n1) <span class="ot">&lt;-</span> generateConstraints&#39; ty1
     (c2, n2) <span class="ot">&lt;-</span> generateConstraints&#39; ty2
     thisName <span class="ot">&lt;-</span> newUnknown
     <span class="kw">let</span> newConstraint <span class="fu">=</span> (n1, <span class="dt">KindArr</span> (<span class="dt">KindUnknown</span> n2) (<span class="dt">KindUnknown</span> thisName))
-    <span class="fu">return</span> <span class="fu">$</span> ((newConstraint<span class="fu">:</span>c1) <span class="fu">++</span> c2, thisName)
+    return <span class="fu">$</span> ((newConstraint<span class="fu">:</span>c1) <span class="fu">++</span> c2, thisName)
     
-<span class="ot">newUnknown ::</span> (<span class="kw">Monad</span> m, <span class="dt">S.MonadState</span> (a, <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> m <span class="dt">Unknown</span>
-newUnknown <span class="fu">=</span> S.modify (<span class="fu">id</span> <span class="fu">***</span> (<span class="fu">+</span><span class="dv">1</span>)) <span class="fu">&gt;&gt;</span> S.get <span class="fu">&gt;&gt;=</span> <span class="fu">return</span> <span class="fu">.</span> <span class="fu">snd</span></code></pre>
+<span class="ot">newUnknown ::</span> (<span class="dt">Monad</span> m, <span class="dt">S.MonadState</span> (a, <span class="dt">Unknown</span>) m) <span class="ot">=&gt;</span> m <span class="dt">Unknown</span>
+newUnknown <span class="fu">=</span> S.modify (id <span class="fu">***</span> (<span class="fu">+</span><span class="dv">1</span>)) <span class="fu">&gt;&gt;</span> S.get <span class="fu">&gt;&gt;=</span> return <span class="fu">.</span> snd</code></pre>
 <p>Constraints are solved by substitution using <code>replace</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">solve ::</span> [<span class="dt">KindConstraint</span>] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">SolutionSet</span>
 solve cs <span class="fu">=</span> solve&#39; cs <span class="dt">KindUnknown</span> <span class="kw">where</span>
-  solve&#39; [] ss <span class="fu">=</span> <span class="fu">return</span> ss
+  solve&#39; [] ss <span class="fu">=</span> return ss
   solve&#39; (c<span class="fu">@</span>(i, x)<span class="fu">:</span>cs) ss <span class="fu">=</span> <span class="kw">do</span>
     occursCheck i x
     cs&#39; <span class="ot">&lt;-</span> substConstraints c cs
     <span class="kw">let</span> ss&#39; <span class="fu">=</span> substSolutionSet c ss
     solve&#39; cs&#39; ss&#39;
-  substConstraints c [] <span class="fu">=</span> <span class="fu">return</span> []
+  substConstraints c [] <span class="fu">=</span> return []
   substConstraints (i, x) ((j, y)<span class="fu">:</span> cs) 
     <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> (<span class="fu">++</span>) <span class="fu">&lt;$&gt;</span> substConstraints (i, x) cs <span class="fu">&lt;*&gt;</span> unifyKinds x y
-    <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> (<span class="fu">:</span>) (j, replace i x y) <span class="fu">&lt;$&gt;</span> substConstraints (i, x) cs
+    <span class="fu">|</span> otherwise <span class="fu">=</span> (<span class="fu">:</span>) (j, replace i x y) <span class="fu">&lt;$&gt;</span> substConstraints (i, x) cs
   substSolutionSet (i, x) <span class="fu">=</span> (<span class="fu">.</span>) (replace i x)</code></pre>
 <p>Now we can write the kind checker. The <code>applications</code> function splits an arrow type into parts, so that kind checking can work on each part.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">applications ::</span> <span class="dt">Ty</span> <span class="ot">-&gt;</span> [<span class="dt">Ty</span>]
@@ -369,17 +369,17 @@ applications t <span class="fu">=</span> applications&#39; t [] <span class="kw"
   applications&#39; t <span class="fu">=</span> (<span class="fu">:</span>) t
 
 <span class="ot">kindCheck ::</span> [<span class="dt">Ty</span>] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Kind</span>)]
-kindCheck <span class="fu">=</span> <span class="fu">uncurry</span> kindCheck&#39; 
-  <span class="fu">.</span> (solve <span class="fu">***</span> <span class="fu">id</span>) 
-  <span class="fu">.</span> (<span class="fu">concat</span> <span class="fu">***</span> <span class="fu">fst</span>) 
-  <span class="fu">.</span> <span class="fu">flip</span> S.runState ([], <span class="dv">0</span>) 
-  <span class="fu">.</span> <span class="fu">flip</span> forM generateConstraints 
-  <span class="fu">.</span> <span class="fu">concatMap</span> applications
+kindCheck <span class="fu">=</span> uncurry kindCheck&#39; 
+  <span class="fu">.</span> (solve <span class="fu">***</span> id) 
+  <span class="fu">.</span> (concat <span class="fu">***</span> fst) 
+  <span class="fu">.</span> flip S.runState ([], <span class="dv">0</span>) 
+  <span class="fu">.</span> flip forM generateConstraints 
+  <span class="fu">.</span> concatMap applications
   <span class="kw">where</span>
 <span class="ot">  kindCheck&#39; ::</span> <span class="dt">Either</span> <span class="dt">String</span> <span class="dt">SolutionSet</span> <span class="ot">-&gt;</span> [(<span class="dt">String</span>, <span class="dt">Unknown</span>)] <span class="ot">-&gt;</span> <span class="dt">Either</span> <span class="dt">String</span> [(<span class="dt">String</span>, <span class="dt">Kind</span>)]
   kindCheck&#39; ss unks <span class="fu">=</span> <span class="kw">do</span>
     ss&#39; <span class="ot">&lt;-</span> ss
-    <span class="fu">return</span> <span class="fu">$</span> <span class="fu">map</span> (<span class="fu">id</span> <span class="fu">***</span> ss&#39;) unks</code></pre>
+    return <span class="fu">$</span> map (id <span class="fu">***</span> ss&#39;) unks</code></pre>
 <p>Let's try it out.</p>
 <pre><code>ghci&gt; parseErr schema exampleSchema &gt;&gt;= fmap (map (id *** prettyKind)) . kindCheck . map snd
 Right [

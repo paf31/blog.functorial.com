@@ -17,10 +17,10 @@ _gaq.push(['_trackPageview']);
 <p>The free monad for a functor <code>f</code> describes &quot;incomplete <code>f</code>-trees&quot; with variables of type <code>a</code>, so it is not surprising that it appears in the type of our constraints:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Free</span> f a <span class="fu">=</span> <span class="dt">Return</span> a <span class="fu">|</span> <span class="dt">Wrap</span> (f (<span class="dt">Free</span> f a))
 
-<span class="kw">instance</span> (<span class="kw">Functor</span> f) <span class="ot">=&gt;</span> <span class="kw">Monad</span> (<span class="dt">Free</span> f) <span class="kw">where</span>
-  <span class="fu">return</span> <span class="fu">=</span> <span class="dt">Return</span>
+<span class="kw">instance</span> (<span class="dt">Functor</span> f) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Free</span> f) <span class="kw">where</span>
+  return <span class="fu">=</span> <span class="dt">Return</span>
   (<span class="dt">Return</span> x) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> f x
-  (<span class="dt">Wrap</span> xs) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> <span class="dt">Wrap</span> (<span class="fu">fmap</span> (<span class="fu">&gt;&gt;=</span> f) xs)</code></pre>
+  (<span class="dt">Wrap</span> xs) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> <span class="dt">Wrap</span> (fmap (<span class="fu">&gt;&gt;=</span> f) xs)</code></pre>
 <p>Type variables are represented as integers:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Unknown</span> <span class="fu">=</span> <span class="dt">Int</span></code></pre>
 <p>Then a constraint for a type functor <code>f</code> asserts equality between an unknown (identified by an integer) and an incomplete <code>f</code>-tree with variables in <code>Unknown</code>. It is represented as a pair:</p>
@@ -31,10 +31,10 @@ _gaq.push(['_trackPageview']);
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">class</span> <span class="dt">Unifiable</span> f <span class="kw">where</span>
 <span class="ot">  unify ::</span> <span class="dt">Free</span> f <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span> <span class="ot">-&gt;</span> [<span class="dt">Constraint</span> f]</code></pre>
 <p>The method replace takes a variable, and a new term, and substitutes all instances of that variable for the term, using the bind operation of the free monad:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">replace ::</span> (<span class="kw">Functor</span> f) <span class="ot">=&gt;</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span>
-replace i x <span class="fu">=</span> <span class="fu">flip</span> (<span class="fu">&gt;&gt;=</span>) (\j <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> j <span class="kw">then</span> x <span class="kw">else</span> <span class="dt">Return</span> j)</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">replace ::</span> (<span class="dt">Functor</span> f) <span class="ot">=&gt;</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Free</span> f <span class="dt">Unknown</span>
+replace i x <span class="fu">=</span> flip (<span class="fu">&gt;&gt;=</span>) (\j <span class="ot">-&gt;</span> <span class="kw">if</span> i <span class="fu">==</span> j <span class="kw">then</span> x <span class="kw">else</span> <span class="dt">Return</span> j)</code></pre>
 <p><code>solve</code> takes a set of constraints and returns a solution set. It does so by repeatedly substituting the first constraint into the remaining constraints, and into the solution set, removing one unknown at a time. As it does so, it may be necessary to unify one or more types, generating further constraints. These are added to the queue of constraints still to be solved.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">solve ::</span> (<span class="kw">Functor</span> f, <span class="dt">Unifiable</span> f) <span class="ot">=&gt;</span> [<span class="dt">Constraint</span> f] <span class="ot">-&gt;</span> <span class="dt">SolutionSet</span> f
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">solve ::</span> (<span class="dt">Functor</span> f, <span class="dt">Unifiable</span> f) <span class="ot">=&gt;</span> [<span class="dt">Constraint</span> f] <span class="ot">-&gt;</span> <span class="dt">SolutionSet</span> f
 solve cs <span class="fu">=</span> solve&#39; cs <span class="dt">Return</span> <span class="kw">where</span>
   solve&#39; [] ss <span class="fu">=</span> ss
   solve&#39; (c<span class="fu">:</span>cs) ss <span class="fu">=</span> 
@@ -44,26 +44,26 @@ solve cs <span class="fu">=</span> solve&#39; cs <span class="dt">Return</span> 
   substConstraints c [] <span class="fu">=</span> []
   substConstraints (i, x) ((j, y)<span class="fu">:</span> cs) 
     <span class="fu">|</span> i <span class="fu">==</span> j <span class="fu">=</span> (substConstraints (i, x) cs) <span class="fu">++</span> (unify x y)
-    <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> ((j, replace i x y) <span class="fu">:</span> substConstraints (i, x) cs)
+    <span class="fu">|</span> otherwise <span class="fu">=</span> ((j, replace i x y) <span class="fu">:</span> substConstraints (i, x) cs)
   substSolutionSet (i, x) <span class="fu">=</span> (<span class="fu">.</span>) (replace i x)</code></pre>
 <p>Now for a small motivating example before moving onto gathering constraints. The following functor defines a single basic type of integers, and the type of arrows:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Type</span> a <span class="fu">=</span> <span class="dt">IntType</span> <span class="fu">|</span> <span class="dt">Arrow</span> a a
 
-<span class="kw">instance</span> <span class="kw">Show</span> (<span class="dt">Free</span> <span class="dt">Type</span> <span class="dt">Unknown</span>) <span class="kw">where</span>
-  <span class="fu">show</span> (<span class="dt">Return</span> i) <span class="fu">=</span> <span class="fu">show</span> i
-  <span class="fu">show</span> (<span class="dt">Wrap</span> <span class="dt">IntType</span>) <span class="fu">=</span> <span class="st">&quot;Int&quot;</span>
-  <span class="fu">show</span> (<span class="dt">Wrap</span> (<span class="dt">Arrow</span> a b)) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> <span class="fu">show</span> a <span class="fu">++</span> <span class="st">&quot; -&quot;</span> <span class="fu">++</span> <span class="fu">show</span> b <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
+<span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Free</span> <span class="dt">Type</span> <span class="dt">Unknown</span>) <span class="kw">where</span>
+  show (<span class="dt">Return</span> i) <span class="fu">=</span> show i
+  show (<span class="dt">Wrap</span> <span class="dt">IntType</span>) <span class="fu">=</span> <span class="st">&quot;Int&quot;</span>
+  show (<span class="dt">Wrap</span> (<span class="dt">Arrow</span> a b)) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> show a <span class="fu">++</span> <span class="st">&quot; -&quot;</span> <span class="fu">++</span> show b <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
 <p>Type defines a functor:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="kw">Functor</span> <span class="dt">Type</span> <span class="kw">where</span>
-  <span class="fu">fmap</span> f <span class="dt">IntType</span> <span class="fu">=</span> <span class="dt">IntType</span>
-  <span class="fu">fmap</span> f (<span class="dt">Arrow</span> t1 t2) <span class="fu">=</span> <span class="dt">Arrow</span> (f t1) (f t2)</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Functor</span> <span class="dt">Type</span> <span class="kw">where</span>
+  fmap f <span class="dt">IntType</span> <span class="fu">=</span> <span class="dt">IntType</span>
+  fmap f (<span class="dt">Arrow</span> t1 t2) <span class="fu">=</span> <span class="dt">Arrow</span> (f t1) (f t2)</code></pre>
 <p>And types can be unified:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Unifiable</span> <span class="dt">Type</span> <span class="kw">where</span>
   unify (<span class="dt">Return</span> i) x <span class="fu">=</span> [(i, x)]
   unify x (<span class="dt">Return</span> i) <span class="fu">=</span> [(i, x)]
   unify (<span class="dt">Wrap</span> <span class="dt">IntType</span>) (<span class="dt">Wrap</span> <span class="dt">IntType</span>) <span class="fu">=</span> []
   unify (<span class="dt">Wrap</span> (<span class="dt">Arrow</span> a b)) (<span class="dt">Wrap</span> (<span class="dt">Arrow</span> c d)) <span class="fu">=</span> (unify a c) <span class="fu">++</span> (unify b d)
-  unify _ _ <span class="fu">=</span> <span class="fu">error</span> <span class="st">&quot;Cannot unify&quot;</span></code></pre>
+  unify _ _ <span class="fu">=</span> error <span class="st">&quot;Cannot unify&quot;</span></code></pre>
 <p>The following example corresponds to the constraints gathered by Algorithm W during the typing of the <code>S</code> combinator:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">example <span class="fu">=</span> [
   (<span class="dv">0</span>, <span class="dt">Wrap</span> (<span class="dt">Arrow</span> (<span class="dt">Return</span> <span class="dv">2</span>) (<span class="dt">Return</span> <span class="dv">3</span>))),
@@ -87,15 +87,15 @@ solve cs <span class="fu">=</span> solve&#39; cs <span class="dt">Return</span> 
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Env</span> a <span class="fu">=</span> <span class="dt">Env</span> {<span class="ot"> find ::</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">Unknown</span> }</code></pre>
 <p>The only environment for closed terms is the empty environment:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nil ::</span> <span class="dt">Env</span> <span class="dt">Void</span>
-nil <span class="fu">=</span> <span class="dt">Env</span> (\_ <span class="ot">-&gt;</span> <span class="fu">undefined</span>)</code></pre>
+nil <span class="fu">=</span> <span class="dt">Env</span> (\_ <span class="ot">-&gt;</span> undefined)</code></pre>
 <p>To add to an environment, we require a new addend in the type variable of the environment:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">add ::</span> <span class="dt">Env</span> a <span class="ot">-&gt;</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> <span class="dt">Env</span> (<span class="dt">Either</span> a b)
-add e i <span class="fu">=</span> <span class="dt">Env</span> (<span class="fu">either</span> (find e) (<span class="fu">const</span> (<span class="kw">Just</span> i)))</code></pre>
+add e i <span class="fu">=</span> <span class="dt">Env</span> (either (find e) (const (<span class="dt">Just</span> i)))</code></pre>
 <p>During the constraint gathering process, we will need to generate names for unknowns. This state monad is used to generate unique type variable names during the constraint-gathering process:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Context</span> a <span class="fu">=</span> <span class="dt">Context</span> {<span class="ot"> runContext ::</span> <span class="dt">Unknown</span> <span class="ot">-&gt;</span> (a, <span class="dt">Unknown</span>) }
 
-<span class="kw">instance</span> <span class="kw">Monad</span> <span class="dt">Context</span> <span class="kw">where</span>
-  <span class="fu">return</span> a <span class="fu">=</span> <span class="dt">Context</span> (\i <span class="ot">-&gt;</span> (a, i))
+<span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">Context</span> <span class="kw">where</span>
+  return a <span class="fu">=</span> <span class="dt">Context</span> (\i <span class="ot">-&gt;</span> (a, i))
   f <span class="fu">&gt;&gt;=</span> g <span class="fu">=</span> <span class="dt">Context</span> (\i <span class="ot">-&gt;</span> <span class="kw">let</span> (a, j) <span class="fu">=</span> runContext f i <span class="kw">in</span> runContext (g a) j)</code></pre>
 <p>And this action generates a new name:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">next ::</span> <span class="dt">Context</span> <span class="dt">Unknown</span>
@@ -105,25 +105,25 @@ next <span class="fu">=</span> <span class="dt">Context</span> (\i <span class="
 generateConstraints t <span class="fu">=</span> <span class="kw">let</span> ((cs, _), _) <span class="fu">=</span> runContext (generateConstraints&#39; nil t) <span class="dv">0</span> <span class="kw">in</span> cs <span class="kw">where</span>
 <span class="ot">  generateConstraints&#39; ::</span> <span class="dt">Env</span> a <span class="ot">-&gt;</span> <span class="dt">Term</span> a <span class="ot">-&gt;</span> <span class="dt">Context</span> ([<span class="dt">Constraint</span> <span class="dt">Type</span>], <span class="dt">Unknown</span>)
   generateConstraints&#39; env (<span class="dt">Var</span> a) <span class="fu">=</span> <span class="kw">do</span>
-    <span class="kw">let</span> (<span class="kw">Just</span> n) <span class="fu">=</span> find env a
-    <span class="fu">return</span> ([], n)
+    <span class="kw">let</span> (<span class="dt">Just</span> n) <span class="fu">=</span> find env a
+    return ([], n)
   generateConstraints&#39; env (<span class="dt">App</span> t1 t2) <span class="fu">=</span> <span class="kw">do</span>
     (c1, n1) <span class="ot">&lt;-</span> generateConstraints&#39; env t1
     (c2, n2) <span class="ot">&lt;-</span> generateConstraints&#39; env t2
     thisName <span class="ot">&lt;-</span> next
     <span class="kw">let</span> newConstraint <span class="fu">=</span> (n1, <span class="dt">Wrap</span> (<span class="dt">Arrow</span> (<span class="dt">Return</span> n2) (<span class="dt">Return</span> thisName)))
-    <span class="fu">return</span> ((newConstraint<span class="fu">:</span>c1) <span class="fu">++</span> c2, thisName)
+    return ((newConstraint<span class="fu">:</span>c1) <span class="fu">++</span> c2, thisName)
   generateConstraints&#39; env (<span class="dt">Abs</span> f) <span class="fu">=</span> <span class="kw">do</span>
     varName <span class="ot">&lt;-</span> next
     <span class="kw">let</span> newenv <span class="fu">=</span> add env varName
     (cs, n) <span class="ot">&lt;-</span> generateConstraints&#39; newenv (f ())
     thisName <span class="ot">&lt;-</span> next
     <span class="kw">let</span> newConstraint <span class="fu">=</span> (thisName, <span class="dt">Wrap</span> (<span class="dt">Arrow</span> (<span class="dt">Return</span> varName) (<span class="dt">Return</span> n)))
-    <span class="fu">return</span> ((newConstraint<span class="fu">:</span>cs), thisName)</code></pre>
+    return ((newConstraint<span class="fu">:</span>cs), thisName)</code></pre>
 <p>Finally, here are some more examples, the <code>S</code> and <code>K</code> combinators:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">s <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\z <span class="ot">-&gt;</span> <span class="dt">App</span> (<span class="dt">App</span> (<span class="dt">Var</span> <span class="fu">$</span> <span class="kw">Left</span> <span class="fu">$</span> <span class="kw">Left</span> <span class="fu">$</span> <span class="kw">Right</span> <span class="fu">$</span> x) (<span class="dt">Var</span> <span class="fu">$</span> <span class="kw">Right</span> <span class="fu">$</span> z)) (<span class="dt">App</span> (<span class="dt">Var</span> <span class="fu">$</span> <span class="kw">Left</span> <span class="fu">$</span> <span class="kw">Right</span> <span class="fu">$</span> y) (<span class="dt">Var</span> <span class="fu">$</span> <span class="kw">Right</span> <span class="fu">$</span> z)))))
+<pre class="sourceCode haskell"><code class="sourceCode haskell">s <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\z <span class="ot">-&gt;</span> <span class="dt">App</span> (<span class="dt">App</span> (<span class="dt">Var</span> <span class="fu">$</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="dt">Right</span> <span class="fu">$</span> x) (<span class="dt">Var</span> <span class="fu">$</span> <span class="dt">Right</span> <span class="fu">$</span> z)) (<span class="dt">App</span> (<span class="dt">Var</span> <span class="fu">$</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="dt">Right</span> <span class="fu">$</span> y) (<span class="dt">Var</span> <span class="fu">$</span> <span class="dt">Right</span> <span class="fu">$</span> z)))))
 
-k <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Var</span> <span class="fu">$</span> <span class="kw">Left</span> <span class="fu">$</span> <span class="kw">Right</span> <span class="fu">$</span> x))</code></pre>
+k <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Var</span> <span class="fu">$</span> <span class="dt">Left</span> <span class="fu">$</span> <span class="dt">Right</span> <span class="fu">$</span> x))</code></pre>
 <p>We can test these examples in GHCi as follows:</p>
 <blockquote>
 <p>ghci&gt; solve (generateConstraints s) 8</p>

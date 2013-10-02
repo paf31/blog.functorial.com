@@ -16,29 +16,29 @@ _gaq.push(['_trackPageview']);
 <span class="kw">data</span> <span class="dt">Free</span> f a <span class="fu">=</span> <span class="dt">Return</span> a <span class="fu">|</span> <span class="dt">Bind</span> (f (<span class="dt">Free</span> f a))</code></pre>
 <p>The free monad for a functor <code>f</code> is given by the fixed point of the bifunctor <code>X -&gt; A -&gt; F (X + A)</code> where the fixed point is taken over <code>X</code>.</p>
 <p>Thus, the free monad describes structures whose pattern of recursion looks like <code>f</code>, but where whole substructures can be replaced with a leaf of type <code>A</code>. The free monad defines a functor in <code>A</code>, and a monad, for any functor <code>f</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="kw">Functor</span> f) <span class="ot">=&gt;</span> <span class="kw">Functor</span> (<span class="dt">Free</span> f) <span class="kw">where</span>
-  <span class="fu">fmap</span> f (<span class="dt">Return</span> x) <span class="fu">=</span> <span class="dt">Return</span> (f x)
-  <span class="fu">fmap</span> f (<span class="dt">Bind</span> xs) <span class="fu">=</span> <span class="dt">Bind</span> (<span class="fu">fmap</span> (<span class="fu">fmap</span> f) xs)
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> (<span class="dt">Functor</span> f) <span class="ot">=&gt;</span> <span class="dt">Functor</span> (<span class="dt">Free</span> f) <span class="kw">where</span>
+  fmap f (<span class="dt">Return</span> x) <span class="fu">=</span> <span class="dt">Return</span> (f x)
+  fmap f (<span class="dt">Bind</span> xs) <span class="fu">=</span> <span class="dt">Bind</span> (fmap (fmap f) xs)
 
-<span class="kw">instance</span> (<span class="kw">Functor</span> f) <span class="ot">=&gt;</span> <span class="kw">Monad</span> (<span class="dt">Free</span> f) <span class="kw">where</span>
-  <span class="fu">return</span> <span class="fu">=</span> <span class="dt">Return</span>
+<span class="kw">instance</span> (<span class="dt">Functor</span> f) <span class="ot">=&gt;</span> <span class="dt">Monad</span> (<span class="dt">Free</span> f) <span class="kw">where</span>
+  return <span class="fu">=</span> <span class="dt">Return</span>
   (<span class="dt">Return</span> x) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> f x
-  (<span class="dt">Bind</span> xs) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> <span class="dt">Bind</span> <span class="fu">$</span> <span class="fu">fmap</span> (<span class="fu">&gt;&gt;=</span> f) xs</code></pre>
+  (<span class="dt">Bind</span> xs) <span class="fu">&gt;&gt;=</span> f <span class="fu">=</span> <span class="dt">Bind</span> <span class="fu">$</span> fmap (<span class="fu">&gt;&gt;=</span> f) xs</code></pre>
 <p>As a mapping from functors to monads, <code>Free</code> is also a functor, from the category of endofunctors to the category of monads and monad morphisms. A monad morphism is just a natural transformation which commutes with the return and bind operations.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mapFree ::</span> (<span class="kw">Functor</span> f, <span class="kw">Functor</span> g) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> f a <span class="ot">-&gt;</span> g a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> <span class="dt">Free</span> g a
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">mapFree ::</span> (<span class="dt">Functor</span> f, <span class="dt">Functor</span> g) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> f a <span class="ot">-&gt;</span> g a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> <span class="dt">Free</span> g a
 mapFree f (<span class="dt">Return</span> x) <span class="fu">=</span> <span class="dt">Return</span> x
-mapFree f (<span class="dt">Bind</span> xs) <span class="fu">=</span> <span class="dt">Bind</span> <span class="fu">$</span> f <span class="fu">$</span> <span class="fu">fmap</span> (mapFree f) xs</code></pre>
+mapFree f (<span class="dt">Bind</span> xs) <span class="fu">=</span> <span class="dt">Bind</span> <span class="fu">$</span> f <span class="fu">$</span> fmap (mapFree f) xs</code></pre>
 <p>Now we can show that this functor from endofunctors to monads is actually left adjoint to the forgetful functor which takes a monad and forgets the monadic structure.</p>
 <p>We need to give a natural equivalence between hom-sets <code>Free f ~&gt; m</code> in the category of monads and monad morphisms, and <code>f -&gt; Forget m</code> in the category of endofunctors.</p>
 <p>That is, we need to define mappings with the following signatures:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">leftAdjunct ::</span> (<span class="kw">Functor</span> f, <span class="kw">Monad</span> m) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> f a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> m a
-<span class="ot">rightAdjunct ::</span> (<span class="kw">Functor</span> f, <span class="kw">Monad</span> m) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> m a</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">leftAdjunct ::</span> (<span class="dt">Functor</span> f, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> f a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> m a
+<span class="ot">rightAdjunct ::</span> (<span class="dt">Functor</span> f, <span class="dt">Monad</span> m) <span class="ot">=&gt;</span> (forall a<span class="fu">.</span> <span class="dt">Free</span> f a <span class="ot">-&gt;</span> m a) <span class="ot">-&gt;</span> f a <span class="ot">-&gt;</span> m a</code></pre>
 <p>And then show that these are inverses.</p>
 <p>Let's define these functions by following the types:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">leftAdjunct _ (<span class="dt">Return</span> x) <span class="fu">=</span> <span class="fu">return</span> x
-leftAdjunct phi (<span class="dt">Bind</span> xs) <span class="fu">=</span> join <span class="fu">$</span> phi <span class="fu">$</span> <span class="fu">fmap</span> (leftAdjunct phi) xs
+<pre class="sourceCode haskell"><code class="sourceCode haskell">leftAdjunct _ (<span class="dt">Return</span> x) <span class="fu">=</span> return x
+leftAdjunct phi (<span class="dt">Bind</span> xs) <span class="fu">=</span> join <span class="fu">$</span> phi <span class="fu">$</span> fmap (leftAdjunct phi) xs
 
-rightAdjunct psi <span class="fu">=</span> psi <span class="fu">.</span> <span class="dt">Bind</span> <span class="fu">.</span> (<span class="fu">fmap</span> <span class="dt">Return</span>)</code></pre>
+rightAdjunct psi <span class="fu">=</span> psi <span class="fu">.</span> <span class="dt">Bind</span> <span class="fu">.</span> (fmap <span class="dt">Return</span>)</code></pre>
 <p>Using parametricity, it is not hard to see that <code>leftAdjunct</code> followed by <code>rightAdjunct</code> must be the identity since its type is</p>
 <pre><code>forall f m. (Functor f, Monad m) =&gt; (forall a. f a -&gt; m a) -&gt; (forall a. f a -&gt; m a)</code></pre>
 <p>In the other direction, we have</p>

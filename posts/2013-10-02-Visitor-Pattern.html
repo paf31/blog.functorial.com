@@ -1,0 +1,293 @@
+<!DOCTYPE HTML>
+<html><head><title>functorial.com - The Visitor Pattern and Pattern Matching</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
+_gaq.push(['_setAccount', 'UA-33896432-1']);
+_gaq.push(['_trackPageview']);
+(function() {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>The Visitor Pattern and Pattern Matching</h2><p><small>by Phil Freeman on 2013/10/02</small></p><hr><p>For many developers using Object Oriented programming languages, the Visitor Pattern is one of the first design patterns to provide a major roadblock in terms of understanding. It doesn't help that the typical examples are not particularly enlightening, but in my experience, it can be very difficult to explain to a beginner what is going on and why the design pattern is useful, especially with all of the syntactic noise that comes with a language like Java or C#.</p>
+<p>I find it much easier to explain the visitor pattern by taking a detour through pattern matching, which can provide useful motivating examples.</p>
+<h2 id="motivating-example">Motivating Example</h2>
+<p>Suppose we want to write a method which calculates payroll for different types of employees. We're given the following business requirement: all employees are of one of two types:</p>
+<ul>
+<li>Hourly employees</li>
+<li>Salaried employees</li>
+</ul>
+<p>One way to model this in an Object Oriented language would be to create an abstract class called <code>Employee</code> with three concrete subclasses <code>HourlyEmployee</code>, <code>SalariedEmployee</code>. <code>Employee</code> would be defined as an interface with a method for calculating the employee's monthly pay, and each employee class would be responsible for implementing it.</p>
+<p>It might look something like this:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> Employee {
+
+    <span class="kw">public</span> <span class="kw">abstract</span> <span class="dt">int</span> <span class="fu">calculatePay</span>();
+}
+
+<span class="kw">public</span> <span class="kw">class</span> HourlyEmployee <span class="kw">implements</span> Employee {
+
+    <span class="kw">public</span> <span class="dt">int</span> hourlyRate;
+    <span class="kw">public</span> <span class="dt">int</span> hoursWorked;
+
+    <span class="kw">public</span> <span class="dt">int</span> <span class="fu">calculatePay</span>() {
+        <span class="kw">return</span> hoursWorked * hourlyRate;
+    }
+}
+
+<span class="kw">public</span> <span class="kw">class</span> SalariedEmployee <span class="kw">implements</span> Employee {
+
+    <span class="kw">public</span> <span class="dt">int</span> salary;
+
+    <span class="kw">public</span> <span class="dt">int</span> <span class="fu">calculatePay</span>() {
+        <span class="kw">return</span> salary / <span class="dv">12</span>;
+    }
+}</code></pre>
+<h2 id="the-problem">The Problem</h2>
+<p>You complete the assignment and the code is deployed. It works so well that other developers want to make use of your code as a library in their own work.</p>
+<p>Now suppose another business requirement is given: the number of paid vacation hours will be determined by the employee type; hourly employees will be given paid time off depending on the number of hours worked, salaried employees will be given a fixed amount of time off, etc.</p>
+<p>Now the problem with the original approach rears its head. The developer responsible for this change should use your code as a library, and will not have access to the original code or the means to modify it. Here's the issue:</p>
+<p><em>Subclass polymorphism easily allows the addition of new types of object, but does not easily allow the addition of new methods</em></p>
+<p>This is the problem that the Visitor Pattern solves.</p>
+<p><em>The Visitor Pattern easily allows the addition of new methods, but does not easily allow the addition of new types of object</em></p>
+<p>We know that the types of employees are not likely to change, but we would like to add new methods to the Employee type, so it seems as if the Visitor pattern would be more appropriate.</p>
+<p>When deciding if subclass inheritance is the correct solution for a problem, as yourself <em>&quot;would I prefer the consumers of my API to be able to add new subclasses, or new operations more easily?&quot;</em></p>
+<h2 id="a-non-solution-using-reflection">A Non-Solution using Reflection</h2>
+<p>One anti-pattern which I sometimes see is to solve this problem by using reflection. In C#, the proposed solution might look something like this:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="dt">int</span> <span class="fu">computeVacationHours</span>(Employee employee) {
+    <span class="kw">if</span> (employee is HourlyEmployee) {
+        HourlyExployee hourlyEmployee = (HourlyEmployee) employee;
+        <span class="kw">return</span> ...
+    } <span class="kw">else</span> <span class="kw">if</span> (employee is SalariedEmployee) {
+        SalariedEmployee salariedEmployee = (SalariedEmployee) employee;
+        <span class="kw">return</span> ...
+    } <span class="kw">else</span> {
+        <span class="kw">throw</span> <span class="kw">new</span> <span class="fu">ArgumentException</span>(<span class="st">&quot;Unknown employee type!&quot;</span>);
+    }
+}</code></pre>
+<p>But we can do better. It would be nice if we didn't have to throw an exception in the final line. What we would really like is to statically check that all cases have been handled. If we could somehow prevent additional subclasses of <code>Employee</code> from being defined elsewhere, we wouldn't need to throw an exception. This problem can be solved using the visitor pattern.</p>
+<h2 id="solution-using-pattern-matching">Solution Using Pattern Matching</h2>
+<p>When I am trying to explain the purpose and implementation of the visitor pattern to another developer, I like to show them how I would solve the problem in a language with pattern matching. I then attempt to sell them the Visitor Pattern as the OOP-ification of pattern matching.</p>
+<p>In Haskell, I would define the type of employees as follows:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Employee</span> 
+  <span class="fu">=</span> <span class="dt">HourlyEmployee</span> {<span class="ot"> hourlyRate ::</span> <span class="dt">Double</span>,<span class="ot"> hoursWorked ::</span> <span class="dt">Douvle</span> }
+  <span class="fu">|</span> <span class="dt">SalariedEmployee</span> {<span class="ot"> salary ::</span> <span class="dt">Double</span> }</code></pre>
+<p>Hopefully, this is self-explanatory, but in case it isn't: reading the vertical bar as &quot;or&quot;, and the double colon as &quot;of type&quot;, this would read as &quot;An <code>Employee</code> is either an <code>HourlyEmployee</code> with an <code>hourlyRate</code> of type <code>Double</code>, or a <code>SalariedEmployee</code> with a salary of type <code>Double</code>.</p>
+<p>Note that an <code>Employee</code> is either hourly or salaried, but never both, and an <code>Employee</code> constructed with the <code>SalariedEmployee</code> does not have an <code>hourlyRate</code>, for example.</p>
+<p>With that, the original pay rate calculation, using pattern matching, would look like this:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">calculatePay ::</span> <span class="dt">Employee</span> <span class="ot">-&gt;</span> <span class="dt">Double</span>
+calculatePay (<span class="dt">HourlyEmployee</span> hourlyRate hoursWorked) <span class="fu">=</span> hourlyRate <span class="fu">*</span> hoursWorked
+calculatePay (<span class="dt">SalariedEmployee</span> salary) <span class="fu">=</span> salary <span class="fu">/</span> <span class="dv">12</span><span class="fu">.</span><span class="dv">0</span></code></pre>
+<p>Notice how the code is structured: it is expressed as a series of cases, each of which matches its input data using a specific pattern. The pattern binds some variables such as <code>hoursWorked</code>, which can then be used in the remainder of the computation, on the right hand side of the equals sign.</p>
+<h2 id="solution-using-the-visitor-pattern">Solution Using the Visitor Pattern</h2>
+<p>If the visitor pattern is just the &quot;OOP-ification of pattern matching&quot;, then we should be able to derive it by attempting to translate the previous code into Java.</p>
+<p>First, we encapsulate a computation which works by case analysis using an interface:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> EmployeeCaseAnalysis&lt;Result&gt; {
+
+    Result <span class="fu">matchHourlyEmployee</span>(Double hourlyRate, Double hoursWorked);
+    
+    Result <span class="fu">matchSalariedEmployee</span>(Double salary);
+}</code></pre>
+<p>An implementation of EmployeeCaseAnalysis<Result> needs to provide two methods: one calculates the result for an hourly employee, and the other calculates the result for a salaried employee.</p>
+<p>The <code>Result</code> type parameter here is used to indicate the type of the result of the computation. More commonly, you will see a version of this class with no type parameter, which would be used when simply performing an action on the data, not transforming it.</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> EmployeeCaseAnalysis {
+
+    <span class="dt">void</span> <span class="fu">matchHourlyEmployee</span>(Double hourlyRate, Double hoursWorked);
+    
+    <span class="dt">void</span> <span class="fu">matchSalariedEmployee</span>(Double salary);
+}</code></pre>
+<p>Now, we define the <code>Employee</code> abstract class. What is an <code>Employee</code>? Well, given any computation by case analysis, we want to be able to perform it and get a result. Here is the result:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> Employee {
+
+    <span class="dt">void</span> <span class="fu">performCaseAnalysis</span>(EmployeeCaseAnalysis caseAnalysis);
+    
+    Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis);
+}</code></pre>
+<p>A concrete class of <code>Employee</code> must provide a way to perform a case analysis with no result, or a case analysis with a result, no matter what its result type.</p>
+<p>In fact, there are only two sensible ways to implement this specification: we can either call the <code>matchHourlyEmployee</code> method on the provided <code>EmployeeCaseAnalysis</code> object, if we have an <code>hourlyRate</code> and a number of <code>hoursWorked</code>, or we can call the <code>matchSalariedEmployee</code> method if we have a <code>salary</code>.</p>
+<p>Let's call these two implementations <code>HourlyEmployee</code> and <code>SalariedEmployee</code>:</p>
+<p><sub>~</sub>{.java} public class HourlyEmployee implements Employee {</p>
+<pre><code>public int hourlyRate;
+public int hoursWorked;
+
+public void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis) {
+    caseAnalysis.matchHourlyEmployee(hourlyRate, hoursWorked);
+}
+
+public Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis) {
+    return caseAnalysis.matchHourlyEmployee(hourlyRate, hoursWorked);
+}</code></pre>
+<p>}</p>
+<p>public class SalariedEmployee implements Employee {</p>
+<pre><code>public int salary;
+
+public void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis) {
+    caseAnalysis.matchSalariedEmployee(salary);
+}
+
+public Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis) {
+    return caseAnalysis.matchSalariedEmployee(salary);
+}</code></pre>
+<p>}</p>
+<p>After some renaming, the code above looks just like code implemented using the visitor pattern. What I have called <code>EmployeeCaseAnalysis</code> might be renamed to <code>EmployeeVisitor</code>, and the <code>performCaseAnalysis</code> methods would most likely be renamed to <code>visit</code> or <code>apply</code>. Here is the full version after the renamings:</p>
+<p><sub>~</sub>{.java} public interface Employee {</p>
+<pre><code>void visit(EmployeeVisitor visitor);
+
+Result visit&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor);</code></pre>
+<p>}</p>
+<p>public interface EmployeeVisitor {</p>
+<pre><code>void visitHourlyEmployee(Double hourlyRate);
+
+void visitSalariedEmployee(Double salary);</code></pre>
+<p>}</p>
+<p>public interface EmployeeVisitor<Result> {</p>
+<pre><code>Result visitHourlyEmployee(Double hourlyRate);
+
+Result visitSalariedEmployee(Double salary);</code></pre>
+<p>}</p>
+<p>public class HourlyEmployee implements Employee {</p>
+<pre><code>public int hourlyRate;
+public int hoursWorked;
+
+public void visit(EmployeeVisitor visitor) {
+    visitor.visitHourlyEmployee(hourlyRate, hoursWorked);
+}
+
+public Result visit&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor) {
+    return visitor.visitHourlyEmployee(hourlyRate, hoursWorked);
+}</code></pre>
+<p>}</p>
+<p>public class SalariedEmployee implements Employee {</p>
+<pre><code>public int salary;
+
+public void visit(EmployeeVisitor visitor) {
+    visitor.visitSalariedEmployee(salary);
+}
+
+public Result visit&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor) {
+    return visitor.visitSalariedEmployee(salary);
+}</code></pre>
+<p>}</p>
+<p>It is also common to pass along the entire subclass of <code>Employee</code> to the <code>visitX</code> methods in <code>EmployeeVisitor</code>.</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> EmployeeVisitor {
+
+    <span class="dt">void</span> <span class="fu">visitHourlyEmployee</span>(HourlyEmployee employee);
+    
+    <span class="dt">void</span> <span class="fu">visitSalariedEmployee</span>(SalariedEmployee employee);
+}</code></pre>
+<p>But I will skip that here.</p>
+<p>It is now possible to implement our original payroll computation as a subclass of <code>EmployeeVisitor</code>:</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">class</span> PayrollCalulator <span class="kw">implements</span> EmployeeVisitor&lt;Double&gt; {
+
+    Double <span class="fu">visitHourlyEmployee</span>(Double hourlyRate, Double hoursWorked) {
+        <span class="kw">return</span> hourlyRate * hoursWorked;
+    }
+    
+    Double <span class="fu">visitSalariedEmployee</span>(Double salary) {
+        <span class="kw">return</span> salary / <span class="fl">12.0</span>;
+    }
+}</code></pre>
+<p>However, now our coworker can implement the computation of the number of vacation hours without modifying the original code!</p>
+<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">class</span> VacationCalculator <span class="kw">implements</span> EmployeeVisitor&lt;Integer&gt; {
+   
+    <span class="kw">public</span> <span class="dt">int</span> maxVacationHours;
+    <span class="kw">public</span> <span class="dt">int</span> vacationHoursAccruedPerHourWorked;
+
+    Integer <span class="fu">visitHourlyEmployee</span>(Double hourlyRate, Double hoursWorked) {
+        <span class="kw">return</span> Math.<span class="fu">min</span>(maxVacationHours, 
+            Math.<span class="fu">floor</span>(hoursWorked / vacationHoursAccruedPerHourWorked));
+    }
+    
+    Integer <span class="fu">visitSalariedEmployee</span>(Double salary) {
+        <span class="kw">return</span> maxVacationHours;
+    }
+}</code></pre>
+<h2 id="a-recipe-for-visitors">A Recipe for Visitors</h2>
+<p>That is the essence of the visitor pattern. We can summarise what we did in a number of bullet points which can be executed any time we'd like to be able to perform abstract case analyses in an object oriented language.</p>
+<p>Suppose we'd like to perform case analysis on our new data type <code>Foo</code>:</p>
+<ol type="1">
+<li>Add an interface caled <code>FooVisitor</code>.</li>
+<li>Add a void interface method to <code>FooVisitor</code> for each possible case in a case analysis, whose method arguments provide the additional data which is available in that case.</li>
+<li>Optionally repeat steps 1 and 2 for a generic interface <code>FooVisitor&lt;Result&gt;</code>, in which all interface methods return a result of type <code>Result</code>.</li>
+<li>Add an interface called <code>Foo</code>.</li>
+<li>Add a void interface method <code>visit</code> to <code>Foo</code> which takes a <code>FooVisitor</code>.</li>
+<li>Optionally add an interface method <code>visit</code> to <code>Foo</code> which takes a <code>FooVisitor&lt;Result&gt;</code> and returns a <code>Result</code>.</li>
+<li>For each case, add a class implementing <code>Foo</code>, whose implementations of <code>visit</code> call the appropriate method on <code>FooVisitor</code>.</li>
+</ol>
+<p>It's a lot of boilerplate (which can be automated), but which gives us the flexibility to define new methods without modifying the original code.</p>
+<h2 id="a-brief-type-theoretic-detour">A Brief Type-Theoretic Detour</h2>
+<p>You may wish to skip this section as it is not really necessary for understanding the visitor pattern, but I have included it since it may be helpful.</p>
+<p>Suppose for the time being that I have a data type which supports case analysis with only two cases, as in the <code>Employee</code> example. The following argument works with any number of cases, but this assumption will simplify what follows. Let's call the data type <code>Foo</code>, and the two cases <code>FooA</code> and <code>FooB</code>.</p>
+<p>In Haskell, we could define <code>Foo</code> using a type-synonym: <code>type Foo = Either FooA FooB</code>.</p>
+<p><code>Either</code> is what is known as a &quot;sum type&quot;, because it is analogous at a type level to a sum in algebra. It is defined as follows:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Either</span> a b <span class="fu">=</span> <span class="dt">Left</span> a <span class="fu">|</span> <span class="dt">Right</span> b</code></pre>
+<p>That is, a value of type <code>Either a b</code> is <em>either</em> constructed using <code>Left</code>, in which case it contains a value of type <code>a</code>, or with <code>Right</code>, in which case it contains a value of type <code>b</code>. A value of type <code>Either a b</code> contains <em>either</em> an <code>a</code> or a <code>b</code>, but not both.</p>
+<p>Now, consider a function which takes a value of type <code>Foo</code> and returns something of type <code>result</code>. Let's call such a thing an <code>FooFunction result</code>:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">FooFunction</span> result <span class="fu">=</span> <span class="dt">Foo</span> <span class="ot">-&gt;</span> result</code></pre>
+<p>Now <code>Foo</code> is defined by a type synonym, which we can expand. I'll write in pseudo-Haskell here, and the symbol <code>~</code> will be used to indicate that two types are <em>isomorphic</em>, i.e. that they contain the same values in a possibly different representation.</p>
+<pre><code>FooFunction result ~ Either FooA FooB -&gt; result</code></pre>
+<p>We can now use the fact that the function type <code>Either a b -&gt; result</code> is isomorphic to a pair of functions <code>(a -&gt; result, b -&gt; result)</code>. This can be witnessed by writing out the isomorphism explicitly in Haskell, but should be somewhat obvious: if we want a <code>result</code> given only an <code>Either a b</code>, and we don't know whether we have a <code>Left</code> or a <code>Right</code>, then we need to be able to handle both cases, so we need two functions, one which returns a <code>result</code> given an <code>a</code>, and one which returns a result given a <code>b</code>.</p>
+<pre><code>FooFunction result ~ (FooA -&gt; result, FooB -&gt; result)</code></pre>
+<p>To aid understanding, I will represent the pair of functions as a record, giving the two functions useful names:</p>
+<pre><code>FooFunction result ~ { visitFooA :: FooA -&gt; result, visitFooB :: FooB -&gt; result }</code></pre>
+<p>Now consider the following type: <code>forall result. FooFunction result -&gt; result</code>. I claim that this type is isomorphic to the original type <code>Foo</code>, but I will omit a proof. Given that, you should be convinced that</p>
+<pre><code>Foo ~ forall result. { visitFooA :: FooA -&gt; result, visitFooB :: FooB -&gt; result } -&gt; result</code></pre>
+<p>and that this isomorphism captures the idea behind the visitor pattern at the type level.</p>
+<h2 id="extending-the-visitor-pattern">Extending the Visitor Pattern</h2>
+<p>The idea behind the visitor pattern can be combined with other features of languages like Java and C# to create new patterns and enable new forms of abstraction. Here are some ideas:</p>
+<ul>
+<li>Use generic functions to emulate <em>existential types</em>.</li>
+<li>Use generic type parameters to emulate <em>generalized algebraic data types</em>.</li>
+</ul>
+<p>I will leave these as extended exercises for the interested reader, but details can be found in some of my previous posts.</p>
+<h2 id="the-expression-problem-and-type-classes">The Expression Problem and Type Classes</h2>
+<p>We have seen that the visitor pattern is useful when we have a fixed set of subclasses and would like to extend the set of operations on those subclasses. This is in contrast to subclass polymorphism which allows the addition of new subclasses for a fixed set of operations.</p>
+<p>This begs the question: can we have the benefits of both? That is, can we write an abstraction which easily allows the definition of new subclasses, and new operations, without modification to the original code, and with support from the compiler.</p>
+<p>This problem is called the Expression Problem and has been the subject of a great deal of research. In Haskell, the problem is solved using <em>type classes</em>, also known in other languages as <em>traits</em>. New &quot;subclasses&quot; can be defined by adding new data types and writing associated <em>type class instances</em>, and new operations can be defined by writing new <em>type classes</em> and retroactively providing instances for all existing data types.</p>
+<p>For example, we might have two different data types for our two employee types in one module:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Employee.Types</span>
+
+<span class="kw">data</span> <span class="dt">HourlyEmployee</span> <span class="fu">=</span> <span class="dt">HourlyEmployee</span> {<span class="ot"> hourlyRate ::</span> <span class="dt">Double</span>,<span class="ot"> hoursWorked ::</span> <span class="dt">Double</span> }
+
+<span class="kw">data</span> <span class="dt">SalariedEmployee</span> <span class="fu">=</span> <span class="dt">SalariedEmployee</span> {<span class="ot"> salary ::</span> <span class="dt">Double</span> }</code></pre>
+<p>And we could define a type class which represents the operation of computing monthly pay, in a second module:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Employee.Payroll</span>
+
+<span class="kw">class</span> <span class="dt">Payable</span> employee <span class="kw">where</span>
+<span class="ot">    pay ::</span> employee <span class="ot">-&gt;</span> <span class="dt">Double</span></code></pre>
+<p>We can define type class instances for our existing employee types:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="dt">Payable</span> <span class="dt">HourlyEmployee</span> <span class="kw">where</span>
+    pay (<span class="dt">HourlyEmployee</span> hourlyRate hoursWorked) <span class="fu">=</span> hourlyRate <span class="fu">*</span> hoursWorked
+    
+<span class="kw">instance</span> <span class="dt">Payable</span> <span class="dt">SalariedEmployee</span> <span class="kw">where</span>
+    pay (<span class="dt">SalariedEmployee</span> salary) <span class="fu">=</span> salary <span class="fu">/</span> <span class="dv">12</span><span class="fu">.</span><span class="dv">0</span></code></pre>
+<p>Now when a coworker would like to calculate paid vacation allowance, they can do so in another module by defining another type class and associated instances:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">maxTimeOff ::</span> <span class="dt">Double</span>
+<span class="ot">hoursOffPerHourWorked ::</span> <span class="dt">Double</span>
+
+<span class="kw">class</span> <span class="dt">Vacation</span> employee <span class="kw">where</span>
+<span class="ot">    timeOff ::</span> employee <span class="ot">-&gt;</span> <span class="dt">Int</span>
+    
+<span class="kw">instance</span> <span class="dt">Vacation</span> <span class="dt">HourlyEmployee</span> <span class="kw">where</span>
+    timeOff (<span class="dt">HourlyEmployee</span> _ hoursWorked) <span class="fu">=</span> min maxTimeOff (hoursWorked <span class="fu">/</span> hoursOffPerHourWorked)
+    
+<span class="kw">instance</span> <span class="dt">Vacation</span> <span class="dt">SalariedEmployee</span> <span class="kw">where</span>
+    timeOff (<span class="dt">SalariedEmployee</span> _) <span class="fu">=</span> maxTimeOff</code></pre>
+<p>Now, despite their previous advice, management hands down a third business requirement that there will be a new employee type, who is to be paid a lump sum on completion of the allocated work, and who receives no paid vacation:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Employee.Contract</span>
+
+<span class="kw">data</span> <span class="dt">ContractEmployee</span> <span class="fu">=</span> <span class="dt">ContractEmployee</span> {<span class="ot"> workCost ::</span> <span class="dt">Double</span>,<span class="ot"> wasWorkCompletedThisMonth ::</span> <span class="dt">Bool</span> }
+
+<span class="kw">instance</span> <span class="dt">Payable</span> <span class="dt">ContractEmployee</span> <span class="kw">where</span>
+    pay (<span class="dt">ContractEmployee</span> _ <span class="dt">False</span>) <span class="fu">=</span> <span class="dv">0</span><span class="fu">.</span><span class="dv">0</span>
+    pay (<span class="dt">ContractEmployee</span> workCost <span class="dt">True</span>) <span class="fu">=</span> workCost
+
+<span class="kw">instance</span> <span class="dt">Vacation</span> <span class="dt">ContractEmployee</span> <span class="kw">where</span>
+    timeOff (<span class="dt">ContractEmployee</span> _ _) <span class="fu">=</span> <span class="dv">0</span></code></pre>
+<p>This time, an employee was able to implement a new data type supporting existing operations by implementing existing type classes, without the need to modify any existing code.</p>
+<p>Type classes allow Haskell developers to do more while writing less code. They allow a form of ad-hoc polymorphism and enable a degree of separation which is not possible in other languages.</p>
+<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
+/* * * DON'T EDIT BELOW THIS LINE * * */
+(function() {
+var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
