@@ -219,22 +219,25 @@ public Result accept&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor) {
 <p>It's a lot of boilerplate (which can be automated), but which gives us the flexibility to define new methods without modifying the original code.</p>
 <h2 id="a-brief-type-theoretic-detour">A Brief Type-Theoretic Detour</h2>
 <p>You may wish to skip this section as it is not really necessary for understanding the visitor pattern, but I have included it since it may be helpful.</p>
-<p>Suppose for the time being that I have a data type which supports case analysis with only two cases, as in the <code>Employee</code> example. The following argument works with any number of cases, but this assumption will simplify what follows. Let's call the data type <code>Foo</code>, and the two cases <code>FooA</code> and <code>FooB</code>.</p>
-<p>In Haskell, we could define <code>Foo</code> using a type-synonym: <code>type Foo = Either FooA FooB</code>.</p>
-<p><code>Either</code> is what is known as a &quot;sum type&quot;, because it is analogous at a type level to a sum in algebra. It is defined as follows:</p>
+<p>A simple example of a type which supports case analysis in Haskell is the <code>Either</code> data type, defined as follows:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Either</span> a b <span class="fu">=</span> <span class="dt">Left</span> a <span class="fu">|</span> <span class="dt">Right</span> b</code></pre>
-<p>That is, a value of type <code>Either a b</code> is <em>either</em> constructed using <code>Left</code>, in which case it contains a value of type <code>a</code>, or with <code>Right</code>, in which case it contains a value of type <code>b</code>. A value of type <code>Either a b</code> contains <em>either</em> an <code>a</code> or a <code>b</code>, but not both.</p>
-<p>Now, consider a function which takes a value of type <code>Foo</code> and returns something of type <code>result</code>. Let's call such a thing an <code>FooFunction result</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">FooFunction</span> result <span class="fu">=</span> <span class="dt">Foo</span> <span class="ot">-&gt;</span> result</code></pre>
-<p>Now <code>Foo</code> is defined by a type synonym, which we can expand. I'll write in pseudo-Haskell here, and the symbol <code>~</code> will be used to indicate that two types are <em>isomorphic</em>, i.e. that they contain the same values in a possibly different representation.</p>
-<pre><code>FooFunction result ~ Either FooA FooB -&gt; result</code></pre>
-<p>We can now use the fact that the function type <code>Either a b -&gt; result</code> is isomorphic to a pair of functions <code>(a -&gt; result, b -&gt; result)</code>. This can be witnessed by writing out the isomorphism explicitly in Haskell, but should be somewhat obvious: if we want a <code>result</code> given only an <code>Either a b</code>, and we don't know whether we have a <code>Left</code> or a <code>Right</code>, then we need to be able to handle both cases, so we need two functions, one which returns a <code>result</code> given an <code>a</code>, and one which returns a result given a <code>b</code>.</p>
-<pre><code>FooFunction result ~ (FooA -&gt; result, FooB -&gt; result)</code></pre>
-<p>To aid understanding, I will represent the pair of functions as a record, giving the two functions useful names:</p>
-<pre><code>FooFunction result ~ { visitFooA :: FooA -&gt; result, visitFooB :: FooB -&gt; result }</code></pre>
-<p>Now consider the following type: <code>forall result. FooFunction result -&gt; result</code>. I claim that this type is isomorphic to the original type <code>Foo</code>, but I will omit a proof. Given that, you should be convinced that</p>
-<pre><code>Foo ~ forall result. { visitFooA :: FooA -&gt; result, visitFooB :: FooB -&gt; result } -&gt; result</code></pre>
-<p>and that this isomorphism captures the idea behind the visitor pattern at the type level.</p>
+<p><code>Either</code> is what is known as a &quot;sum type&quot;, because it corresponds to addition at the type level.</p>
+<p>A value of type <code>Either a b</code> is <em>either</em> constructed using <code>Left</code>, in which case it contains a value of type <code>a</code>, or with <code>Right</code>, in which case it contains a value of type <code>b</code>. A value of type <code>Either a b</code> contains <em>either</em> an <code>a</code> or a <code>b</code>, but not both.</p>
+<p>We cannot immediately define the type <code>Either</code> in C#, since its type system doesn't support sum types. However, <code>Either</code> is isomorphic to a data type which is constructed only using functions, rank-2 polymorphism and records, both of which are available in C#, so it is possible to emulate <code>Either</code> in C# using those features.</p>
+<p>Define the following data types</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">EitherVisitor</span> a b result <span class="fu">=</span> <span class="dt">EitherVisitor</span> {<span class="ot"> visitLeft ::</span> a <span class="ot">-&gt;</span> result,<span class="ot"> visitRight ::</span> b <span class="ot">-&gt;</span> result }
+
+<span class="kw">data</span> <span class="dt">Either&#39;</span> a b <span class="fu">=</span> <span class="dt">Either&#39;</span> {<span class="ot"> acceptVisitor ::</span> forall result<span class="fu">.</span> <span class="dt">EitherVisitor</span> a b result <span class="ot">-&gt;</span> result }</code></pre>
+<p>This code requires the <code>PolymorphicComponents</code> GHC extension.</p>
+<p>The isomorphism between <code>Either</code> and <code>Either'</code> can be witnessed by two functions:</p>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">forward ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either&#39;</span> a b
+forward (<span class="dt">Left</span> a) <span class="fu">=</span> <span class="dt">Either&#39;</span> <span class="fu">$</span> flip visitLeft a
+forward (<span class="dt">Right</span> a) <span class="fu">=</span> <span class="dt">Either&#39;</span> <span class="fu">$</span> flip visitRight a
+
+<span class="ot">back ::</span> <span class="dt">Either&#39;</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> a b
+back <span class="fu">=</span> acceptVisitor (<span class="dt">EitherVisitor</span> <span class="dt">Left</span> <span class="dt">Right</span>)</code></pre>
+<p>One can verify that these functions are indeed inverse to one another.</p>
+<p>It is this isomorphism that ensures that the visitor pattern is a sound embedding of sum types into C# using only functions, generics and records. Since the types are isomorphic, we can be sure (assuming we don't do anything too subversive) that the typechecker will verify totality in our case analyses.</p>
 <h2 id="extending-the-visitor-pattern">Extending the Visitor Pattern</h2>
 <p>The idea behind the visitor pattern can be combined with other features of languages like C# to create new patterns and enable new forms of abstraction. Here are some ideas:</p>
 <ol type="1">
