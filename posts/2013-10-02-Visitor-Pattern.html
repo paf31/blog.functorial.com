@@ -17,27 +17,27 @@ _gaq.push(['_trackPageview']);
 </ul>
 <p>One way to model this in an Object Oriented language would be to create an abstract class called <code>Employee</code> with three concrete subclasses <code>HourlyEmployee</code>, <code>SalariedEmployee</code>. <code>Employee</code> would be defined as an interface with a method for calculating the employee's monthly pay, and each employee class would be responsible for implementing it.</p>
 <p>It might look something like this:</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> Employee {
+<pre><code>public interface Employee {
 
-    <span class="kw">public</span> <span class="kw">abstract</span> <span class="dt">int</span> <span class="fu">calculatePay</span>();
+    public abstract int calculatePay();
 }
 
-<span class="kw">public</span> <span class="kw">class</span> HourlyEmployee <span class="kw">implements</span> Employee {
+public class HourlyEmployee implements Employee {
 
-    <span class="kw">public</span> <span class="dt">int</span> hourlyRate;
-    <span class="kw">public</span> <span class="dt">int</span> hoursWorked;
+    public int hourlyRate;
+    public int hoursWorked;
 
-    <span class="kw">public</span> <span class="dt">int</span> <span class="fu">calculatePay</span>() {
-        <span class="kw">return</span> hoursWorked * hourlyRate;
+    public int calculatePay() {
+        return hoursWorked * hourlyRate;
     }
 }
 
-<span class="kw">public</span> <span class="kw">class</span> SalariedEmployee <span class="kw">implements</span> Employee {
+public class SalariedEmployee implements Employee {
 
-    <span class="kw">public</span> <span class="dt">int</span> salary;
+    public int salary;
 
-    <span class="kw">public</span> <span class="dt">int</span> <span class="fu">calculatePay</span>() {
-        <span class="kw">return</span> salary / <span class="dv">12</span>;
+    public int calculatePay() {
+        return salary / 12;
     }
 }</code></pre>
 <h2 id="the-problem">The Problem</h2>
@@ -51,15 +51,15 @@ _gaq.push(['_trackPageview']);
 <p>When deciding if subclass inheritance is the correct solution for a problem, as yourself <em>&quot;would I prefer the consumers of my API to be able to add new subclasses, or new operations more easily?&quot;</em></p>
 <h2 id="a-non-solution-using-reflection">A Non-Solution using Reflection</h2>
 <p>One anti-pattern which I sometimes see is to solve this problem by using reflection. In C#, the proposed solution might look something like this:</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="dt">int</span> <span class="fu">computeVacationHours</span>(Employee employee) {
-    <span class="kw">if</span> (employee is HourlyEmployee) {
+<pre><code>public int computeVacationHours(Employee employee) {
+    if (employee is HourlyEmployee) {
         HourlyExployee hourlyEmployee = (HourlyEmployee) employee;
-        <span class="kw">return</span> ...
-    } <span class="kw">else</span> <span class="kw">if</span> (employee is SalariedEmployee) {
+        return ...
+    } else if (employee is SalariedEmployee) {
         SalariedEmployee salariedEmployee = (SalariedEmployee) employee;
-        <span class="kw">return</span> ...
-    } <span class="kw">else</span> {
-        <span class="kw">throw</span> <span class="kw">new</span> <span class="fu">ArgumentException</span>(<span class="st">&quot;Unknown employee type!&quot;</span>);
+        return ...
+    } else {
+        throw new ArgumentException(&quot;Unknown employee type!&quot;);
     }
 }</code></pre>
 <p>But we can do better. It would be nice if we didn't have to throw an exception in the final line. What we would really like is to statically check that all cases have been handled. If we could somehow prevent additional subclasses of <code>Employee</code> from being defined elsewhere, we wouldn't need to throw an exception. This problem can be solved using the visitor pattern.</p>
@@ -79,55 +79,60 @@ calculatePay (<span class="dt">SalariedEmployee</span> salary) <span class="fu">
 <h2 id="solution-using-the-visitor-pattern">Solution Using the Visitor Pattern</h2>
 <p>If the visitor pattern is just the &quot;OOP-ification of pattern matching&quot;, then we should be able to derive it by attempting to translate the previous code into Java.</p>
 <p>First, we encapsulate a computation which works by case analysis using an interface:</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> EmployeeCaseAnalysis&lt;Result&gt; {
+<pre><code>public interface EmployeeCaseAnalysis&lt;Result&gt; {
 
-    Result <span class="fu">matchHourlyEmployee</span>(Double hourlyRate, Double hoursWorked);
+    Result matchHourlyEmployee(Double hourlyRate, Double hoursWorked);
     
-    Result <span class="fu">matchSalariedEmployee</span>(Double salary);
+    Result matchSalariedEmployee(Double salary);
 }</code></pre>
 <p>An implementation of EmployeeCaseAnalysis<Result> needs to provide two methods: one calculates the result for an hourly employee, and the other calculates the result for a salaried employee.</p>
 <p>The <code>Result</code> type parameter here is used to indicate the type of the result of the computation. More commonly, you will see a version of this class with no type parameter, which would be used when simply performing an action on the data, not transforming it.</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> EmployeeCaseAnalysis {
+<pre><code>public interface EmployeeCaseAnalysis {
 
-    <span class="dt">void</span> <span class="fu">matchHourlyEmployee</span>(Double hourlyRate, Double hoursWorked);
+    void matchHourlyEmployee(Double hourlyRate, Double hoursWorked);
     
-    <span class="dt">void</span> <span class="fu">matchSalariedEmployee</span>(Double salary);
+    void matchSalariedEmployee(Double salary);
 }</code></pre>
 <p>Now, we define the <code>Employee</code> abstract class. What is an <code>Employee</code>? Well, given any computation by case analysis, we want to be able to perform it and get a result. Here is the result:</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> Employee {
+<pre><code>public interface Employee {
 
-    <span class="dt">void</span> <span class="fu">performCaseAnalysis</span>(EmployeeCaseAnalysis caseAnalysis);
+    void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis);
     
     Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis);
 }</code></pre>
 <p>A concrete class of <code>Employee</code> must provide a way to perform a case analysis with no result, or a case analysis with a result, no matter what its result type.</p>
 <p>In fact, there are only two sensible ways to implement this specification: we can either call the <code>matchHourlyEmployee</code> method on the provided <code>EmployeeCaseAnalysis</code> object, if we have an <code>hourlyRate</code> and a number of <code>hoursWorked</code>, or we can call the <code>matchSalariedEmployee</code> method if we have a <code>salary</code>.</p>
 <p>Let's call these two implementations <code>HourlyEmployee</code> and <code>SalariedEmployee</code>:</p>
-<p><sub>~</sub>{.java} public class HourlyEmployee implements Employee {</p>
-<pre><code>public int hourlyRate;
-public int hoursWorked;
+<pre><code>public class HourlyEmployee implements Employee {
 
-public void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis) {
-    caseAnalysis.matchHourlyEmployee(hourlyRate, hoursWorked);
+    public int hourlyRate;
+    public int hoursWorked;
+
+    public void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis) {
+        caseAnalysis.matchHourlyEmployee(hourlyRate, hoursWorked);
+    }
+
+    public Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis) {
+        return caseAnalysis.matchHourlyEmployee(hourlyRate, hoursWorked);
+    }
 }
 
-public Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis) {
-    return caseAnalysis.matchHourlyEmployee(hourlyRate, hoursWorked);
-}</code></pre>
-<p>}</p>
-<p>public class SalariedEmployee implements Employee {</p>
-<pre><code>public int salary;
+public class SalariedEmployee implements Employee {
 
-public void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis) {
-    caseAnalysis.matchSalariedEmployee(salary);
+    public int salary;
+
+    public void performCaseAnalysis(EmployeeCaseAnalysis caseAnalysis) {
+        caseAnalysis.matchSalariedEmployee(salary);
+    }
+
+    public Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis) {
+        return caseAnalysis.matchSalariedEmployee(salary);
+    }
 }
 
-public Result performCaseAnalysis&lt;Result&gt;(EmployeeCaseAnalysis&lt;Result&gt; caseAnalysis) {
-    return caseAnalysis.matchSalariedEmployee(salary);
-}</code></pre>
-<p>}</p>
-<p>After some renaming, the code above looks just like code implemented using the visitor pattern. What I have called <code>EmployeeCaseAnalysis</code> might be renamed to <code>EmployeeVisitor</code>, and the <code>performCaseAnalysis</code> methods would most likely be renamed to <code>visit</code> or <code>apply</code>. Here is the full version after the renamings:</p>
-<p><sub>~</sub>{.java} public interface Employee {</p>
+After some renaming, the code above looks just like code implemented using the visitor pattern. What I have called `EmployeeCaseAnalysis` might be renamed to `EmployeeVisitor`, and the `performCaseAnalysis` methods would most likely be renamed to `visit` or `apply`. Here is the full version after the renamings:
+</code></pre>
+<p>public interface Employee {</p>
 <pre><code>void visit(EmployeeVisitor visitor);
 
 Result visit&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor);</code></pre>
@@ -166,37 +171,37 @@ public Result visit&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor) {
 }</code></pre>
 <p>}</p>
 <p>It is also common to pass along the entire subclass of <code>Employee</code> to the <code>visitX</code> methods in <code>EmployeeVisitor</code>.</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">interface</span> EmployeeVisitor {
+<pre><code>public interface EmployeeVisitor {
 
-    <span class="dt">void</span> <span class="fu">visitHourlyEmployee</span>(HourlyEmployee employee);
+    void visitHourlyEmployee(HourlyEmployee employee);
     
-    <span class="dt">void</span> <span class="fu">visitSalariedEmployee</span>(SalariedEmployee employee);
+    void visitSalariedEmployee(SalariedEmployee employee);
 }</code></pre>
 <p>But I will skip that here.</p>
 <p>It is now possible to implement our original payroll computation as a subclass of <code>EmployeeVisitor</code>:</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">class</span> PayrollCalulator <span class="kw">implements</span> EmployeeVisitor&lt;Double&gt; {
+<pre><code>public class PayrollCalulator implements EmployeeVisitor&lt;Double&gt; {
 
-    Double <span class="fu">visitHourlyEmployee</span>(Double hourlyRate, Double hoursWorked) {
-        <span class="kw">return</span> hourlyRate * hoursWorked;
+    Double visitHourlyEmployee(Double hourlyRate, Double hoursWorked) {
+        return hourlyRate * hoursWorked;
     }
     
-    Double <span class="fu">visitSalariedEmployee</span>(Double salary) {
-        <span class="kw">return</span> salary / <span class="fl">12.0</span>;
+    Double visitSalariedEmployee(Double salary) {
+        return salary / 12.0;
     }
 }</code></pre>
 <p>However, now our coworker can implement the computation of the number of vacation hours without modifying the original code!</p>
-<pre class="sourceCode java"><code class="sourceCode java"><span class="kw">public</span> <span class="kw">class</span> VacationCalculator <span class="kw">implements</span> EmployeeVisitor&lt;Integer&gt; {
+<pre><code>public class VacationCalculator implements EmployeeVisitor&lt;Integer&gt; {
    
-    <span class="kw">public</span> <span class="dt">int</span> maxVacationHours;
-    <span class="kw">public</span> <span class="dt">int</span> vacationHoursAccruedPerHourWorked;
+    public int maxVacationHours;
+    public int vacationHoursAccruedPerHourWorked;
 
-    Integer <span class="fu">visitHourlyEmployee</span>(Double hourlyRate, Double hoursWorked) {
-        <span class="kw">return</span> Math.<span class="fu">min</span>(maxVacationHours, 
-            Math.<span class="fu">floor</span>(hoursWorked / vacationHoursAccruedPerHourWorked));
+    Integer visitHourlyEmployee(Double hourlyRate, Double hoursWorked) {
+        return Math.min(maxVacationHours, 
+            Math.floor(hoursWorked / vacationHoursAccruedPerHourWorked));
     }
     
-    Integer <span class="fu">visitSalariedEmployee</span>(Double salary) {
-        <span class="kw">return</span> maxVacationHours;
+    Integer visitSalariedEmployee(Double salary) {
+        return maxVacationHours;
     }
 }</code></pre>
 <h2 id="a-recipe-for-visitors">A Recipe for Visitors</h2>
