@@ -33,28 +33,28 @@ _gaq.push(['_trackPageview']);
 <span class="kw">import</span> Control.Monad
 <span class="kw">import</span> Control.Applicative
  
-<span class="kw">newtype</span> <span class="dt">Height</span> <span class="fu">=</span> <span class="dt">Height</span> {<span class="ot"> height ::</span> <span class="dt">Int</span> } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)
+<span class="kw">newtype</span> <span class="dt">Height</span> <span class="fu">=</span> <span class="dt">Height</span> {<span class="ot"> height ::</span> <span class="dt">Int</span> } <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>, <span class="kw">Ord</span>)
  
-<span class="kw">newtype</span> <span class="dt">Pattern</span> <span class="fu">=</span> <span class="dt">Pattern</span> {<span class="ot"> pattern ::</span> [<span class="dt">Height</span>] } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>)
+<span class="kw">newtype</span> <span class="dt">Pattern</span> <span class="fu">=</span> <span class="dt">Pattern</span> {<span class="ot"> pattern ::</span> [<span class="dt">Height</span>] } <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
  
-<span class="kw">newtype</span> <span class="dt">State</span> <span class="fu">=</span> <span class="dt">State</span> {<span class="ot"> state ::</span> <span class="dt">Int</span> } <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Eq</span>, <span class="dt">Ord</span>)</code></pre>
+<span class="kw">newtype</span> <span class="dt">State</span> <span class="fu">=</span> <span class="dt">State</span> {<span class="ot"> state ::</span> <span class="dt">Int</span> } <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>, <span class="kw">Ord</span>)</code></pre>
 <p>We can transition to a new state by throwing a ball to a given height. If the first bit of the state is zero, then there is no ball scheduled to land, hence nothing available to throw, and the only valid throw is a fake throw to &quot;height&quot; 0. If the first bit is a one, then we can throw to any height <code>h</code> such that the bit at position <code>h + 1</code> is a zero.</p>
 <p>A valid throw is indicated by a return value constructed using <code>Just</code>. An invalid throw returns <code>Nothing</code>.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">
 <span class="ot">throw ::</span> <span class="dt">Height</span> <span class="ot">-&gt;</span> <span class="dt">State</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">State</span>
 throw (<span class="dt">Height</span> <span class="dv">0</span>) (<span class="dt">State</span> s) <span class="fu">|</span> (s <span class="fu">.&amp;.</span> <span class="dv">1</span>) <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> 
-  <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">State</span> <span class="fu">$</span> s <span class="ot">`shiftR`</span> <span class="dv">1</span>
+  <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">State</span> <span class="fu">$</span> s <span class="ot">`shiftR`</span> <span class="dv">1</span>
 throw (<span class="dt">Height</span> h) (<span class="dt">State</span> s) <span class="fu">|</span> h <span class="fu">&gt;</span> <span class="dv">0</span> <span class="fu">&amp;&amp;</span> ((<span class="dv">1</span> <span class="ot">`shift`</span> h) <span class="fu">.&amp;.</span> s) <span class="fu">==</span> <span class="dv">0</span> <span class="fu">=</span> 
-  <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">State</span> <span class="fu">$</span> (s <span class="ot">`shiftR`</span> <span class="dv">1</span>) <span class="fu">.|.</span> (<span class="dv">1</span> <span class="ot">`shift`</span> (h <span class="fu">-</span> <span class="dv">1</span>))
-throw _ _ <span class="fu">=</span> <span class="dt">Nothing</span></code></pre>
+  <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">State</span> <span class="fu">$</span> (s <span class="ot">`shiftR`</span> <span class="dv">1</span>) <span class="fu">.|.</span> (<span class="dv">1</span> <span class="ot">`shift`</span> (h <span class="fu">-</span> <span class="dv">1</span>))
+throw _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
 <p>We can also use <code>foldM</code> to attemt to throw a pattern. The return value will be <code>Nothing</code> if any throw was invalid.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">throwMany ::</span> <span class="dt">Pattern</span> <span class="ot">-&gt;</span> <span class="dt">State</span> <span class="ot">-&gt;</span> <span class="dt">Maybe</span> <span class="dt">State</span>
-throwMany p s0 <span class="fu">=</span> foldM (flip throw) s0 (pattern p)</code></pre>
+throwMany p s0 <span class="fu">=</span> foldM (<span class="fu">flip</span> throw) s0 (pattern p)</code></pre>
 <p>To find valid patterns, we need to find cycles in the graph of states and throws.</p>
 <p>A graph can be represented by a list of vertices together with a list of edges:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Graph</span> v e <span class="fu">=</span> ([v], [(v, v, e)])</code></pre>
 <p>Cycles are just paths whose start and end vertices coincide. We can find paths by choosing a start vertex and performing a depth first traversal of the graph, keeping track of the vertices we have already visited:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">paths ::</span> (<span class="dt">Eq</span> v) <span class="ot">=&gt;</span> <span class="dt">Graph</span> v e <span class="ot">-&gt;</span> [(v, v, [e])]
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">paths ::</span> (<span class="kw">Eq</span> v) <span class="ot">=&gt;</span> <span class="dt">Graph</span> v e <span class="ot">-&gt;</span> [(v, v, [e])]
 paths (vs, es) <span class="fu">=</span> 
   [ (v1, v2, p) 
   <span class="fu">|</span> v1 <span class="ot">&lt;-</span> vs
@@ -64,13 +64,13 @@ paths (vs, es) <span class="fu">=</span>
     [ (v3, (e<span class="fu">:</span>p))
     <span class="fu">|</span> (v1, v2, e) <span class="ot">&lt;-</span> es
     , v1 <span class="fu">==</span> v
-    , not <span class="fu">$</span> v2 <span class="ot">`elem`</span> visited
+    , <span class="fu">not</span> <span class="fu">$</span> v2 <span class="ot">`elem`</span> visited
     , (v3, p) <span class="ot">&lt;-</span> paths&#39; v2 es (v1<span class="fu">:</span>visited) ]</code></pre>
 <p>Cycles are then given by filtering the list of paths:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">cycles ::</span> (<span class="dt">Eq</span> v) <span class="ot">=&gt;</span> <span class="dt">Graph</span> v e <span class="ot">-&gt;</span> [(v, [e])]
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">cycles ::</span> (<span class="kw">Eq</span> v) <span class="ot">=&gt;</span> <span class="dt">Graph</span> v e <span class="ot">-&gt;</span> [(v, [e])]
 cycles (vs, es) <span class="fu">=</span> [ (v1, p <span class="fu">++</span> [e]) 
                   <span class="fu">|</span> (v1, v2, p) <span class="ot">&lt;-</span> paths (vs, es)
-                  , not <span class="fu">$</span> null p
+                  , <span class="fu">not</span> <span class="fu">$</span> <span class="fu">null</span> p
                   , (v2&#39;, v3, e) <span class="ot">&lt;-</span> es
                   , v2 <span class="fu">==</span> v2&#39;
                   , v3 <span class="fu">==</span> v1 ]</code></pre>
@@ -81,19 +81,19 @@ countBits <span class="dv">0</span> <span class="fu">=</span> <span class="dv">0
 countBits <span class="dv">1</span> <span class="fu">=</span> <span class="dv">1</span>
 countBits n <span class="fu">=</span> <span class="kw">let</span> (d, r) <span class="fu">=</span> n <span class="ot">`divMod`</span> <span class="dv">2</span> <span class="kw">in</span> countBits d <span class="fu">+</span> countBits r</code></pre>
 <p>The function <code>throw</code> is the transition function which can be used to tell whether or not a throw corresponds to an edge in the graph. Here is a function which generically constructs a graph from such a function:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generateGraph ::</span> (<span class="dt">Eq</span> v) <span class="ot">=&gt;</span> (e <span class="ot">-&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v) <span class="ot">-&gt;</span> [v] <span class="ot">-&gt;</span> [e] <span class="ot">-&gt;</span> <span class="dt">Graph</span> v e
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">generateGraph ::</span> (<span class="kw">Eq</span> v) <span class="ot">=&gt;</span> (e <span class="ot">-&gt;</span> v <span class="ot">-&gt;</span> <span class="dt">Maybe</span> v) <span class="ot">-&gt;</span> [v] <span class="ot">-&gt;</span> [e] <span class="ot">-&gt;</span> <span class="dt">Graph</span> v e
 generateGraph transition vs es <span class="fu">=</span>
   <span class="kw">let</span> edges <span class="fu">=</span> [ (v1, v2, e) 
               <span class="fu">|</span> v1 <span class="ot">&lt;-</span> vs 
               , v2 <span class="ot">&lt;-</span> vs
               , e <span class="ot">&lt;-</span> es
-              , transition e v1 <span class="fu">==</span> <span class="dt">Just</span> v2] <span class="kw">in</span> (vs, edges)</code></pre>
+              , transition e v1 <span class="fu">==</span> <span class="kw">Just</span> v2] <span class="kw">in</span> (vs, edges)</code></pre>
 <p>We can now construct the state transition graph for a number of balls with a maximum throw height by using <code>generateGraph</code> with <code>throw</code>. We can use <code>countBits</code> to construct the set of states given the maximum height <code>maxHeight</code>.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">graph ::</span> <span class="dt">Height</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Graph</span> <span class="dt">State</span> <span class="dt">Height</span>
 graph (<span class="dt">Height</span> maxHeight) numBalls <span class="fu">=</span> 
   <span class="kw">let</span> maxState  <span class="fu">=</span> (<span class="dv">1</span> <span class="ot">`shiftL`</span> maxHeight) <span class="fu">-</span> <span class="dv">1</span>
-      states    <span class="fu">=</span> map <span class="dt">State</span> <span class="fu">$</span> filter ((<span class="fu">==</span> numBalls) <span class="fu">.</span> countBits) [<span class="dv">0</span><span class="fu">..</span>maxState] <span class="kw">in</span>
-  generateGraph throw states (map <span class="dt">Height</span> [<span class="dv">0</span><span class="fu">..</span>maxHeight])</code></pre>
+      states    <span class="fu">=</span> <span class="fu">map</span> <span class="dt">State</span> <span class="fu">$</span> <span class="fu">filter</span> ((<span class="fu">==</span> numBalls) <span class="fu">.</span> countBits) [<span class="dv">0</span><span class="fu">..</span>maxState] <span class="kw">in</span>
+  generateGraph throw states (<span class="fu">map</span> <span class="dt">Height</span> [<span class="dv">0</span><span class="fu">..</span>maxHeight])</code></pre>
 <p>Enumerating valid patterns for a number of balls with a maximum throw height is as simple as finding cycles in this graph:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">validPatterns ::</span> <span class="dt">Height</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [(<span class="dt">State</span>, [<span class="dt">Height</span>])]
 validPatterns maxHeight numBalls <span class="fu">=</span> cycles <span class="fu">$</span> graph maxHeight numBalls</code></pre>
@@ -104,8 +104,8 @@ validPatterns maxHeight numBalls <span class="fu">=</span> cycles <span class="f
 <p>A trick can be inserted into the n-ball cascade whenever its initial and final states equal the steady state 2<sup>n</sup>-1 of the n-ball cascade.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">tricks ::</span> <span class="dt">Height</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [[<span class="dt">Height</span>]]
 tricks maxHeight numBalls <span class="fu">=</span> 
-  map snd 
-  <span class="fu">$</span> filter ((<span class="fu">==</span> (<span class="dt">State</span> (<span class="dv">2</span><span class="fu">^</span>numBalls <span class="fu">-</span> <span class="dv">1</span>))) <span class="fu">.</span> fst) 
+  <span class="fu">map</span> <span class="fu">snd</span> 
+  <span class="fu">$</span> <span class="fu">filter</span> ((<span class="fu">==</span> (<span class="dt">State</span> (<span class="dv">2</span><span class="fu">^</span>numBalls <span class="fu">-</span> <span class="dv">1</span>))) <span class="fu">.</span> <span class="fu">fst</span>) 
   <span class="fu">$</span> validPatterns maxHeight numBalls</code></pre>
 <p>For example, here are the tricks with maximum height 4 which can be inserted into the 3-ball cascade:</p>
 <pre><code>ghci&gt; map (map height) $ tricks (Height 4) 3
@@ -127,36 +127,36 @@ pattern <span class="fu">=</span> [<span class="dv">5</span>]</code></pre>
 <p>A key function is <code>rotatePattern</code>, which is used to rotate a list of heights by a number of steps. This is used to shift a pattern after a throw occurs, or to adjust a pattern for each ball being juggled.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">rotatePattern <span class="fu">:</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]
 rotatePattern n xs <span class="fu">=</span>
-  <span class="kw">if</span> <span class="fu">|</span> n <span class="fu">&lt;</span> length xs <span class="ot">-&gt;</span> drop n xs <span class="fu">++</span> take n xs
-     <span class="fu">|</span> otherwise     <span class="ot">-&gt;</span> rotatePattern (n <span class="fu">-</span> length xs) xs</code></pre>
+  <span class="kw">if</span> <span class="fu">|</span> n <span class="fu">&lt;</span> <span class="fu">length</span> xs <span class="ot">-&gt;</span> <span class="fu">drop</span> n xs <span class="fu">++</span> <span class="fu">take</span> n xs
+     <span class="fu">|</span> <span class="fu">otherwise</span>     <span class="ot">-&gt;</span> rotatePattern (n <span class="fu">-</span> <span class="fu">length</span> xs) xs</code></pre>
 <p>Given the current time (in units of beats), we can calculate the height of the current throw, and the coordinates of the current ball by repeatedly rotating the pattern:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">heightAtTime <span class="fu">:</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
 heightAtTime hs t <span class="fu">=</span>
-  <span class="kw">let</span> h <span class="fu">=</span> head hs <span class="kw">in</span>
+  <span class="kw">let</span> h <span class="fu">=</span> <span class="fu">head</span> hs <span class="kw">in</span>
   <span class="kw">if</span> <span class="fu">|</span> t <span class="fu">&lt;</span> toFloat h     <span class="ot">-&gt;</span> h
-     <span class="fu">|</span> otherwise         <span class="ot">-&gt;</span> heightAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)
+     <span class="fu">|</span> <span class="fu">otherwise</span>         <span class="ot">-&gt;</span> heightAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)
  
 xAtTime <span class="fu">:</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span>
 xAtTime hs t <span class="fu">=</span>
-  <span class="kw">let</span> h <span class="fu">=</span> head hs <span class="kw">in</span>
+  <span class="kw">let</span> h <span class="fu">=</span> <span class="fu">head</span> hs <span class="kw">in</span>
   <span class="kw">if</span> <span class="fu">|</span> t <span class="fu">&lt;</span> pauseTime                       <span class="ot">-&gt;</span> t <span class="fu">/</span> pauseTime <span class="fu">*</span> handMovement
      <span class="fu">|</span> (t <span class="fu">&lt;</span> toFloat h) <span class="fu">&amp;&amp;</span> (h <span class="ot">`mod`</span> <span class="dv">2</span> <span class="fu">==</span> <span class="dv">0</span>) <span class="ot">-&gt;</span> handMovement <span class="fu">*</span> (toFloat h <span class="fu">-</span> t) <span class="fu">/</span> (toFloat h <span class="fu">-</span> pauseTime)
      <span class="fu">|</span> t <span class="fu">&lt;</span> toFloat h                       <span class="ot">-&gt;</span> handMovement <span class="fu">+</span> (<span class="dv">1</span> <span class="fu">-</span> handMovement) <span class="fu">*</span> (t <span class="fu">-</span> pauseTime) <span class="fu">/</span> (toFloat h <span class="fu">-</span> pauseTime)
      <span class="fu">|</span> h <span class="ot">`mod`</span> <span class="dv">2</span> <span class="fu">==</span> <span class="dv">0</span>                      <span class="ot">-&gt;</span> xAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)
-     <span class="fu">|</span> otherwise                           <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> xAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)
+     <span class="fu">|</span> <span class="fu">otherwise</span>                           <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">+</span> xAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)
  
 yAtTime <span class="fu">:</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span>
 yAtTime hs t  <span class="fu">=</span>
-  <span class="kw">let</span> h <span class="fu">=</span> head hs <span class="kw">in</span>
+  <span class="kw">let</span> h <span class="fu">=</span> <span class="fu">head</span> hs <span class="kw">in</span>
   <span class="kw">if</span> <span class="fu">|</span> t <span class="fu">&lt;</span> pauseTime <span class="ot">-&gt;</span> <span class="dv">0</span>
      <span class="fu">|</span> t <span class="fu">&lt;</span> toFloat h <span class="ot">-&gt;</span> (t <span class="fu">-</span> pauseTime) <span class="fu">/</span> (toFloat h <span class="fu">-</span> pauseTime)
-     <span class="fu">|</span> otherwise     <span class="ot">-&gt;</span> yAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)</code></pre>
+     <span class="fu">|</span> <span class="fu">otherwise</span>     <span class="ot">-&gt;</span> yAtTime (rotatePattern h hs) (t <span class="fu">-</span> toFloat h)</code></pre>
 <p>The <code>x</code>-coordinate needs to be clipped to the range <code>0-1</code>. Reflections occur at integer values of <code>x</code>, since the <code>x</code> coordinate represents the total displacement along the <code>x</code>-axis.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">clip <span class="fu">:</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span>
 clip x <span class="fu">=</span>
   <span class="kw">if</span> <span class="fu">|</span> x <span class="fu">&gt;</span> <span class="dv">1</span>     <span class="ot">-&gt;</span> <span class="dv">1</span> <span class="fu">-</span> clip (x <span class="fu">-</span> <span class="dv">1</span>)
      <span class="fu">|</span> x <span class="fu">&lt;</span> <span class="dv">0</span>     <span class="ot">-&gt;</span> clip (<span class="dv">0</span> <span class="fu">-</span> x)
-     <span class="fu">|</span> otherwise <span class="ot">-&gt;</span> x</code></pre>
+     <span class="fu">|</span> <span class="fu">otherwise</span> <span class="ot">-&gt;</span> x</code></pre>
 <p>We can now compute the position of each ball. I have hard-coded the width and height of the canvas to 300 pixels here, but these could be provided as parameters.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">project <span class="fu">:</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">Float</span>, <span class="dt">Float</span>)
 project x y h maxHeight <span class="fu">=</span> 
@@ -167,36 +167,36 @@ project x y h maxHeight <span class="fu">=</span>
     (xProj, yProj)
     
 positionOfBallAt <span class="fu">:</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Float</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (<span class="dt">Float</span>, <span class="dt">Float</span>)
-positionOfBallAt heights maxHeight time index <span class="fu">=</span>
+positionOfBallAt heights maxHeight time <span class="fu">index</span> <span class="fu">=</span>
   <span class="kw">let</span> 
     x      <span class="fu">=</span> xAtTime heights time
     y      <span class="fu">=</span> yAtTime heights time
-    cx     <span class="fu">=</span> clip (toFloat index <span class="fu">+</span> x)
+    cx     <span class="fu">=</span> clip (toFloat <span class="fu">index</span> <span class="fu">+</span> x)
     h      <span class="fu">=</span> heightAtTime heights time
   <span class="kw">in</span>
     project cx y (h <span class="fu">-</span> <span class="dv">1</span>) maxHeight</code></pre>
 <p><code>positionOfBallAt</code> gives the position of the ball, and <code>circle</code> is used to render it. The <code>frame</code> function renders each ball as a circle at its current position:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">frameFor <span class="fu">:</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Form</span>
-frameFor heights timePeriod maxHeight millis index <span class="fu">=</span>
+frameFor heights timePeriod maxHeight millis <span class="fu">index</span> <span class="fu">=</span>
   <span class="kw">let</span> 
-    startMillis     <span class="fu">=</span> index <span class="fu">*</span> timePerThrow
+    startMillis     <span class="fu">=</span> <span class="fu">index</span> <span class="fu">*</span> timePerThrow
     relativeTime    <span class="fu">=</span> toFloat ((millis <span class="fu">-</span> startMillis) <span class="ot">`mod`</span> timePeriod) <span class="fu">/</span> toFloat timePerThrow
-    rotatedPattern  <span class="fu">=</span> rotatePattern index heights
-    position        <span class="fu">=</span> positionOfBallAt rotatedPattern maxHeight relativeTime index
+    rotatedPattern  <span class="fu">=</span> rotatePattern <span class="fu">index</span> heights
+    position        <span class="fu">=</span> positionOfBallAt rotatedPattern maxHeight relativeTime <span class="fu">index</span>
   <span class="kw">in</span> 
     circle <span class="dv">10</span> <span class="fu">|&gt;</span> filled black <span class="fu">|&gt;</span> move position
  
 frame <span class="fu">:</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Element</span>
 frame heights millis <span class="fu">=</span> 
   <span class="kw">let</span>
-    period          <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> sum heights
+    period          <span class="fu">=</span> <span class="dv">2</span> <span class="fu">*</span> <span class="fu">sum</span> heights
     timePeriod      <span class="fu">=</span> timePerThrow <span class="fu">*</span> period
-    maxHeight       <span class="fu">=</span> maximum heights
+    maxHeight       <span class="fu">=</span> <span class="fu">maximum</span> heights
   <span class="kw">in</span>
     [<span class="dv">0</span> <span class="fu">..</span> period <span class="fu">-</span> <span class="dv">1</span>] <span class="fu">|&gt;</span> List.map (frameFor heights timePeriod maxHeight millis) <span class="fu">|&gt;</span> collage <span class="dv">300</span> <span class="dv">300</span> </code></pre>
 <p><code>main</code> simply invokes <code>frame</code> to render the current scene once every millisecond (or as fast as possible):</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">main <span class="fu">:</span> <span class="dt">Signal</span> <span class="dt">Element</span>
-main <span class="fu">=</span> lift (frame pattern <span class="fu">.</span> round) (every millisecond)</code></pre>
+main <span class="fu">=</span> lift (frame pattern <span class="fu">.</span> <span class="fu">round</span>) (every millisecond)</code></pre>
 <hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
 /* * * DON'T EDIT BELOW THIS LINE * * */
 (function() {

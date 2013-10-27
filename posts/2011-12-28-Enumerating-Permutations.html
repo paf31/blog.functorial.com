@@ -75,7 +75,7 @@ indexOfPerm n xs = n * (indexOfPerm (n - 1) xs&#39;) + j
 --   = (i + 1, x&#39;:xs&#39;)</code></pre>
 <p>Now we can define <code>extract</code> as follows:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">extract x (x&#39;<span class="fu">:</span>xs) <span class="fu">|</span> x <span class="fu">==</span> x&#39;    <span class="fu">=</span> (<span class="dv">0</span>, xs)
-                  <span class="fu">|</span> otherwise  <span class="fu">=</span> (i <span class="fu">+</span> <span class="dv">1</span>, x&#39;<span class="fu">:</span>xs&#39;)
+                  <span class="fu">|</span> <span class="fu">otherwise</span>  <span class="fu">=</span> (i <span class="fu">+</span> <span class="dv">1</span>, x&#39;<span class="fu">:</span>xs&#39;)
   <span class="kw">where</span> (i, xs&#39;) <span class="fu">=</span> extract x xs </code></pre>
 <p>One can check that the relation that we are interested in between <code>insertAt</code> and <code>extract</code> actually holds.</p>
 <h2 id="generating-permutations">Generating Permutations</h2>
@@ -115,7 +115,7 @@ nextPerm&#39; n xs <span class="fu">=</span> perms n <span class="fu">!!</span> 
 <p>Thus we arrive at our final definition of <code>nextPerm</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">nextPerm <span class="dv">0</span> [] <span class="fu">=</span> []
 nextPerm n xs <span class="fu">|</span> j <span class="fu">==</span> n <span class="fu">-</span> <span class="dv">1</span>  <span class="fu">=</span> insertAt <span class="dv">0</span> n (nextPerm (n <span class="fu">-</span> <span class="dv">1</span>) xs&#39;)
-              <span class="fu">|</span> otherwise   <span class="fu">=</span> insertAt (j <span class="fu">+</span> <span class="dv">1</span>) n xs&#39;
+              <span class="fu">|</span> <span class="fu">otherwise</span>   <span class="fu">=</span> insertAt (j <span class="fu">+</span> <span class="dv">1</span>) n xs&#39;
   <span class="kw">where</span> (j, xs&#39;) <span class="fu">=</span> extract n xs</code></pre>
 <h2 id="a-better-data-structure">A Better Data Structure</h2>
 <p>The inverse <code>indexOfPerm</code> is only a partial function, because <code>perms n</code> returns a collection of lists of size <code>n</code>. In addition, the types of lists does not enforce the invariant that each element <code>perms n</code> is a permutation of <code>[1..n]</code>.</p>
@@ -128,13 +128,13 @@ _3 <span class="fu">=</span> <span class="dt">S</span> <span class="fu">$</span>
 _4 <span class="fu">=</span> <span class="dt">S</span> <span class="fu">$</span> <span class="dt">S</span> <span class="fu">$</span> <span class="dt">S</span> <span class="fu">$</span> <span class="dt">S</span> <span class="dt">Z</span>
 
 <span class="ot">showNat ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-showNat n <span class="fu">=</span> show (show&#39; n <span class="dv">0</span>) <span class="kw">where</span>
+showNat n <span class="fu">=</span> <span class="fu">show</span> (show&#39; n <span class="dv">0</span>) <span class="kw">where</span>
 <span class="ot">  show&#39; ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
   show&#39; <span class="dt">Z</span> m <span class="fu">=</span> m
   show&#39; (<span class="dt">S</span> n) m <span class="fu">=</span> show&#39; n (m <span class="fu">+</span> <span class="dv">1</span>)
 
-<span class="kw">instance</span> <span class="dt">Show</span> <span class="dt">Nat</span> <span class="kw">where</span>
-  show <span class="fu">=</span> showNat</code></pre>
+<span class="kw">instance</span> <span class="kw">Show</span> <span class="dt">Nat</span> <span class="kw">where</span>
+  <span class="fu">show</span> <span class="fu">=</span> showNat</code></pre>
 <p>The type <code>Leq n</code> of natural numbers less than or equal to <code>n</code>. The type is parameterised over the kind <code>Nat</code>.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Leq</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
   <span class="dt">LeqZero</span><span class="ot"> ::</span> <span class="dt">Leq</span> n
@@ -153,13 +153,13 @@ intToLeq <span class="dv">0</span> n <span class="fu">=</span> <span class="dt">
 intToLeq n (<span class="dt">EqSucc</span> m) <span class="fu">=</span> <span class="dt">LeqSucc</span> (intToLeq (n <span class="fu">-</span> <span class="dv">1</span>) m)
 
 <span class="ot">showLeq ::</span> <span class="dt">Leq</span> n <span class="ot">-&gt;</span> <span class="dt">String</span>
-showLeq n <span class="fu">=</span> show (show&#39; n <span class="dv">0</span>) <span class="kw">where</span>
+showLeq n <span class="fu">=</span> <span class="fu">show</span> (show&#39; n <span class="dv">0</span>) <span class="kw">where</span>
 <span class="ot">  show&#39; ::</span> <span class="dt">Leq</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
   show&#39; <span class="dt">LeqZero</span> m <span class="fu">=</span> m
   show&#39; (<span class="dt">LeqSucc</span> n) m <span class="fu">=</span> show&#39; n (m <span class="fu">+</span> <span class="dv">1</span>)
 
-<span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Leq</span> n) <span class="kw">where</span>
-  show <span class="fu">=</span> showLeq</code></pre>
+<span class="kw">instance</span> <span class="kw">Show</span> (<span class="dt">Leq</span> n) <span class="kw">where</span>
+  <span class="fu">show</span> <span class="fu">=</span> showLeq</code></pre>
 <p>The type of natural numbers equal to <code>n</code>, that is, a singleton type for each natural number:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">EqNat</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
   <span class="dt">EqZero</span><span class="ot"> ::</span> <span class="dt">EqNat</span> <span class="dt">Z</span>
@@ -175,13 +175,13 @@ eqToInt <span class="dt">EqZero</span> <span class="fu">=</span> <span class="dv
 eqToInt (<span class="dt">EqSucc</span> n) <span class="fu">=</span> <span class="dv">1</span> <span class="fu">+</span> eqToInt n
 
 <span class="ot">showEq ::</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> <span class="dt">String</span>
-showEq n <span class="fu">=</span> show (show&#39; n <span class="dv">0</span>) <span class="kw">where</span>
+showEq n <span class="fu">=</span> <span class="fu">show</span> (show&#39; n <span class="dv">0</span>) <span class="kw">where</span>
 <span class="ot">  show&#39; ::</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Int</span>
   show&#39; <span class="dt">EqZero</span> m <span class="fu">=</span> m
   show&#39; (<span class="dt">EqSucc</span> n) m <span class="fu">=</span> show&#39; n (m <span class="fu">+</span> <span class="dv">1</span>)
 
-<span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">EqNat</span> n) <span class="kw">where</span>
-  show <span class="fu">=</span> showEq</code></pre>
+<span class="kw">instance</span> <span class="kw">Show</span> (<span class="dt">EqNat</span> n) <span class="kw">where</span>
+  <span class="fu">show</span> <span class="fu">=</span> showEq</code></pre>
 <p>We will need the following helper method, which returns the value of <code>n</code> in the type of numbers less than or equal to <code>n</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">maxLeq ::</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> <span class="dt">Leq</span> n
 maxLeq <span class="dt">EqZero</span> <span class="fu">=</span> <span class="dt">LeqZero</span>
@@ -189,20 +189,20 @@ maxLeq (<span class="dt">EqSucc</span> n) <span class="fu">=</span> <span class=
 <p>We can turn collect the list of all numbers in <code>Leq n</code> recursively:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">for ::</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> [<span class="dt">Leq</span> n]
 for <span class="dt">EqZero</span> <span class="fu">=</span> [<span class="dt">LeqZero</span>]
-for (<span class="dt">EqSucc</span> n) <span class="fu">=</span> <span class="dt">LeqZero</span> <span class="fu">:</span> map <span class="dt">LeqSucc</span> (for n)</code></pre>
+for (<span class="dt">EqSucc</span> n) <span class="fu">=</span> <span class="dt">LeqZero</span> <span class="fu">:</span> <span class="fu">map</span> <span class="dt">LeqSucc</span> (for n)</code></pre>
 <p>Finally, we define the type of permutations, again parameterised by the kind <code>Nat</code> and containing two type constructors: the empty permutation and the permutation obtained by inserting the value <code>n + 1</code> into a permutation of the list <code>[1..n]</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Perm</span><span class="ot"> ::</span> <span class="dt">Nat</span> <span class="ot">-&gt;</span> <span class="fu">*</span> <span class="kw">where</span>
   <span class="dt">Empty</span><span class="ot"> ::</span> <span class="dt">Perm</span> <span class="dt">Z</span>
   <span class="dt">Insert</span><span class="ot"> ::</span> <span class="dt">Leq</span> n <span class="ot">-&gt;</span> <span class="dt">Perm</span> n <span class="ot">-&gt;</span> <span class="dt">Perm</span> (<span class="dt">S</span> n)
 
 <span class="ot">showPerm ::</span> <span class="dt">Perm</span> n <span class="ot">-&gt;</span> <span class="dt">String</span>
-showPerm p <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> concat (intersperse <span class="st">&quot;,&quot;</span> (map show (toList p <span class="dv">0</span>))) <span class="fu">++</span> <span class="st">&quot;)&quot;</span> <span class="kw">where</span>
+showPerm p <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> <span class="fu">concat</span> (intersperse <span class="st">&quot;,&quot;</span> (<span class="fu">map</span> <span class="fu">show</span> (toList p <span class="dv">0</span>))) <span class="fu">++</span> <span class="st">&quot;)&quot;</span> <span class="kw">where</span>
 <span class="ot">  toList ::</span> <span class="dt">Perm</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> [<span class="dt">Int</span>]
   toList <span class="dt">Empty</span> m <span class="fu">=</span> []
-  toList (<span class="dt">Insert</span> n p) m <span class="fu">=</span> <span class="kw">let</span> (l, r) <span class="fu">=</span> splitAt (leqToInt n) (toList p (m <span class="fu">+</span> <span class="dv">1</span>)) <span class="kw">in</span> l <span class="fu">++</span> [m] <span class="fu">++</span> r
+  toList (<span class="dt">Insert</span> n p) m <span class="fu">=</span> <span class="kw">let</span> (l, r) <span class="fu">=</span> <span class="fu">splitAt</span> (leqToInt n) (toList p (m <span class="fu">+</span> <span class="dv">1</span>)) <span class="kw">in</span> l <span class="fu">++</span> [m] <span class="fu">++</span> r
                          
-<span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Perm</span> n) <span class="kw">where</span>
-  show <span class="fu">=</span> showPerm</code></pre>
+<span class="kw">instance</span> <span class="kw">Show</span> (<span class="dt">Perm</span> n) <span class="kw">where</span>
+  <span class="fu">show</span> <span class="fu">=</span> showPerm</code></pre>
 <p>Note now that invalid permutations are no longer inhabitants of the type <code>Perm n</code> for any <code>n</code>: to insert value <code>n</code> into a permutation of <code>[1..n-1]</code>, we have to specify a position to insert which is in the range <code>[0..n]</code>, and this is enforced by the type <code>Perm n</code>! One cannot, for example, represent a list with a duplicate element - the elements are not even mentioned explicitly.</p>
 <p>The rank of a permutation is the size of the set it permutes:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">rank ::</span> <span class="dt">Perm</span> n <span class="ot">-&gt;</span> <span class="dt">EqNat</span> n
@@ -219,8 +219,8 @@ perms1 (<span class="dt">EqSucc</span> n) <span class="fu">=</span> [ <span clas
 <p>We can create a permutation from its list representation by repeatedly extracting the highest element:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">fromList ::</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> [<span class="dt">Int</span>] <span class="ot">-&gt;</span> <span class="dt">Perm</span> n
 fromList <span class="dt">EqZero</span> [] <span class="fu">=</span> <span class="dt">Empty</span>
-fromList (<span class="dt">EqSucc</span> n) xs <span class="fu">=</span> <span class="dt">Insert</span> (intToLeq i n) (fromList n (map (flip (<span class="fu">-</span>) <span class="dv">1</span>) (delete <span class="dv">0</span> xs)))
-  <span class="kw">where</span> <span class="dt">Just</span> i <span class="fu">=</span> elemIndex <span class="dv">0</span> xs</code></pre>
+fromList (<span class="dt">EqSucc</span> n) xs <span class="fu">=</span> <span class="dt">Insert</span> (intToLeq i n) (fromList n (<span class="fu">map</span> (<span class="fu">flip</span> (<span class="fu">-</span>) <span class="dv">1</span>) (delete <span class="dv">0</span> xs)))
+  <span class="kw">where</span> <span class="kw">Just</span> i <span class="fu">=</span> elemIndex <span class="dv">0</span> xs</code></pre>
 <p>We can also translate the function <code>indexOfPerm</code> without difficulty:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">indexOfPerm1 ::</span> <span class="dt">Perm</span> n <span class="ot">-&gt;</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> <span class="dt">Int</span>
 indexOfPerm1 <span class="dt">Empty</span> <span class="dt">EqZero</span> <span class="fu">=</span> <span class="dv">0</span>
@@ -229,7 +229,7 @@ indexOfPerm1 (<span class="dt">Insert</span> n p) (<span class="dt">EqSucc</span
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nth ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">EqNat</span> n <span class="ot">-&gt;</span> <span class="dt">Perm</span> n
 nth <span class="dv">0</span> <span class="dt">EqZero</span> <span class="fu">=</span> <span class="dt">Empty</span>
 nth m (<span class="dt">EqSucc</span> n) <span class="fu">=</span> <span class="dt">Insert</span> (intToLeq k n) (nth j n)
-  <span class="kw">where</span> (j, k) <span class="fu">=</span> divMod m (<span class="dv">1</span> <span class="fu">+</span> eqToInt n)</code></pre>
+  <span class="kw">where</span> (j, k) <span class="fu">=</span> <span class="fu">divMod</span> m (<span class="dv">1</span> <span class="fu">+</span> eqToInt n)</code></pre>
 <p>As before, we can combine <code>nth</code> with <code>indexOfPerm1</code> to step to the next permutation:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nextPerm1&#39; ::</span> <span class="dt">Perm</span> n <span class="ot">-&gt;</span> <span class="dt">Perm</span> n
 nextPerm1&#39; p <span class="fu">=</span> <span class="kw">let</span> r <span class="fu">=</span> rank p <span class="kw">in</span> nth (indexOfPerm1 p r <span class="fu">-</span> <span class="dv">1</span>) r</code></pre>

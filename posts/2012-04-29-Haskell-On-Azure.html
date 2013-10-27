@@ -32,7 +32,7 @@ account <span class="fu">=</span> developmentAccount </code></pre>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">newId ::</span> <span class="dt">IO</span> <span class="dt">String</span>
 newId <span class="fu">=</span> <span class="kw">do</span>
   (<span class="dt">TOD</span> seconds picos) <span class="ot">&lt;-</span> getClockTime
-  return <span class="fu">$</span> show (<span class="dv">9999999999</span> <span class="fu">-</span> seconds) <span class="fu">++</span> show picos</code></pre>
+  <span class="fu">return</span> <span class="fu">$</span> <span class="fu">show</span> (<span class="dv">9999999999</span> <span class="fu">-</span> seconds) <span class="fu">++</span> <span class="fu">show</span> picos</code></pre>
 <p>With that, we can implement the code which will add a new note. This will be implemented as a POST method which accepts its parameters as form-encoded data in the request body.</p>
 <p>A new key is generated, and then the insertEntity IO action is used to add the newly created note entity to the notes table, along with the author and text properties as string columns.</p>
 <p>If this is successful, we perform a redirect-and-get to display the newly added note to the user. If the insert is not successful, then we respond with 500 - Internal Server Error.</p>
@@ -45,26 +45,26 @@ postNote <span class="fu">=</span> <span class="kw">do</span>
   author <span class="ot">&lt;-</span> look <span class="st">&quot;author&quot;</span>
   partition <span class="ot">&lt;-</span> look <span class="st">&quot;partition&quot;</span>
   result <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span>
-    id <span class="ot">&lt;-</span> newId
+    <span class="fu">id</span> <span class="ot">&lt;-</span> newId
     <span class="kw">let</span> entity <span class="fu">=</span> <span class="dt">Entity</span> { entityKey <span class="fu">=</span> <span class="dt">EntityKey</span> { ekPartitionKey <span class="fu">=</span> partition, 
-                                                  ekRowKey <span class="fu">=</span> id }, 
-                          entityColumns <span class="fu">=</span> [ (<span class="st">&quot;text&quot;</span>, <span class="dt">EdmString</span> <span class="fu">$</span> <span class="dt">Just</span> text),
-                                            (<span class="st">&quot;author&quot;</span>, <span class="dt">EdmString</span> <span class="fu">$</span> <span class="dt">Just</span> author)] }
+                                                  ekRowKey <span class="fu">=</span> <span class="fu">id</span> }, 
+                          entityColumns <span class="fu">=</span> [ (<span class="st">&quot;text&quot;</span>, <span class="dt">EdmString</span> <span class="fu">$</span> <span class="kw">Just</span> text),
+                                            (<span class="st">&quot;author&quot;</span>, <span class="dt">EdmString</span> <span class="fu">$</span> <span class="kw">Just</span> author)] }
     insertEntity account <span class="st">&quot;notes&quot;</span> entity
   <span class="kw">case</span> result <span class="kw">of</span>
-    <span class="dt">Left</span> err <span class="ot">-&gt;</span> internalServerError <span class="fu">$</span> toResponse err
-    <span class="dt">Right</span> _ <span class="ot">-&gt;</span> seeOther (<span class="st">&quot;?partition=&quot;</span> <span class="fu">++</span> partition) <span class="fu">$</span> toResponse ()</code></pre>
+    <span class="kw">Left</span> err <span class="ot">-&gt;</span> internalServerError <span class="fu">$</span> toResponse err
+    <span class="kw">Right</span> _ <span class="ot">-&gt;</span> seeOther (<span class="st">&quot;?partition=&quot;</span> <span class="fu">++</span> partition) <span class="fu">$</span> toResponse ()</code></pre>
 <p>To list the recent notes in the selected notebook, we use queryEntities to query the top 10 entities from the notes table, filtering based on the partition key.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getNotes ::</span> <span class="dt">ServerPartT</span> <span class="dt">IO</span> <span class="dt">Response</span>
 getNotes <span class="fu">=</span> <span class="kw">do</span>
   methodM <span class="dt">GET</span>
-  partition <span class="ot">&lt;-</span> look <span class="st">&quot;partition&quot;</span> <span class="ot">`mplus`</span> return <span class="st">&quot;default&quot;</span>
-  <span class="kw">let</span> query <span class="fu">=</span> defaultEntityQuery { eqPageSize <span class="fu">=</span> <span class="dt">Just</span> <span class="dv">10</span>,
-                                   eqFilter <span class="fu">=</span> <span class="dt">Just</span> <span class="fu">$</span> <span class="dt">CompareString</span> <span class="st">&quot;PartitionKey&quot;</span> <span class="dt">Equal</span> partition }
+  partition <span class="ot">&lt;-</span> look <span class="st">&quot;partition&quot;</span> <span class="ot">`mplus`</span> <span class="fu">return</span> <span class="st">&quot;default&quot;</span>
+  <span class="kw">let</span> query <span class="fu">=</span> defaultEntityQuery { eqPageSize <span class="fu">=</span> <span class="kw">Just</span> <span class="dv">10</span>,
+                                   eqFilter <span class="fu">=</span> <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">CompareString</span> <span class="st">&quot;PartitionKey&quot;</span> <span class="dt">Equal</span> partition }
   result <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> queryEntities account <span class="st">&quot;notes&quot;</span> query
   <span class="kw">case</span> result <span class="kw">of</span>
-    <span class="dt">Left</span> err <span class="ot">-&gt;</span> internalServerError <span class="fu">$</span> toResponse err
-    <span class="dt">Right</span> notes <span class="ot">-&gt;</span> ok <span class="fu">$</span> setHeader <span class="st">&quot;Content-Type&quot;</span> <span class="st">&quot;text/html&quot;</span> <span class="fu">$</span> toResponse <span class="fu">$</span> root partition notes</code></pre>
+    <span class="kw">Left</span> err <span class="ot">-&gt;</span> internalServerError <span class="fu">$</span> toResponse err
+    <span class="kw">Right</span> notes <span class="ot">-&gt;</span> ok <span class="fu">$</span> setHeader <span class="st">&quot;Content-Type&quot;</span> <span class="st">&quot;text/html&quot;</span> <span class="fu">$</span> toResponse <span class="fu">$</span> root partition notes</code></pre>
 <p>This demonstrates a very basic query, but the tablestorage package supports more complicated queries including multiple filters.</p>
 <p>If the query fails, then we return response code 500. If it is successful, then we return a HTML page built using blaze-html. The is the content of the root function:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">root ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">Entity</span>] <span class="ot">-&gt;</span> <span class="dt">H.Html</span>
@@ -84,14 +84,14 @@ root partition notes <span class="fu">=</span> H.html <span class="fu">$</span> 
       H.div <span class="fu">$</span>
         H.input <span class="fu">!</span> A.type_ (toValue <span class="st">&quot;submit&quot;</span>) <span class="fu">!</span> A.value (toValue <span class="st">&quot;Add Note&quot;</span>)
     H.h1 <span class="fu">$</span> H.toHtml <span class="st">&quot;Recent Notes&quot;</span>
-    H.ul <span class="fu">$</span> void <span class="fu">$</span> mapM displayNote notes</code></pre>
+    H.ul <span class="fu">$</span> void <span class="fu">$</span> <span class="fu">mapM</span> displayNote notes</code></pre>
 <p>The first part of the page contains a form which will allow the user to post a new note. It contains text boxes for the text and author arguments. The partition key is provided as a hidden field on the form, which the user can change by editing the query string.</p>
 <p>The last part of the page lists the most recent ten notes in the selected notebook (partition key). Each note is rendered using the displayNote function:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">displayNote ::</span> <span class="dt">Entity</span> <span class="ot">-&gt;</span> <span class="dt">H.Html</span>
-displayNote note <span class="fu">=</span> fromMaybe (return ()) <span class="fu">$</span> <span class="kw">do</span>
+displayNote note <span class="fu">=</span> fromMaybe (<span class="fu">return</span> ()) <span class="fu">$</span> <span class="kw">do</span>
   text <span class="ot">&lt;-</span> edmString <span class="st">&quot;text&quot;</span> note
   author <span class="ot">&lt;-</span> edmString <span class="st">&quot;author&quot;</span> note
-  return <span class="fu">$</span> H.li <span class="fu">$</span> <span class="kw">do</span>
+  <span class="fu">return</span> <span class="fu">$</span> H.li <span class="fu">$</span> <span class="kw">do</span>
     H.toHtml <span class="st">&quot;&#39;&quot;</span>
     H.toHtml text
     H.toHtml <span class="st">&quot;&#39;&quot;</span>
@@ -107,8 +107,8 @@ routes <span class="fu">=</span> [ getNotes, postNote ]</code></pre>
 main <span class="fu">=</span> <span class="kw">do</span> 
   result <span class="ot">&lt;-</span> createTableIfNecessary account <span class="st">&quot;notes&quot;</span>
   <span class="kw">case</span> result <span class="kw">of</span>
-    <span class="dt">Left</span> err <span class="ot">-&gt;</span> putStrLn err
-    <span class="dt">Right</span> _ <span class="ot">-&gt;</span> simpleHTTP nullConf <span class="fu">$</span> msum routes</code></pre>
+    <span class="kw">Left</span> err <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> err
+    <span class="kw">Right</span> _ <span class="ot">-&gt;</span> simpleHTTP nullConf <span class="fu">$</span> msum routes</code></pre>
 <p>The web application can be deployed to the development fabric by using the <code>cspack</code> and <code>csrun</code> command line utilities.</p>
 <p>We need to add a few basic configuration files. The web server will run in a worker role, which we set up in the ServiceDefinition.csdef file. We need to add a worker role definition, something like the following:</p>
 <pre><code>-- &lt;ServiceDefinition name=&quot;Notes&quot; xmlns=&quot;http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition&quot;&gt;

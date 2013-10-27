@@ -4,6 +4,13 @@
     <link>http://blog.functorial.com</link>
     <description>functorial</description>
     <item>
+      <title>Pretty Printing Arrows</title>
+      <link>http://blog.functorial.com/posts/2013-10-27-Pretty-Printing-Arrows.html</link>
+      <description></description>
+      <guid isPermaLink="true">http://blog.functorial.com/posts/2013-10-27-Pretty-Printing-Arrows.html</guid>
+      <pubDate>Sun, 27 Oct 2013 00:10:1382832000 GMT</pubDate>
+    </item>
+    <item>
       <title>The Visitor Pattern and Pattern Matching</title>
       <link>http://blog.functorial.com/posts/2013-10-02-Visitor-Pattern.html</link>
       <description></description>
@@ -213,7 +220,7 @@
       <guid isPermaLink="true">http://blog.functorial.com/posts/2010-12-04-Existential-Types.html</guid>
       <pubDate>Sat, 04 Dec 2010 00:12:1291420800 GMT</pubDate>
     </item>
-    <pubDate>Mon, 14 Oct 2013 20:10:1381783458 GMT</pubDate>
-    <lastBuildDate>Mon, 14 Oct 2013 20:10:1381783458 GMT</lastBuildDate>
+    <pubDate>Sun, 27 Oct 2013 01:10:1382836012 GMT</pubDate>
+    <lastBuildDate>Sun, 27 Oct 2013 01:10:1382836012 GMT</lastBuildDate>
   </channel>
 </rss>

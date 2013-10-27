@@ -47,11 +47,11 @@ c <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&g
   <span class="dt">App&#39;</span><span class="ot"> ::</span> <span class="dt">Splitting</span> vs ws s <span class="fu">-</span><span class="dt">Lin&#39;</span> vs <span class="fu">-</span><span class="dt">Lin&#39;</span> ws <span class="fu">-</span><span class="dt">Lin&#39;</span> s
   <span class="dt">Abs&#39;</span><span class="ot"> ::</span> (forall v<span class="fu">.</span> v <span class="fu">-</span><span class="dt">Lin&#39;</span> (v <span class="ch">&#39;: vars)) -Lin&#39;</span> vars
 
-<span class="kw">instance</span> <span class="dt">Show</span> (<span class="dt">Lin&#39;</span> <span class="ch">&#39;[]) where</span>
-  show <span class="dt">B</span> <span class="fu">=</span> <span class="st">&quot;B&quot;</span>
-  show <span class="dt">C</span> <span class="fu">=</span> <span class="st">&quot;C&quot;</span>
-  show <span class="dt">I</span> <span class="fu">=</span> <span class="st">&quot;I&quot;</span>
-  show (<span class="dt">App&#39;</span> <span class="dt">E</span> t1 t2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> (show t1) <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> (show t2) <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
+<span class="kw">instance</span> <span class="kw">Show</span> (<span class="dt">Lin&#39;</span> <span class="ch">&#39;[]) where</span>
+  <span class="fu">show</span> <span class="dt">B</span> <span class="fu">=</span> <span class="st">&quot;B&quot;</span>
+  <span class="fu">show</span> <span class="dt">C</span> <span class="fu">=</span> <span class="st">&quot;C&quot;</span>
+  <span class="fu">show</span> <span class="dt">I</span> <span class="fu">=</span> <span class="st">&quot;I&quot;</span>
+  <span class="fu">show</span> (<span class="dt">App&#39;</span> <span class="dt">E</span> t1 t2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> (<span class="fu">show</span> t1) <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> (<span class="fu">show</span> t2) <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
 <p>The idea is to progressively replace the <code>Abs'</code> and <code>Var'</code> constructors with the remaining constructors, until there are no more abstractions appearing in the expression, and therefore no more variables.</p>
 <p>We will walk the expression tree looking for abstractions. When one is found, we have a polymorphic function with type</p>
 <pre><code>-- forall v. v -&gt; Lin&#39; (v &#39;: vars)</code></pre>
@@ -59,8 +59,8 @@ c <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&g
 <p>We need a supply of unique variable names:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">VarSupply</span> a <span class="fu">=</span> <span class="dt">VarSupply</span> {<span class="ot"> runSupply ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (a, <span class="dt">Int</span>) }
 
-<span class="kw">instance</span> <span class="dt">Monad</span> <span class="dt">VarSupply</span> <span class="kw">where</span>
-  return a <span class="fu">=</span> <span class="dt">VarSupply</span> (\i <span class="ot">-&gt;</span> (a, i))
+<span class="kw">instance</span> <span class="kw">Monad</span> <span class="dt">VarSupply</span> <span class="kw">where</span>
+  <span class="fu">return</span> a <span class="fu">=</span> <span class="dt">VarSupply</span> (\i <span class="ot">-&gt;</span> (a, i))
   f <span class="fu">&gt;&gt;=</span> g <span class="fu">=</span> <span class="dt">VarSupply</span> (\i <span class="ot">-&gt;</span> <span class="kw">let</span> (a, j) <span class="fu">=</span> runSupply f i <span class="kw">in</span> runSupply (g a) j)</code></pre>
 <p>This action generates a new variable name:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nextVar ::</span> <span class="dt">VarSupply</span> <span class="dt">Int</span>
@@ -79,7 +79,7 @@ trivial <span class="dt">C</span> <span class="fu">=</span> <span class="dt">E</
 trivial <span class="dt">I</span> <span class="fu">=</span> <span class="dt">E</span></code></pre>
 <p>Now we can define the elimination function:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">elim ::</span> <span class="dt">Lin</span> vars <span class="ot">-&gt;</span> <span class="dt">Lin&#39;</span> vars
-elim t <span class="fu">=</span> fst <span class="fu">$</span> runSupply (elim&#39; <span class="fu">$</span> inj t) <span class="dv">0</span> <span class="kw">where</span></code></pre>
+elim t <span class="fu">=</span> <span class="fu">fst</span> <span class="fu">$</span> runSupply (elim&#39; <span class="fu">$</span> inj t) <span class="dv">0</span> <span class="kw">where</span></code></pre>
 <p>The helper function <code>inj</code> injects values in the type <code>Lin</code> into the type <code>Lin'</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">  inj ::</span> <span class="dt">Lin</span> vars <span class="fu">-</span><span class="dt">Lin&#39;</span> vars
   inj (<span class="dt">Var</span> v) <span class="fu">=</span> <span class="dt">Var&#39;</span> v
@@ -90,22 +90,22 @@ elim t <span class="fu">=</span> fst <span class="fu">$</span> runSupply (elim&#
   elim&#39; (<span class="dt">App&#39;</span> s t1 t2) <span class="fu">=</span> <span class="kw">do</span>
     t1&#39; <span class="ot">&lt;-</span> elim&#39; t1
     t2&#39; <span class="ot">&lt;-</span> elim&#39; t2
-    return <span class="fu">$</span> <span class="dt">App&#39;</span> s t1&#39; t2&#39;
+    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">App&#39;</span> s t1&#39; t2&#39;
   elim&#39; (<span class="dt">Abs&#39;</span> f) <span class="fu">=</span> <span class="kw">do</span>
     name <span class="ot">&lt;-</span> nextVar
     elim&#39;&#39; name (f name)
-  elim&#39; x <span class="fu">=</span> return <span class="fu">$</span> x</code></pre>
+  elim&#39; x <span class="fu">=</span> <span class="fu">return</span> <span class="fu">$</span> x</code></pre>
 <p>The key function is <code>elim''</code> which eliminates a specific variable from a subexpression. Again, <code>elim''</code> runs in the <code>VarSupply</code> monad.</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">  elim&#39;&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Lin&#39;</span> (<span class="dt">Int</span> <span class="ch">&#39;: vars) -&gt; VarSupply (Lin&#39;</span> vars)</code></pre>
 <p>A variable can be eliminated using the <code>I</code> combinator. Note that it is not necessary to check that names are equal here, because linearity means that if we were to encounter a different variable here, we would have taken a different path at an application further up the expression tree.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">Var&#39;</span> _) <span class="fu">=</span> return <span class="dt">I</span></code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">Var&#39;</span> _) <span class="fu">=</span> <span class="fu">return</span> <span class="dt">I</span></code></pre>
 <p>In the case of an application, our choices are limited by the types of the subexpression. The splitting context tells us how to proceed. If the eliminated variable occurs on the left of the application, we use the combinator <code>C</code>. If it occurs on the right, we use the combinator <code>B</code>. In either case, we only need to eliminate the variable recursively on one side of the application:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">App&#39;</span> (<span class="dt">L</span> s) t1 t2) <span class="fu">=</span> <span class="kw">do</span>
     t1&#39; <span class="ot">&lt;-</span> elim&#39;&#39; name t1
-    return <span class="fu">$</span> <span class="dt">App&#39;</span> s (<span class="dt">App&#39;</span> (trivial t1&#39;) <span class="dt">C</span> t1&#39;) t2
+    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">App&#39;</span> s (<span class="dt">App&#39;</span> (trivial t1&#39;) <span class="dt">C</span> t1&#39;) t2
   elim&#39;&#39; name (<span class="dt">App&#39;</span> (<span class="dt">R</span> s) t1 t2) <span class="fu">=</span> <span class="kw">do</span>
     t2&#39; <span class="ot">&lt;-</span> elim&#39;&#39; name t2
-    return <span class="fu">$</span> <span class="dt">App&#39;</span> s (<span class="dt">App&#39;</span> (trivial t1) <span class="dt">B</span> t1) t2&#39;</code></pre>
+    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">App&#39;</span> s (<span class="dt">App&#39;</span> (trivial t1) <span class="dt">B</span> t1) t2&#39;</code></pre>
 <p>In the case of a nested abstraction, we generate a new variable name, and then eliminate both variables in turn:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">Abs&#39;</span> f) <span class="fu">=</span> <span class="kw">do</span>
     name&#39; <span class="ot">&lt;-</span> nextVar

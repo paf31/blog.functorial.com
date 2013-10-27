@@ -25,14 +25,14 @@ _gaq.push(['_trackPageview']);
 <p>Let's define a fixed point type for an arbitrary functor f as follows:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Rec</span> f <span class="fu">=</span> <span class="dt">In</span> {<span class="ot"> out ::</span> f (<span class="dt">Rec</span> f) }</code></pre>
 <p>We can define folds and unfolds for a functor f in a uniform way as usual.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">fold phi <span class="fu">=</span> phi <span class="fu">.</span> fmap (fold phi) <span class="fu">.</span> out
-unfold psi <span class="fu">=</span> <span class="dt">In</span> <span class="fu">.</span> fmap (unfold psi) <span class="fu">.</span> psi</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell">fold phi <span class="fu">=</span> phi <span class="fu">.</span> <span class="fu">fmap</span> (fold phi) <span class="fu">.</span> out
+unfold psi <span class="fu">=</span> <span class="dt">In</span> <span class="fu">.</span> <span class="fu">fmap</span> (unfold psi) <span class="fu">.</span> psi</code></pre>
 <p>Now look at the definition of the function equals above. Consider the points where the function calls itself recursively. This happens only in the last case, where both sides contribute a smaller term. In general, we can only call a doubly recursive function recursively if we have two arguments to call the function with.</p>
 <p>This observation motivates the following definition. For functors <code>f</code> and <code>g</code>, define the following combination <code>f # g</code> of the two:</p>
 <pre><code>-- (f # g) x = exists a b. (a -&gt; b -&gt; x) (f a) (g b)</code></pre>
 <p>Now, type <code>x</code> appears in <code>(f # g) x</code> in those places where there is an <code>a</code> contributed from <code>f</code>, and a <code>b</code> contributed from <code>g</code>.</p>
 <p>For example, if we define a base functor for the type of natural numbers:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Nat</span> t <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">Succ</span> t <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>)</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Nat</span> t <span class="fu">=</span> <span class="dt">Zero</span> <span class="fu">|</span> <span class="dt">Succ</span> t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)</code></pre>
 <p>then we have</p>
 <pre><code>-- (Nat # Nat) t = exists a b. (a -&gt; b -&gt; x) (Nat a) (Nat b)
 --               ~ exists a b. (a -&gt; b -&gt; x) (1 + a) (1 + b)
@@ -60,24 +60,24 @@ parFold phi x y <span class="fu">=</span> (phi <span class="fu">$</span> parFold
 parUnfold psi x <span class="fu">=</span> <span class="kw">let</span> (a, b) <span class="fu">=</span> (psi <span class="fu">$</span> parUnfold psi) x <span class="kw">in</span> (<span class="dt">In</span> a, <span class="dt">In</span> b)</code></pre>
 <p>Now we can define the <code>equals</code> and <code>unify</code> functions above as instances of <code>parFold</code>:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell">equals <span class="fu">=</span> parFold equals&#39; <span class="kw">where</span>
-  equals&#39; _ <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="dt">True</span>
-  equals&#39; _ <span class="dt">Zero</span> _ <span class="fu">=</span> <span class="dt">False</span>
-  equals&#39; _ _ <span class="dt">Zero</span> <span class="fu">=</span> <span class="dt">False</span>
+  equals&#39; _ <span class="dt">Zero</span> <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">True</span>
+  equals&#39; _ <span class="dt">Zero</span> _ <span class="fu">=</span> <span class="kw">False</span>
+  equals&#39; _ _ <span class="dt">Zero</span> <span class="fu">=</span> <span class="kw">False</span>
   equals&#39; f (<span class="dt">Succ</span> x) (<span class="dt">Succ</span> y) <span class="fu">=</span> f x y
 
-<span class="kw">data</span> <span class="dt">Ty</span> t <span class="fu">=</span> <span class="dt">Unknown</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">Arrow</span> t t <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>)
+<span class="kw">data</span> <span class="dt">Ty</span> t <span class="fu">=</span> <span class="dt">Unknown</span> <span class="dt">Int</span> <span class="fu">|</span> <span class="dt">Arrow</span> t t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)
 
 unify <span class="fu">=</span> parFold unify&#39; <span class="kw">where</span>
-  unify&#39; _ (<span class="dt">Unknown</span> n) (<span class="dt">Unknown</span> m) <span class="fu">=</span> <span class="dt">Just</span> [(n, m)]
-  unify&#39; f (<span class="dt">Arrow</span> x y) (<span class="dt">Arrow</span> z w) <span class="fu">=</span> <span class="kw">do</span> cs1 <span class="ot">&lt;-</span> (f x z); cs2 <span class="ot">&lt;-</span> (f y w); return <span class="fu">$</span> cs1 <span class="fu">++</span> cs2
-  unify&#39; _ _ _ <span class="fu">=</span> <span class="dt">Nothing</span></code></pre>
+  unify&#39; _ (<span class="dt">Unknown</span> n) (<span class="dt">Unknown</span> m) <span class="fu">=</span> <span class="kw">Just</span> [(n, m)]
+  unify&#39; f (<span class="dt">Arrow</span> x y) (<span class="dt">Arrow</span> z w) <span class="fu">=</span> <span class="kw">do</span> cs1 <span class="ot">&lt;-</span> (f x z); cs2 <span class="ot">&lt;-</span> (f y w); <span class="fu">return</span> <span class="fu">$</span> cs1 <span class="fu">++</span> cs2
+  unify&#39; _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
 <p>The third example shows that the two recursive structures do not have to be defined over the same base functor:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">List</span> a t <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Cons</span> a t <span class="kw">deriving</span> (<span class="dt">Show</span>, <span class="dt">Functor</span>)
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">List</span> a t <span class="fu">=</span> <span class="dt">Empty</span> <span class="fu">|</span> <span class="dt">Cons</span> a t <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Functor</span>)
 
 elementAt <span class="fu">=</span> parFold elementAt&#39; <span class="kw">where</span>
-  elementAt&#39; _ <span class="dt">Zero</span> (<span class="dt">Cons</span> a t) <span class="fu">=</span> <span class="dt">Just</span> a
+  elementAt&#39; _ <span class="dt">Zero</span> (<span class="dt">Cons</span> a t) <span class="fu">=</span> <span class="kw">Just</span> a
   elementAt&#39; f (<span class="dt">Succ</span> n) (<span class="dt">Cons</span> a t) <span class="fu">=</span> f n t
-  elementAt&#39; _ _ _ <span class="fu">=</span> <span class="dt">Nothing</span></code></pre>
+  elementAt&#39; _ _ _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
 <hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
 /* * * DON'T EDIT BELOW THIS LINE * * */
 (function() {

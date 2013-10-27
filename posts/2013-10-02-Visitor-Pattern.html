@@ -220,7 +220,7 @@ public Result accept&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor) {
 <h2 id="a-brief-type-theoretic-detour">A Brief Type-Theoretic Detour</h2>
 <p>You may wish to skip this section as it is not really necessary for understanding the visitor pattern, but I have included it since it may be helpful.</p>
 <p>A simple example of a type which supports case analysis in Haskell is the <code>Either</code> data type, defined as follows:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Either</span> a b <span class="fu">=</span> <span class="dt">Left</span> a <span class="fu">|</span> <span class="dt">Right</span> b</code></pre>
+<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Either</span> a b <span class="fu">=</span> <span class="kw">Left</span> a <span class="fu">|</span> <span class="kw">Right</span> b</code></pre>
 <p><code>Either</code> is what is known as a &quot;sum type&quot;, because it corresponds to addition at the type level.</p>
 <p>A value of type <code>Either a b</code> is <em>either</em> constructed using <code>Left</code>, in which case it contains a value of type <code>a</code>, or with <code>Right</code>, in which case it contains a value of type <code>b</code>. A value of type <code>Either a b</code> contains <em>either</em> an <code>a</code> or a <code>b</code>, but not both.</p>
 <p>We cannot immediately define the type <code>Either</code> in C#, since its type system doesn't support sum types. However, <code>Either</code> is isomorphic to a data type which is constructed only using functions, rank-2 polymorphism and records, both of which are available in C#, so it is possible to emulate <code>Either</code> in C# using those features.</p>
@@ -231,11 +231,11 @@ public Result accept&lt;Result&gt;(EmployeeVisitor&lt;Result&gt; visitor) {
 <p>This code requires the <code>PolymorphicComponents</code> GHC extension.</p>
 <p>The isomorphism between <code>Either</code> and <code>Either'</code> can be witnessed by two functions:</p>
 <pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">forward ::</span> <span class="dt">Either</span> a b <span class="ot">-&gt;</span> <span class="dt">Either&#39;</span> a b
-forward (<span class="dt">Left</span> a) <span class="fu">=</span> <span class="dt">Either&#39;</span> <span class="fu">$</span> flip visitLeft a
-forward (<span class="dt">Right</span> a) <span class="fu">=</span> <span class="dt">Either&#39;</span> <span class="fu">$</span> flip visitRight a
+forward (<span class="kw">Left</span> a) <span class="fu">=</span> <span class="dt">Either&#39;</span> <span class="fu">$</span> <span class="fu">flip</span> visitLeft a
+forward (<span class="kw">Right</span> a) <span class="fu">=</span> <span class="dt">Either&#39;</span> <span class="fu">$</span> <span class="fu">flip</span> visitRight a
 
 <span class="ot">back ::</span> <span class="dt">Either&#39;</span> a b <span class="ot">-&gt;</span> <span class="dt">Either</span> a b
-back <span class="fu">=</span> acceptVisitor (<span class="dt">EitherVisitor</span> <span class="dt">Left</span> <span class="dt">Right</span>)</code></pre>
+back <span class="fu">=</span> acceptVisitor (<span class="dt">EitherVisitor</span> <span class="kw">Left</span> <span class="kw">Right</span>)</code></pre>
 <p>One can verify that these functions are indeed inverse to one another.</p>
 <p>It is this isomorphism that ensures that the visitor pattern is a sound embedding of sum types into C# using only functions, generics and records. Since the types are isomorphic, we can be sure (assuming we don't do anything too subversive) that the typechecker will verify totality in our case analyses.</p>
 <h2 id="extending-the-visitor-pattern">Extending the Visitor Pattern</h2>
@@ -274,7 +274,7 @@ back <span class="fu">=</span> acceptVisitor (<span class="dt">EitherVisitor</sp
 <span class="ot">    timeOff ::</span> employee <span class="ot">-&gt;</span> <span class="dt">Int</span>
     
 <span class="kw">instance</span> <span class="dt">Vacation</span> <span class="dt">HourlyEmployee</span> <span class="kw">where</span>
-    timeOff (<span class="dt">HourlyEmployee</span> _ hoursWorked) <span class="fu">=</span> min maxTimeOff (hoursWorked <span class="fu">/</span> hoursOffPerHourWorked)
+    timeOff (<span class="dt">HourlyEmployee</span> _ hoursWorked) <span class="fu">=</span> <span class="fu">min</span> maxTimeOff (hoursWorked <span class="fu">/</span> hoursOffPerHourWorked)
     
 <span class="kw">instance</span> <span class="dt">Vacation</span> <span class="dt">SalariedEmployee</span> <span class="kw">where</span>
     timeOff (<span class="dt">SalariedEmployee</span> _) <span class="fu">=</span> maxTimeOff</code></pre>
@@ -284,8 +284,8 @@ back <span class="fu">=</span> acceptVisitor (<span class="dt">EitherVisitor</sp
 <span class="kw">data</span> <span class="dt">ContractEmployee</span> <span class="fu">=</span> <span class="dt">ContractEmployee</span> {<span class="ot"> workCost ::</span> <span class="dt">Double</span>,<span class="ot"> wasWorkCompletedThisMonth ::</span> <span class="dt">Bool</span> }
 
 <span class="kw">instance</span> <span class="dt">Payable</span> <span class="dt">ContractEmployee</span> <span class="kw">where</span>
-    pay (<span class="dt">ContractEmployee</span> _ <span class="dt">False</span>) <span class="fu">=</span> <span class="dv">0</span><span class="fu">.</span><span class="dv">0</span>
-    pay (<span class="dt">ContractEmployee</span> workCost <span class="dt">True</span>) <span class="fu">=</span> workCost
+    pay (<span class="dt">ContractEmployee</span> _ <span class="kw">False</span>) <span class="fu">=</span> <span class="dv">0</span><span class="fu">.</span><span class="dv">0</span>
+    pay (<span class="dt">ContractEmployee</span> workCost <span class="kw">True</span>) <span class="fu">=</span> workCost
 
 <span class="kw">instance</span> <span class="dt">Vacation</span> <span class="dt">ContractEmployee</span> <span class="kw">where</span>
     timeOff (<span class="dt">ContractEmployee</span> _ _) <span class="fu">=</span> <span class="dv">0</span></code></pre>
