@@ -1,31 +1,26 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Pretty Printing Arrows</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Pretty Printing Arrows</h2><p><small>by Phil Freeman on 2013/10/27</small></p><hr><p>I'd like to show a neat use of arrows for pretty printing an AST.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE GADTs, GeneralizedNewtypeDeriving #-}</span> 
+<html><head><title>Functorial Blog - Pretty Printing Arrows</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Pretty Printing Arrows</h2><p><small>by Phil Freeman on 2013/10/27</small></p><p>I&#39;d like to show a neat use of arrows for pretty printing an AST.</p>
+<pre class="{.haskell}"><code>{-# LANGUAGE GADTs, GeneralizedNewtypeDeriving #-} 
 
-<span class="kw">import</span> Data.Maybe (fromMaybe)
-<span class="kw">import</span> Data.Function (fix)
-<span class="kw">import</span> <span class="kw">qualified</span> Control.Category <span class="kw">as</span> C
-<span class="kw">import</span> Control.Category ((&gt;&gt;&gt;))
-<span class="kw">import</span> <span class="kw">qualified</span> Control.Arrow <span class="kw">as</span> A
-<span class="kw">import</span> Control.Arrow ((***), (&lt;+&gt;))</code></pre>
+import Data.Maybe (fromMaybe)
+import Data.Function (fix)
+import qualified Control.Category as C
+import Control.Category ((&gt;&gt;&gt;))
+import qualified Control.Arrow as A
+import Control.Arrow ((***), (&lt;+&gt;))
+</code></pre>
 <p>Suppose you had defined a type of syntax trees and wanted to write a function to print their representations as code:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Expr</span> <span class="fu">=</span> <span class="dt">Var</span> <span class="dt">String</span>
-          <span class="fu">|</span> <span class="dt">Abs</span> <span class="dt">String</span> <span class="dt">Expr</span>
-          <span class="fu">|</span> <span class="dt">App</span> <span class="dt">Expr</span> <span class="dt">Expr</span> <span class="kw">deriving</span> <span class="kw">Show</span></code></pre>
-<h2 id="a-first-attempt">A First Attempt</h2>
+<pre class="{.haskell}"><code>data Expr = Var String
+          | Abs String Expr
+          | App Expr Expr deriving Show
+</code></pre>
+<h2>A First Attempt</h2>
 <p>A first attempt might look something like this:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">pretty1 ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-pretty1 (<span class="dt">Var</span> v) <span class="fu">=</span> v
-pretty1 (<span class="dt">Abs</span> v e) <span class="fu">=</span> <span class="st">&quot;\\&quot;</span> <span class="fu">++</span> v <span class="fu">++</span> <span class="st">&quot; -&gt; &quot;</span> <span class="fu">++</span> pretty1 e
-pretty1 (<span class="dt">App</span> e1 e2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> pretty1 e1 <span class="fu">++</span> <span class="st">&quot;) (&quot;</span> <span class="fu">++</span> pretty1 e2 <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
+<pre class="{.haskell}"><code>pretty1 :: Expr -&gt; String
+pretty1 (Var v) = v
+pretty1 (Abs v e) = &quot;\\&quot; ++ v ++ &quot; -&gt; &quot; ++ pretty1 e
+pretty1 (App e1 e2) = &quot;(&quot; ++ pretty1 e1 ++ &quot;) (&quot; ++ pretty1 e2 ++ &quot;)&quot;
+</code></pre>
 <p>This certainly generates valid code, but the resulting strings tend to contain a lot of redundant parentheses:</p>
 <pre><code>ghci&gt; let s = Abs &quot;x&quot; $ 
                 Abs &quot;y&quot; $ 
@@ -34,19 +29,21 @@ pretty1 (<span class="dt">App</span> e1 e2) <span class="fu">=</span> <span clas
                           (App (Var &quot;y&quot;) (Var &quot;z&quot;))
                           
 ghci&gt; pretty1 s
-&quot;\\x -&gt; \\y -&gt; \\z -&gt; ((x) (z)) ((y) (z))&quot;</code></pre>
-<h2 id="a-better-approach">A Better Approach</h2>
+&quot;\\x -&gt; \\y -&gt; \\z -&gt; ((x) (z)) ((y) (z))&quot;
+</code></pre>
+<h2>A Better Approach</h2>
 <p>Another approach is to thread the current precedence level as an argument, and to parenthesize as a last resort:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Precedence</span> <span class="fu">=</span> <span class="dt">Int</span>
+<pre class="{.haskell}"><code>type Precedence = Int
 
-<span class="ot">pretty2 ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-pretty2 <span class="fu">=</span> pretty2&#39; <span class="dv">0</span>
-  <span class="kw">where</span>
-<span class="ot">  pretty2&#39; ::</span> <span class="dt">Precedence</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-  pretty2&#39; _ (<span class="dt">Var</span> v) <span class="fu">=</span> v
-  pretty2&#39; p (<span class="dt">Abs</span> v e) <span class="fu">|</span> p <span class="fu">&lt;</span> <span class="dv">2</span> <span class="fu">=</span> <span class="st">&quot;\\&quot;</span> <span class="fu">++</span> v <span class="fu">++</span> <span class="st">&quot; -&gt; &quot;</span> <span class="fu">++</span> pretty2&#39; <span class="dv">0</span> e
-  pretty2&#39; p (<span class="dt">App</span> e1 e2) <span class="fu">=</span> pretty2&#39; <span class="dv">1</span> e1 <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> pretty2&#39; p e2
-  pretty2&#39; _ e <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> pretty2&#39; <span class="dv">0</span> e <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
+pretty2 :: Expr -&gt; String
+pretty2 = pretty2&#39; 0
+  where
+  pretty2&#39; :: Precedence -&gt; Expr -&gt; String
+  pretty2&#39; _ (Var v) = v
+  pretty2&#39; p (Abs v e) | p &lt; 2 = &quot;\\&quot; ++ v ++ &quot; -&gt; &quot; ++ pretty2&#39; 0 e
+  pretty2&#39; p (App e1 e2) = pretty2&#39; 1 e1 ++ &quot; &quot; ++ pretty2&#39; p e2
+  pretty2&#39; _ e = &quot;(&quot; ++ pretty2&#39; 0 e ++ &quot;)&quot;
+</code></pre>
 <p>We can verify that this approach generates better code, and that the precedence rules are still respected:</p>
 <pre><code>ghci&gt; pretty2 s
 &quot;\\x -&gt; \\y -&gt; \\z -&gt; x z (y z)&quot;
@@ -54,9 +51,10 @@ pretty2 <span class="fu">=</span> pretty2&#39; <span class="dv">0</span>
 ghci&gt; let k = App (Abs &quot;x&quot; $ Var &quot;x&quot;) (Abs &quot;x&quot; $ Var &quot;x&quot;)
 
 ghci&gt; pretty2 k
-&quot;(\\x -&gt; x) (\\x -&gt; x)&quot;</code></pre>
+&quot;(\\x -&gt; x) (\\x -&gt; x)&quot;
+</code></pre>
 <p>These approaches are fine, but as the complexity of the AST type increases, I find it harder to keep the various precedence relationships in mind.</p>
-<h2 id="first-class-patterns">First Class Patterns</h2>
+<h2>First Class Patterns</h2>
 <p>Arrows provide a way to express pattern matches as first class values in a simple way, and then to compose those patterns to create full pretty printers.</p>
 <p>First class patterns and their use in pretty printing are not new ideas: interested readers might like to take a look at the following papers for more information:</p>
 <ul>
@@ -66,104 +64,105 @@ ghci&gt; pretty2 k
 <p>However, I think the use of arrows provides a novel way to build up patterns into complex pretty printers.</p>
 <p>The really neat thing is that almost all of the required code can be derived using <code>GeneralizedNewtypeDeriving</code>!</p>
 <p>Here is the definition of a <code>Pattern</code> as an <code>Arrow</code>. It takes a value of type <code>a</code>, and either matches successfully, returning a value of type <code>b</code>, or fails. Failure is modelled using the Kleisli category for the <code>Maybe</code> monad:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Pattern</span> a b <span class="fu">=</span> <span class="dt">Pattern</span> {<span class="ot"> runPattern ::</span> <span class="dt">A.Kleisli</span> <span class="dt">Maybe</span> a b } 
-  <span class="kw">deriving</span> (<span class="dt">C.Category</span>, <span class="dt">A.Arrow</span>, <span class="dt">A.ArrowZero</span>, <span class="dt">A.ArrowPlus</span>)
+<pre class="{.haskell}"><code>newtype Pattern a b = Pattern { runPattern :: A.Kleisli Maybe a b } 
+  deriving (C.Category, A.Arrow, A.ArrowZero, A.ArrowPlus)
 
-<span class="ot">pattern ::</span> <span class="dt">Pattern</span> a b <span class="ot">-&gt;</span> a <span class="ot">-&gt;</span> <span class="dt">Maybe</span> b
-pattern <span class="fu">=</span> A.runKleisli <span class="fu">.</span> runPattern</code></pre>
+pattern :: Pattern a b -&gt; a -&gt; Maybe b
+pattern = A.runKleisli . runPattern
+</code></pre>
 <p>We can derive instances for <code>Category</code>, <code>Arrow</code>, <code>ArrowZero</code>, and <code>ArrowPlus</code>. The intuition here is that <code>Category</code> gives us composition of patterns, i.e. nested patterns, <code>Arrow</code> gives combinators for working with patterns involving tuples, and <code>ArrowZero</code> and <code>ArrowPlus</code> give us a way to deal with failure and backtracking.</p>
-<p>Note: there is also an instance for <code>Applicative</code> which gives another way to work with simultaneous patterns, but I won't write it out here.</p>
-<p>One thing we can't immediately <code>derive</code> is the <code>Functor</code> instance for <code>Pattern</code>, which will come in useful later. Fortunately, it is easy to write by hand</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">instance</span> <span class="kw">Functor</span> (<span class="dt">Pattern</span> a) <span class="kw">where</span>
-  <span class="fu">fmap</span> f p <span class="fu">=</span> <span class="dt">Pattern</span> <span class="fu">$</span> <span class="dt">A.Kleisli</span> <span class="fu">$</span> <span class="fu">fmap</span> f <span class="fu">.</span> pattern p</code></pre>
-<h2 id="some-simple-patterns">Some Simple Patterns</h2>
+<p>Note: there is also an instance for <code>Applicative</code> which gives another way to work with simultaneous patterns, but I won&#39;t write it out here.</p>
+<p>One thing we can&#39;t immediately <code>derive</code> is the <code>Functor</code> instance for <code>Pattern</code>, which will come in useful later. Fortunately, it is easy to write by hand</p>
+<pre class="{.haskell}"><code>instance Functor (Pattern a) where
+  fmap f p = Pattern $ A.Kleisli $ fmap f . pattern p
+</code></pre>
+<h2>Some Simple Patterns</h2>
 <p>Here are some examples of <code>Pattern</code>s</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">var ::</span> <span class="dt">Pattern</span> <span class="dt">Expr</span> <span class="dt">String</span>
-var <span class="fu">=</span> <span class="dt">Pattern</span> <span class="fu">$</span> <span class="dt">A.Kleisli</span> var&#39;
-  <span class="kw">where</span> var&#39; (<span class="dt">Var</span> s) <span class="fu">=</span> <span class="kw">Just</span> s
-        var&#39; _ <span class="fu">=</span> <span class="kw">Nothing</span>
+<pre class="{.haskell}"><code>var :: Pattern Expr String
+var = Pattern $ A.Kleisli var&#39;
+  where var&#39; (Var s) = Just s
+        var&#39; _ = Nothing
 
-<span class="ot">lam ::</span> <span class="dt">Pattern</span> <span class="dt">Expr</span> (<span class="dt">String</span>, <span class="dt">Expr</span>)
-lam <span class="fu">=</span> <span class="dt">Pattern</span> <span class="fu">$</span> <span class="dt">A.Kleisli</span> abs&#39;
-  <span class="kw">where</span> abs&#39; (<span class="dt">Abs</span> s e) <span class="fu">=</span> <span class="kw">Just</span> (s, e)
-        abs&#39; _ <span class="fu">=</span> <span class="kw">Nothing</span>
+lam :: Pattern Expr (String, Expr)
+lam = Pattern $ A.Kleisli abs&#39;
+  where abs&#39; (Abs s e) = Just (s, e)
+        abs&#39; _ = Nothing
 
-<span class="ot">app ::</span> <span class="dt">Pattern</span> <span class="dt">Expr</span> (<span class="dt">Expr</span>, <span class="dt">Expr</span>)
-app <span class="fu">=</span> <span class="dt">Pattern</span> <span class="fu">$</span> <span class="dt">A.Kleisli</span> app&#39;
-  <span class="kw">where</span> app&#39; (<span class="dt">App</span> e1 e2) <span class="fu">=</span> <span class="kw">Just</span> (e1, e2)
-        app&#39; _ <span class="fu">=</span> <span class="kw">Nothing</span></code></pre>
+app :: Pattern Expr (Expr, Expr)
+app = Pattern $ A.Kleisli app&#39;
+  where app&#39; (App e1 e2) = Just (e1, e2)
+        app&#39; _ = Nothing
+</code></pre>
 <p>I imagine these are the sort of the thing one could write a Template Haskell splice for. They also seem quite similar to Prisms, which might provide another way to write this code.</p>
-<h2 id="combining-patterns">Combining Patterns</h2>
+<h2>Combining Patterns</h2>
 <p>Now we can write some combinators in the spirit of <code>Text.Parsec</code> which allow us to build up new patterns from old, and to apply a pattern recursively:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">chainl ::</span> <span class="dt">Pattern</span> a (a, a) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r
-chainl split f p <span class="fu">=</span> fix <span class="fu">$</span> \c <span class="ot">-&gt;</span> (split <span class="fu">&gt;&gt;&gt;</span> ((c <span class="fu">&lt;+&gt;</span> p) <span class="fu">***</span> p) <span class="fu">&gt;&gt;&gt;</span> A.arr (<span class="fu">uncurry</span> f))
+<pre class="{.haskell}"><code>chainl :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Pattern a r -&gt; Pattern a r
+chainl split f p = fix $ \c -&gt; (split &gt;&gt;&gt; ((c &lt;+&gt; p) *** p) &gt;&gt;&gt; A.arr (uncurry f))
 
-<span class="ot">chainr ::</span> <span class="dt">Pattern</span> a (a, a) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r
-chainr split f p <span class="fu">=</span> fix <span class="fu">$</span> \c <span class="ot">-&gt;</span> (split <span class="fu">&gt;&gt;&gt;</span> (p <span class="fu">***</span> (c <span class="fu">&lt;+&gt;</span> p)) <span class="fu">&gt;&gt;&gt;</span> A.arr (<span class="fu">uncurry</span> f))
+chainr :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Pattern a r -&gt; Pattern a r
+chainr split f p = fix $ \c -&gt; (split &gt;&gt;&gt; (p *** (c &lt;+&gt; p)) &gt;&gt;&gt; A.arr (uncurry f))
 
-<span class="ot">wrap ::</span> <span class="dt">Pattern</span> a (s, a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r
-wrap split f p <span class="fu">=</span> fix <span class="fu">$</span> \c <span class="ot">-&gt;</span> (split <span class="fu">&gt;&gt;&gt;</span> (C.id <span class="fu">***</span> (c <span class="fu">&lt;+&gt;</span> p)) <span class="fu">&gt;&gt;&gt;</span> A.arr (<span class="fu">uncurry</span> f))</code></pre>
-<h2 id="precedence-tables">Precedence Tables</h2>
+wrap :: Pattern a (s, a) -&gt; (s -&gt; r -&gt; r) -&gt; Pattern a r -&gt; Pattern a r
+wrap split f p = fix $ \c -&gt; (split &gt;&gt;&gt; (C.id *** (c &lt;+&gt; p)) &gt;&gt;&gt; A.arr (uncurry f))
+</code></pre>
+<h2>Precedence Tables</h2>
 <p>In fact, we can go one step further and derive a pattern from a precedence table in the manner of <code>Text.Parsec.Expr</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">OperatorTable</span> a r <span class="fu">=</span> <span class="dt">OperatorTable</span> {<span class="ot"> runOperatorTable ::</span> [ [<span class="dt">Operator</span> a r] ] }
+<pre class="{.haskell}"><code>data OperatorTable a r = OperatorTable { runOperatorTable :: [ [Operator a r] ] }
 
-<span class="kw">data</span> <span class="dt">Operator</span> a r <span class="kw">where</span>
-  <span class="dt">AssocL</span><span class="ot"> ::</span> <span class="dt">Pattern</span> a (a, a) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Operator</span> a r
-  <span class="dt">AssocR</span><span class="ot"> ::</span> <span class="dt">Pattern</span> a (a, a) <span class="ot">-&gt;</span> (r <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Operator</span> a r
-  <span class="dt">Wrap</span><span class="ot">   ::</span> <span class="dt">Pattern</span> a (s, a) <span class="ot">-&gt;</span> (s <span class="ot">-&gt;</span> r <span class="ot">-&gt;</span> r) <span class="ot">-&gt;</span> <span class="dt">Operator</span> a r
+data Operator a r where
+  AssocL :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Operator a r
+  AssocR :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Operator a r
+  Wrap   :: Pattern a (s, a) -&gt; (s -&gt; r -&gt; r) -&gt; Operator a r
 
-<span class="ot">buildPrettyPrinter ::</span> <span class="dt">OperatorTable</span> a r <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a r
-buildPrettyPrinter table p <span class="fu">=</span> <span class="fu">foldl</span> (\p&#39; ops <span class="ot">-&gt;</span> <span class="fu">foldl1</span> (<span class="fu">&lt;+&gt;</span>) (<span class="fu">flip</span> <span class="fu">map</span> ops <span class="fu">$</span> \op <span class="ot">-&gt;</span>
-  <span class="kw">case</span> op <span class="kw">of</span>
-    <span class="dt">AssocL</span> pat g <span class="ot">-&gt;</span> chainl pat g p&#39;
-    <span class="dt">AssocR</span> pat g <span class="ot">-&gt;</span> chainr pat g p&#39;
-    <span class="dt">Wrap</span> pat g <span class="ot">-&gt;</span> wrap pat g p&#39;
-  ) <span class="fu">&lt;+&gt;</span> p&#39;) p <span class="fu">$</span> runOperatorTable table</code></pre>
+buildPrettyPrinter :: OperatorTable a r -&gt; Pattern a r -&gt; Pattern a r
+buildPrettyPrinter table p = foldl (\p&#39; ops -&gt; foldl1 (&lt;+&gt;) (flip map ops $ \op -&gt;
+  case op of
+    AssocL pat g -&gt; chainl pat g p&#39;
+    AssocR pat g -&gt; chainr pat g p&#39;
+    Wrap pat g -&gt; wrap pat g p&#39;
+  ) &lt;+&gt; p&#39;) p $ runOperatorTable table
+</code></pre>
 <p>We need one final function, which parenthesizes an expression:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">parenthesize ::</span> <span class="dt">Pattern</span> a <span class="dt">String</span> <span class="ot">-&gt;</span> <span class="dt">Pattern</span> a <span class="dt">String</span>
-parenthesize <span class="fu">=</span> <span class="fu">fmap</span> parens 
-  <span class="kw">where</span>
-  parens s <span class="fu">=</span> <span class="ch">&#39;(&#39;</span><span class="fu">:</span>s <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
-<h2 id="finally-...">Finally ...</h2>
+<pre class="{.haskell}"><code>parenthesize :: Pattern a String -&gt; Pattern a String
+parenthesize = fmap parens 
+  where
+  parens s = &#39;(&#39;:s ++ &quot;)&quot;
+</code></pre>
+<h2>Finally ...</h2>
 <p>This gives us the parts we need to express our previous pretty printer as a <code>Pattern</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">expr <span class="fu">=</span> buildPrettyPrinter ops (var <span class="fu">&lt;+&gt;</span> parenthesize expr)
-  <span class="kw">where</span> 
-    ops <span class="fu">=</span> <span class="dt">OperatorTable</span>
-      [ [ <span class="dt">AssocL</span> app <span class="fu">$</span> \e1 e2 <span class="ot">-&gt;</span> e1 <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> e2 ]
-      , [ <span class="dt">Wrap</span> lam <span class="fu">$</span> \b s <span class="ot">-&gt;</span> <span class="st">&quot;\\&quot;</span> <span class="fu">++</span> b <span class="fu">++</span> <span class="st">&quot; -&gt; &quot;</span> <span class="fu">++</span> s ]
+<pre class="{.haskell}"><code>expr = buildPrettyPrinter ops (var &lt;+&gt; parenthesize expr)
+  where 
+    ops = OperatorTable
+      [ [ AssocL app $ \e1 e2 -&gt; e1 ++ &quot; &quot; ++ e2 ]
+      , [ Wrap lam $ \b s -&gt; &quot;\\&quot; ++ b ++ &quot; -&gt; &quot; ++ s ]
       ]
       
-<span class="ot">pattern3 ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">String</span>
-pattern3 <span class="fu">=</span> fromMaybe (<span class="fu">error</span> <span class="st">&quot;Incomplete pattern match&quot;</span>) <span class="fu">.</span> pattern expr</code></pre>
+pattern3 :: Expr -&gt; String
+pattern3 = fromMaybe (error &quot;Incomplete pattern match&quot;) . pattern expr
+</code></pre>
 <p>Note that, just like when we define parsers using <code>Text.Parsec.Expr</code>, the use of combinators allows us to write code which directly represents the precedence table!</p>
-<h2 id="example---integer-expressions-and-binary-operations">Example - Integer Expressions and Binary Operations</h2>
-<p>Here's another example, of expressions supporting integer constants and binary operators.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Eqn</span> <span class="fu">=</span> <span class="dt">Const</span> <span class="dt">Int</span>
-         <span class="fu">|</span> <span class="dt">Bin</span> <span class="dt">Eqn</span> <span class="dt">Char</span> <span class="dt">Eqn</span> <span class="kw">deriving</span> <span class="kw">Show</span>
+<h2>Example - Integer Expressions and Binary Operations</h2>
+<p>Here&#39;s another example, of expressions supporting integer constants and binary operators.</p>
+<pre class="{.haskell}"><code>data Eqn = Const Int
+         | Bin Eqn Char Eqn deriving Show
 
-<span class="ot">con ::</span> <span class="dt">Pattern</span> <span class="dt">Eqn</span> <span class="dt">Int</span>
-con <span class="fu">=</span> <span class="dt">Pattern</span> <span class="fu">$</span> <span class="dt">A.Kleisli</span> con&#39;
-  <span class="kw">where</span> con&#39; (<span class="dt">Const</span> n) <span class="fu">=</span> <span class="kw">Just</span> n
-        con&#39; _ <span class="fu">=</span> <span class="kw">Nothing</span>
+con :: Pattern Eqn Int
+con = Pattern $ A.Kleisli con&#39;
+  where con&#39; (Const n) = Just n
+        con&#39; _ = Nothing
 
-<span class="ot">bin ::</span> <span class="dt">Char</span> <span class="ot">-&gt;</span> <span class="dt">Pattern</span> <span class="dt">Eqn</span> (<span class="dt">Eqn</span>, <span class="dt">Eqn</span>)
-bin c <span class="fu">=</span> <span class="dt">Pattern</span> <span class="fu">$</span> <span class="dt">A.Kleisli</span> bin&#39;
-  <span class="kw">where</span> bin&#39; (<span class="dt">Bin</span> e1 c&#39; e2) <span class="fu">|</span> c <span class="fu">==</span> c&#39; <span class="fu">=</span> <span class="kw">Just</span> (e1, e2)
-        bin&#39; _ <span class="fu">=</span> <span class="kw">Nothing</span>
+bin :: Char -&gt; Pattern Eqn (Eqn, Eqn)
+bin c = Pattern $ A.Kleisli bin&#39;
+  where bin&#39; (Bin e1 c&#39; e2) | c == c&#39; = Just (e1, e2)
+        bin&#39; _ = Nothing
 
-eqn <span class="fu">=</span> buildPrettyPrinter ops (<span class="fu">fmap</span> <span class="fu">show</span> con <span class="fu">&lt;+&gt;</span> parenthesize eqn)
-  <span class="kw">where</span> 
-    ops <span class="fu">=</span> <span class="dt">OperatorTable</span>
-      [ [ binOp <span class="ch">&#39;*&#39;</span>, binOp <span class="ch">&#39;/&#39;</span> ]
-      , [ binOp <span class="ch">&#39;+&#39;</span>, binOp <span class="ch">&#39;-&#39;</span> ]
+eqn = buildPrettyPrinter ops (fmap show con &lt;+&gt; parenthesize eqn)
+  where 
+    ops = OperatorTable
+      [ [ binOp &#39;*&#39;, binOp &#39;/&#39; ]
+      , [ binOp &#39;+&#39;, binOp &#39;-&#39; ]
       ]
-    binOp c <span class="fu">=</span> <span class="dt">AssocL</span> (bin c) <span class="fu">$</span> \e1 e2 <span class="ot">-&gt;</span> e1 <span class="fu">++</span> c <span class="fu">:</span> e2</code></pre>
+    binOp c = AssocL (bin c) $ \e1 e2 -&gt; e1 ++ c : e2
+</code></pre>
 <p>For yet another (more developed) example, see my current project on GitHub, <a href="http://github.com/paf31/purescript/">here</a>.</p>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

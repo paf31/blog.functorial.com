@@ -1,14 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - LINQ to Probability Distributions</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>LINQ to Probability Distributions</h2><p><small>by Phil Freeman on 2011/01/03</small></p><hr><p>Here is an example of an interesting monad which I have not seen expressed anywhere using LINQ's extension methods.</p>
-<h2 id="probability-distributions">Probability Distributions</h2>
+<html><head><title>Functorial Blog - LINQ to Probability Distributions</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>LINQ to Probability Distributions</h2><p><small>by Phil Freeman on 2011/01/03</small></p><p>Here is an example of an interesting monad which I have not seen expressed anywhere using LINQ&#39;s extension methods.</p>
+<h2>Probability Distributions</h2>
 <p>Define a probability distribution with entries in type T as a list of outcomes with probabilities:</p>
 <pre><code>public class Outcome&lt;T&gt;
 {
@@ -43,43 +35,49 @@ public class Distribution&lt;T&gt;
     {
         Outcomes = outcomes;
     }
-}</code></pre>
+}
+</code></pre>
 <p>We can inject a value into the monad by returning a distribution which returns a single value with certainty:</p>
 <pre><code>public static Distribution&lt;T&gt; Return&lt;T&gt;(T t)
 {
     return new Distribution&lt;T&gt;(new Outcome&lt;T&gt;[] { new Outcome&lt;T&gt;(t, 1.0) });
-}</code></pre>
-<h2 id="extension-methods">Extension Methods</h2>
+}
+</code></pre>
+<h2>Extension Methods</h2>
 <p>Distributions are functorial: a function on outcomes lifts to a function on distributions:</p>
 <pre><code>public static Distribution&lt;T&gt; Select&lt;S, T&gt;(this Distribution&lt;S&gt; d,
     Func&lt;S, T&gt; f)
 {
     return new Distribution&lt;T&gt;(d.Outcomes.Select(p =&gt;
         new Outcome&lt;T&gt;(f(p.Value), p.Probability)));
-}</code></pre>
-<p>The monad's bind operation combines a distribution with a dependent distribution in the way one would expect by multiplying probabilities:</p>
+}
+</code></pre>
+<p>The monad&#39;s bind operation combines a distribution with a dependent distribution in the way one would expect by multiplying probabilities:</p>
 <pre><code>public static Distribution&lt;T&gt; SelectMany&lt;S, T&gt;(this Distribution&lt;S&gt; d,
     Func&lt;S, Distribution&lt;T&gt;&gt; s)
 {
     return new Distribution&lt;T&gt;(d.Outcomes.SelectMany(p =&gt;
         s(p.Value).Outcomes.Select(p1 =&gt;
             new Outcome&lt;T&gt;(p1.Value, p.Probability * p1.Probability))));
-}</code></pre>
-<p>Here we are simply applying the rule <span class="math">\(P(A \text{ and } B) = P(A | B) \times P(B)\)</span>.</p>
+}
+</code></pre>
+<p>Here we are simply applying the rule $P(A \text{ and } B) = P(A | B) \times P(B)$.</p>
 <p>Distributions also form a monad-with-zero - for every type T, there is an empty distribution with values in T:</p>
 <pre><code>public static Distribution&lt;T&gt; Empty&lt;T&gt;()
 {
     return new Distribution&lt;T&gt;(Enumerable.Empty&lt;Outcome&lt;T&gt;&gt;());
-}</code></pre>
+}
+</code></pre>
 <p>Now, any monad-with-zero has a means of filtering out values according to a predicate:</p>
 <pre><code>public static Distribution&lt;T&gt; Where&lt;T&gt;(this Distribution&lt;T&gt; d, Func&lt;T, bool&gt; p)
 {
     return from possibility in d
            from oneOrZero in p(possibility) ? Return(possibility) : Empty&lt;T&gt;()
            select oneOrZero;
-}</code></pre>
+}
+</code></pre>
 <p>With these methods, we have the means to calculate monad comprehensions, that is a way of combining, mapping and filtering values in the monad to form complicated distributions.</p>
-<h2 id="calculating-with-distributions">Calculating With Distributions</h2>
+<h2>Calculating With Distributions</h2>
 <p>There are a number of methods that we can use to remove a wrapped value from the monad. For any distribution, we can find the sum of probabilities in a distribution. It is also useful to combine a filter with a sum of probabilities:</p>
 <pre><code>public static double Probability&lt;T&gt;(this Distribution&lt;T&gt; d)
 {
@@ -90,7 +88,8 @@ public static double Probability&lt;T&gt;(this Distribution&lt;T&gt; d,
     Func&lt;T, bool&gt; predicate)
 {
     return d.Where(predicate).Outcomes.Sum(p =&gt; p.Probability);
-}</code></pre>
+}
+</code></pre>
 <p>For numerical distributions, we can find the mean and standard deviation:</p>
 <pre><code>public static double Average(this Distribution&lt;double&gt; d)
 {
@@ -101,7 +100,8 @@ public static double Variance(this Distribution&lt;double&gt; d)
 {
     var average = d.Average();
     return d.Select(o =&gt; (o - average) * (o - average)).Average();
-}</code></pre>
+}
+</code></pre>
 <p>The Distribution of a Die-Roll</p>
 <p>We can define the distribution of a single die-roll as follows:</p>
 <pre><code>var fairDie = new Distribution&lt;int&gt;(new[]
@@ -112,11 +112,13 @@ public static double Variance(this Distribution&lt;double&gt; d)
     new Outcome&lt;int&gt;(4, 1.0 / 6.0),
     new Outcome&lt;int&gt;(5, 1.0 / 6.0),
     new Outcome&lt;int&gt;(6, 1.0 / 6.0)
-});</code></pre>
+});
+</code></pre>
 <p>Our extension methods allow us to form the distribution of the sum of the rolls of two independent fair dice:</p>
 <pre><code>var sum = from d1 in fairDie
           from d2 in fairDie
-          select (double) d1 + d2;</code></pre>
+          select (double) d1 + d2;
+</code></pre>
 <p>We can use our extension methods to find the probabilities of various events:</p>
 <blockquote>
 <p>Console.WriteLine(&quot;P(S = 7) = {0:.##}&quot;, sum.Probability(s =&gt; s == 7));</p>
@@ -149,19 +151,13 @@ var roll = from heads in coinToss
            let die = heads ? loadedDie : fairDie
            from roll1 in die
            from roll2 in die
-           select (double) roll1 + roll2;</code></pre>
-<p>As one would expect, the player's expected sum is now higher:</p>
+           select (double) roll1 + roll2;
+</code></pre>
+<p>As one would expect, the player&#39;s expected sum is now higher:</p>
 <blockquote>
 <p>Console.WriteLine(&quot;Mean = {0:.##}&quot;, roll.Average());</p>
 <p>Mean = 8</p>
 </blockquote>
-<h2 id="references">References</h2>
+<h2>References</h2>
 <p>[1] Probabilistic Functional Programming In Haskell (M. Erwig, S. Kollmansberger, 2006)</p>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

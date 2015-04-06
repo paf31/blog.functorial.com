@@ -1,13 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Least Fixed Points and Catamorphisms in C#</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Least Fixed Points and Catamorphisms in C#</h2><p><small>by Phil Freeman on 2010/12/04</small></p><hr><p>I've been trying to find a nice way to encode least fixed points in C# for a while. At first, I tried to define a functor interface. Unfortunately, due to C#'s lack of type constructor polymorphism, there isn't really a nice way to do this in a type-safe way. However, there is a nice way to encode least fixed points without using the functorial structure at all.</p>
+<html><head><title>Functorial Blog - Least Fixed Points and Catamorphisms in C#</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Least Fixed Points and Catamorphisms in C#</h2><p><small>by Phil Freeman on 2010/12/04</small></p><p>I&#39;ve been trying to find a nice way to encode least fixed points in C# for a while. At first, I tried to define a functor interface. Unfortunately, due to C#&#39;s lack of type constructor polymorphism, there isn&#39;t really a nice way to do this in a type-safe way. However, there is a nice way to encode least fixed points without using the functorial structure at all.</p>
 <p>We use the isomorphism</p>
 <blockquote>
 <p>Mu F ~ forall X. (F X -&gt; X) -&gt; X</p>
@@ -22,8 +14,8 @@ _gaq.push(['_trackPageview']);
 <p>\y. y in</p>
 </blockquote>
 <p>where <code>in :: F Mu F -&gt; Mu F</code> is the algebra morphism. Note that <code>cata in = id</code> implies that this is indeed an inverse.</p>
-<p>Unfortunately, we can't capture the type constructor F as a first-class value in C#, again due to the lack of type constructor polymorphism.</p>
-<p>For now, let's take the example of cons lists. We have</p>
+<p>Unfortunately, we can&#39;t capture the type constructor F as a first-class value in C#, again due to the lack of type constructor polymorphism.</p>
+<p>For now, let&#39;s take the example of cons lists. We have</p>
 <blockquote>
 <p>List A = Mu (\X. 1 + A.X)</p>
 </blockquote>
@@ -37,7 +29,8 @@ _gaq.push(['_trackPageview']);
 interface List&lt;A&gt;
 {
     T Cata&lt;T&gt;(Func&lt;ListF&lt;A, T&gt;?, T&gt; generator);
-}</code></pre>
+}
+</code></pre>
 <p>How can we use this? Well, we can define the empty list:</p>
 <pre><code>class EmptyList&lt;A&gt; : List&lt;A&gt;
 {
@@ -45,7 +38,8 @@ interface List&lt;A&gt;
     {
         return generator(null);
     }
-}</code></pre>
+}
+</code></pre>
 <p>and a means of consing an element onto the front of an existing list:</p>
 <pre><code>class Cons&lt;A&gt; : List&lt;A&gt;
 {
@@ -66,14 +60,16 @@ interface List&lt;A&gt;
             t = xs.Cata(generator)
         });           
     }
-} </code></pre>
+} 
+</code></pre>
 <p>Finally we can turn a <code>List&lt;A&gt;</code> into an array <code>A[]</code>:</p>
 <pre><code>public static T[] ToArray&lt;T&gt;(this List&lt;T&gt; list)
 {
     return list.Cata&lt;T[]&gt;(x =&gt; x.HasValue
         ? new T[] {x.Value.a}.Concat(x.Value.t).ToArray()
         : new T[0]);
-}</code></pre>
+}
+</code></pre>
 <p>Some extension methods can make the creation of lists easier:</p>
 <pre><code>public static List&lt;T&gt; Empty&lt;T&gt;()
 {
@@ -83,21 +79,16 @@ interface List&lt;A&gt;
 public static List&lt;T&gt; Cons&lt;T&gt;(this List&lt;T&gt; list, T t)
 {
     return new Cons&lt;T&gt;(t, list);
-}</code></pre>
+}
+</code></pre>
 <p>Now we can manipulate lists in the ways you would expect:</p>
 <blockquote>
-<p>Empty<int>().Cons(1).Cons(2).Cons(3).ToArray() [3, 2, 1]</p>
+<p>Empty<int>().Cons(1).Cons(2).Cons(3).ToArray()
+[3, 2, 1]</p>
 </blockquote>
 <p>We can also encode greatest fixed points using</p>
 <blockquote>
 <p>Nu F ~ Exists X. X * (X -&gt; FX)</p>
 </blockquote>
-<p>using the encoding of existentials which I described in my previous post, but that's a story for my next post.</p>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+<p>using the encoding of existentials which I described in my previous post, but that&#39;s a story for my next post.</p>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

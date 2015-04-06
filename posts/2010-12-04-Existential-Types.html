@@ -1,22 +1,15 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Existential Types in C#</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Existential Types in C#</h2><p><small>by Phil Freeman on 2010/12/04</small></p><hr><p>I was thinking about existential types recently, what they might be useful for, and if it was possible to encode them in C#.</p>
+<html><head><title>Functorial Blog - Existential Types in C#</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Existential Types in C#</h2><p><small>by Phil Freeman on 2010/12/04</small></p><p>I was thinking about existential types recently, what they might be useful for, and if it was possible to encode them in C#.</p>
 <p>First, a quick recap. A value of an existential type <code>exists X. T</code> looks like a pair consisting of a type <code>A</code> and a value <code>a</code> of type <code>T[X\A]</code> which is the result of substituting the type <code>A</code> for the bound type variable <code>X</code> in <code>T</code>. This creates a notion of information hiding where the interface being defined is given by the type expression <code>T</code>, and the implementation is hidden in the type <code>A</code> and the term <code>a</code> which the developer can only access by unpacking the existential package.</p>
-<p>As an example, think of the situation where we want to assign unique identifiers to a set of objects. For our purposes, we don't care what the actual representation of the identifiers will be, so long as they uniquely identify the objects in question. We would need two functions: a way of creating a new identifier, and a way of mapping an existing identifier to the object it uniquely identifies.</p>
+<p>As an example, think of the situation where we want to assign unique identifiers to a set of objects. For our purposes, we don&#39;t care what the actual representation of the identifiers will be, so long as they uniquely identify the objects in question. We would need two functions: a way of creating a new identifier, and a way of mapping an existing identifier to the object it uniquely identifies.</p>
 <p>We might encode this as follows:</p>
 <pre><code>interface KeyProvider&lt;K, T&gt; 
 {
     K NextKey(T t);
 
     T Map(K key);
-}</code></pre>
+}
+</code></pre>
 <p>Here, the type variable <code>K</code> stands for the type of the identifiers, the type we want to hide. The type variable <code>T</code> denotes the type of object we hope to uniquely identify.</p>
 <p>We might create an implementation using the <code>System.Guid</code> class or by using a counter, but the user should not be able to get at the underlying type.</p>
 <p>Fortunately, there is a nice isomorphism</p>
@@ -38,12 +31,13 @@ _gaq.push(['_trackPageview']);
 interface KeyProvider&lt;T&gt;
 {
     R Apply&lt;R, T&gt;(KeyProviderFunction&lt;R, T&gt; f);
-}</code></pre>
-<p>With this kind of method dispatch, we've created a version of the KeyProvider interface with the type variable K hidden.</p>
-<p>Now, to use an implementation of KeyProvider<T>, we simply have to provide a function of type KeyProviderFunction<R, T> for some result type R.</p>
-<h2 id="peano-arithmetic">Peano Arithmetic</h2>
-<p>Here's an example encoding Peano arithmetic over a hidden data type.</p>
-<p>An algebra for the Peano axioms is a type with a zero, and a successor function. For illustration purposes, we'll also add a printing function ToString:</p>
+}
+</code></pre>
+<p>With this kind of method dispatch, we&#39;ve created a version of the KeyProvider interface with the type variable K hidden.</p>
+<p>Now, to use an implementation of KeyProvider<T>, we simply have to provide a function of type KeyProviderFunction&lt;R, T&gt; for some result type R.</p>
+<h2>Peano Arithmetic</h2>
+<p>Here&#39;s an example encoding Peano arithmetic over a hidden data type.</p>
+<p>An algebra for the Peano axioms is a type with a zero, and a successor function. For illustration purposes, we&#39;ll also add a printing function ToString:</p>
 <pre><code>interface PeanoArithmetic&lt;T&gt;
 {
     T Zero { get; }
@@ -51,7 +45,8 @@ interface KeyProvider&lt;T&gt;
     T Successor(T t);
 
     string ToString(T t);
-}</code></pre>
+}
+</code></pre>
 <p>Now we can existentially quantify over the type parameter T to define a Peano algebra with a hidden underlying type:</p>
 <pre><code>interface PeanoArithmeticFunction&lt;R&gt;
 {
@@ -61,7 +56,8 @@ interface KeyProvider&lt;T&gt;
 interface PeanoArithmetic
 {
      R Apply&lt;R&gt;(PeanoArithmeticFunction&lt;R&gt; f);
-}</code></pre>
+}
+</code></pre>
 <p>Here is a simple implementation using Integers as the underlying type:</p>
 <pre><code>class PeanoArithmeticImplementation : PeanoArithmetic
 {
@@ -87,7 +83,8 @@ interface PeanoArithmetic
     {
          return f.Apply&lt;int&gt;(new PeanoArithmeticMethods());
     }
-}</code></pre>
+}
+</code></pre>
 <p>Even though the type parameter has been hidden, the existentially quantified type can still be used. We can, for example, print the numbers 1, 2, 3 as follows:</p>
 <pre><code>class Program
 {
@@ -112,12 +109,6 @@ interface PeanoArithmetic
          PeanoArithmetic peano = new PeanoArithmeticImplementation();
          Console.WriteLine(peano.Apply&lt;string&gt;(new OneTwoThree()));
      }
-}</code></pre>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+}
+</code></pre>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

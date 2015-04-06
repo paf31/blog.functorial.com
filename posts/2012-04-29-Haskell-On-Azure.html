@@ -1,114 +1,115 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Haskell On Azure</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Haskell On Azure</h2><p><small>by Phil Freeman on 2012/04/29</small></p><hr><p>Today, as a change of topic, I'm going to write about getting a Haskell web application to run on Windows Azure.</p>
+<html><head><title>Functorial Blog - Haskell On Azure</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Haskell On Azure</h2><p><small>by Phil Freeman on 2012/04/29</small></p><p>Today, as a change of topic, I&#39;m going to write about getting a Haskell web application to run on Windows Azure.</p>
 <p>Azure provides storage services (the table, queue and blob storage services) exposing REST APIs. I recently uploaded my first cabal package tablestorage to HackageDB, which is a simple wrapper for the web methods of the table storage REST service.</p>
-<p>I've chosen to use a combination of the Happstack web server and blaze-html to build a very simple note-taking web application, but it should be possible to switch out the particular web server easily.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">module</span> <span class="dt">Main</span> <span class="kw">where</span>
+<p>I&#39;ve chosen to use a combination of the Happstack web server and blaze-html to build a very simple note-taking web application, but it should be possible to switch out the particular web server easily.</p>
+<pre class="{.haskell}"><code>module Main where
 
-<span class="kw">import</span> Data.Maybe
-<span class="kw">import</span> Control.Monad
-<span class="kw">import</span> Control.Monad.Trans
-<span class="kw">import</span> System.Time
-<span class="kw">import</span> System.Directory
-<span class="kw">import</span> Happstack.Server
-<span class="kw">import</span> <span class="kw">qualified</span> Text.Blaze.Html4.Strict <span class="kw">as</span> H
-<span class="kw">import</span> <span class="kw">qualified</span> Text.Blaze.Html4.Strict.Attributes <span class="kw">as</span> A
-<span class="kw">import</span> Network.TableStorage
-<span class="kw">import</span> Text.Blaze ((!), toValue)</code></pre>
-<p>Let's define the account we are going to be using. An account consists of a service endpoint, an account name and the account's secret key.</p>
-<p>For now, we'll use the development account, so you will need to have the Windows Azure storage emulator running on your development machine.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">account ::</span> <span class="dt">Account</span>
-account <span class="fu">=</span> developmentAccount </code></pre>
+import Data.Maybe
+import Control.Monad
+import Control.Monad.Trans
+import System.Time
+import System.Directory
+import Happstack.Server
+import qualified Text.Blaze.Html4.Strict as H
+import qualified Text.Blaze.Html4.Strict.Attributes as A
+import Network.TableStorage
+import Text.Blaze ((!), toValue)
+</code></pre>
+<p>Let&#39;s define the account we are going to be using. An account consists of a service endpoint, an account name and the account&#39;s secret key.</p>
+<p>For now, we&#39;ll use the development account, so you will need to have the Windows Azure storage emulator running on your development machine.</p>
+<pre class="{.haskell}"><code>account :: Account
+account = developmentAccount 
+</code></pre>
 <p>When it is time to deploy the account to staging/production, we can replace <code>developmentAccount</code> with a call to defaultAccount with the account information copied from the Azure management portal.</p>
 <p>The note-taking appplication will have simple features: there will be multiple &quot;notebooks&quot;, the ability to list the most recent notes in a notebook, and the ability to add a new note to a notebook. We will shard the notes as necessary based on the notebook. In the table storage model, this means that the notebook being used will be determined by the Partition Key of the note entities.</p>
 <p>We need the ability to generate a new key. We would like note IDs to be approximately sorted by insertion date. In order that more recent notes will be displayed first, we will generate a key based on the current time, subtracting the seconds component of the current time from a large value to reverse the order of the generated keys.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">newId ::</span> <span class="dt">IO</span> <span class="dt">String</span>
-newId <span class="fu">=</span> <span class="kw">do</span>
-  (<span class="dt">TOD</span> seconds picos) <span class="ot">&lt;-</span> getClockTime
-  <span class="fu">return</span> <span class="fu">$</span> <span class="fu">show</span> (<span class="dv">9999999999</span> <span class="fu">-</span> seconds) <span class="fu">++</span> <span class="fu">show</span> picos</code></pre>
+<pre class="{.haskell}"><code>newId :: IO String
+newId = do
+  (TOD seconds picos) &lt;- getClockTime
+  return $ show (9999999999 - seconds) ++ show picos
+</code></pre>
 <p>With that, we can implement the code which will add a new note. This will be implemented as a POST method which accepts its parameters as form-encoded data in the request body.</p>
 <p>A new key is generated, and then the insertEntity IO action is used to add the newly created note entity to the notes table, along with the author and text properties as string columns.</p>
 <p>If this is successful, we perform a redirect-and-get to display the newly added note to the user. If the insert is not successful, then we respond with 500 - Internal Server Error.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">postNote ::</span> <span class="dt">ServerPartT</span> <span class="dt">IO</span> <span class="dt">Response</span>
-postNote <span class="fu">=</span> <span class="kw">do</span> 
-  methodM <span class="dt">POST</span>
-  tmp <span class="ot">&lt;-</span> liftIO getTemporaryDirectory 
-  decodeBody <span class="fu">$</span> defaultBodyPolicy tmp <span class="dv">0</span> <span class="dv">1000</span> <span class="dv">1000</span>
-  text <span class="ot">&lt;-</span> look <span class="st">&quot;text&quot;</span>
-  author <span class="ot">&lt;-</span> look <span class="st">&quot;author&quot;</span>
-  partition <span class="ot">&lt;-</span> look <span class="st">&quot;partition&quot;</span>
-  result <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> <span class="kw">do</span>
-    <span class="fu">id</span> <span class="ot">&lt;-</span> newId
-    <span class="kw">let</span> entity <span class="fu">=</span> <span class="dt">Entity</span> { entityKey <span class="fu">=</span> <span class="dt">EntityKey</span> { ekPartitionKey <span class="fu">=</span> partition, 
-                                                  ekRowKey <span class="fu">=</span> <span class="fu">id</span> }, 
-                          entityColumns <span class="fu">=</span> [ (<span class="st">&quot;text&quot;</span>, <span class="dt">EdmString</span> <span class="fu">$</span> <span class="kw">Just</span> text),
-                                            (<span class="st">&quot;author&quot;</span>, <span class="dt">EdmString</span> <span class="fu">$</span> <span class="kw">Just</span> author)] }
-    insertEntity account <span class="st">&quot;notes&quot;</span> entity
-  <span class="kw">case</span> result <span class="kw">of</span>
-    <span class="kw">Left</span> err <span class="ot">-&gt;</span> internalServerError <span class="fu">$</span> toResponse err
-    <span class="kw">Right</span> _ <span class="ot">-&gt;</span> seeOther (<span class="st">&quot;?partition=&quot;</span> <span class="fu">++</span> partition) <span class="fu">$</span> toResponse ()</code></pre>
+<pre class="{.haskell}"><code>postNote :: ServerPartT IO Response
+postNote = do 
+  methodM POST
+  tmp &lt;- liftIO getTemporaryDirectory 
+  decodeBody $ defaultBodyPolicy tmp 0 1000 1000
+  text &lt;- look &quot;text&quot;
+  author &lt;- look &quot;author&quot;
+  partition &lt;- look &quot;partition&quot;
+  result &lt;- liftIO $ do
+    id &lt;- newId
+    let entity = Entity { entityKey = EntityKey { ekPartitionKey = partition, 
+                                                  ekRowKey = id }, 
+                          entityColumns = [ (&quot;text&quot;, EdmString $ Just text),
+                                            (&quot;author&quot;, EdmString $ Just author)] }
+    insertEntity account &quot;notes&quot; entity
+  case result of
+    Left err -&gt; internalServerError $ toResponse err
+    Right _ -&gt; seeOther (&quot;?partition=&quot; ++ partition) $ toResponse ()
+</code></pre>
 <p>To list the recent notes in the selected notebook, we use queryEntities to query the top 10 entities from the notes table, filtering based on the partition key.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">getNotes ::</span> <span class="dt">ServerPartT</span> <span class="dt">IO</span> <span class="dt">Response</span>
-getNotes <span class="fu">=</span> <span class="kw">do</span>
-  methodM <span class="dt">GET</span>
-  partition <span class="ot">&lt;-</span> look <span class="st">&quot;partition&quot;</span> <span class="ot">`mplus`</span> <span class="fu">return</span> <span class="st">&quot;default&quot;</span>
-  <span class="kw">let</span> query <span class="fu">=</span> defaultEntityQuery { eqPageSize <span class="fu">=</span> <span class="kw">Just</span> <span class="dv">10</span>,
-                                   eqFilter <span class="fu">=</span> <span class="kw">Just</span> <span class="fu">$</span> <span class="dt">CompareString</span> <span class="st">&quot;PartitionKey&quot;</span> <span class="dt">Equal</span> partition }
-  result <span class="ot">&lt;-</span> liftIO <span class="fu">$</span> queryEntities account <span class="st">&quot;notes&quot;</span> query
-  <span class="kw">case</span> result <span class="kw">of</span>
-    <span class="kw">Left</span> err <span class="ot">-&gt;</span> internalServerError <span class="fu">$</span> toResponse err
-    <span class="kw">Right</span> notes <span class="ot">-&gt;</span> ok <span class="fu">$</span> setHeader <span class="st">&quot;Content-Type&quot;</span> <span class="st">&quot;text/html&quot;</span> <span class="fu">$</span> toResponse <span class="fu">$</span> root partition notes</code></pre>
+<pre class="{.haskell}"><code>getNotes :: ServerPartT IO Response
+getNotes = do
+  methodM GET
+  partition &lt;- look &quot;partition&quot; `mplus` return &quot;default&quot;
+  let query = defaultEntityQuery { eqPageSize = Just 10,
+                                   eqFilter = Just $ CompareString &quot;PartitionKey&quot; Equal partition }
+  result &lt;- liftIO $ queryEntities account &quot;notes&quot; query
+  case result of
+    Left err -&gt; internalServerError $ toResponse err
+    Right notes -&gt; ok $ setHeader &quot;Content-Type&quot; &quot;text/html&quot; $ toResponse $ root partition notes
+</code></pre>
 <p>This demonstrates a very basic query, but the tablestorage package supports more complicated queries including multiple filters.</p>
 <p>If the query fails, then we return response code 500. If it is successful, then we return a HTML page built using blaze-html. The is the content of the root function:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">root ::</span> <span class="dt">String</span> <span class="ot">-&gt;</span> [<span class="dt">Entity</span>] <span class="ot">-&gt;</span> <span class="dt">H.Html</span>
-root partition notes <span class="fu">=</span> H.html <span class="fu">$</span> <span class="kw">do</span>
-  H.head <span class="fu">$</span> 
-    H.title <span class="fu">$</span> H.toHtml <span class="st">&quot;Notes&quot;</span>
-  H.body <span class="fu">$</span> <span class="kw">do</span>
-    H.h1 <span class="fu">$</span> H.toHtml <span class="st">&quot;Add Note&quot;</span>
-    H.form <span class="fu">!</span> A.method (toValue <span class="st">&quot;POST&quot;</span>) <span class="fu">$</span> <span class="kw">do</span>
-      H.input <span class="fu">!</span> A.type_ (toValue <span class="st">&quot;hidden&quot;</span>) <span class="fu">!</span> A.name (toValue <span class="st">&quot;partition&quot;</span>) <span class="fu">!</span> A.value (toValue partition)
-      H.div <span class="fu">$</span> <span class="kw">do</span>
-        H.label <span class="fu">!</span> A.for (toValue <span class="st">&quot;text&quot;</span>) <span class="fu">$</span> H.toHtml <span class="st">&quot;Text: &quot;</span>
-        H.input <span class="fu">!</span> A.type_ (toValue <span class="st">&quot;text&quot;</span>) <span class="fu">!</span> A.name (toValue <span class="st">&quot;text&quot;</span>)
-      H.div <span class="fu">$</span> <span class="kw">do</span>
-        H.label <span class="fu">!</span> A.for (toValue <span class="st">&quot;author&quot;</span>) <span class="fu">$</span> H.toHtml <span class="st">&quot;Author: &quot;</span>
-        H.input <span class="fu">!</span> A.type_ (toValue <span class="st">&quot;text&quot;</span>) <span class="fu">!</span> A.name (toValue <span class="st">&quot;author&quot;</span>)
-      H.div <span class="fu">$</span>
-        H.input <span class="fu">!</span> A.type_ (toValue <span class="st">&quot;submit&quot;</span>) <span class="fu">!</span> A.value (toValue <span class="st">&quot;Add Note&quot;</span>)
-    H.h1 <span class="fu">$</span> H.toHtml <span class="st">&quot;Recent Notes&quot;</span>
-    H.ul <span class="fu">$</span> void <span class="fu">$</span> <span class="fu">mapM</span> displayNote notes</code></pre>
+<pre class="{.haskell}"><code>root :: String -&gt; [Entity] -&gt; H.Html
+root partition notes = H.html $ do
+  H.head $ 
+    H.title $ H.toHtml &quot;Notes&quot;
+  H.body $ do
+    H.h1 $ H.toHtml &quot;Add Note&quot;
+    H.form ! A.method (toValue &quot;POST&quot;) $ do
+      H.input ! A.type_ (toValue &quot;hidden&quot;) ! A.name (toValue &quot;partition&quot;) ! A.value (toValue partition)
+      H.div $ do
+        H.label ! A.for (toValue &quot;text&quot;) $ H.toHtml &quot;Text: &quot;
+        H.input ! A.type_ (toValue &quot;text&quot;) ! A.name (toValue &quot;text&quot;)
+      H.div $ do
+        H.label ! A.for (toValue &quot;author&quot;) $ H.toHtml &quot;Author: &quot;
+        H.input ! A.type_ (toValue &quot;text&quot;) ! A.name (toValue &quot;author&quot;)
+      H.div $
+        H.input ! A.type_ (toValue &quot;submit&quot;) ! A.value (toValue &quot;Add Note&quot;)
+    H.h1 $ H.toHtml &quot;Recent Notes&quot;
+    H.ul $ void $ mapM displayNote notes
+</code></pre>
 <p>The first part of the page contains a form which will allow the user to post a new note. It contains text boxes for the text and author arguments. The partition key is provided as a hidden field on the form, which the user can change by editing the query string.</p>
 <p>The last part of the page lists the most recent ten notes in the selected notebook (partition key). Each note is rendered using the displayNote function:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">displayNote ::</span> <span class="dt">Entity</span> <span class="ot">-&gt;</span> <span class="dt">H.Html</span>
-displayNote note <span class="fu">=</span> fromMaybe (<span class="fu">return</span> ()) <span class="fu">$</span> <span class="kw">do</span>
-  text <span class="ot">&lt;-</span> edmString <span class="st">&quot;text&quot;</span> note
-  author <span class="ot">&lt;-</span> edmString <span class="st">&quot;author&quot;</span> note
-  <span class="fu">return</span> <span class="fu">$</span> H.li <span class="fu">$</span> <span class="kw">do</span>
-    H.toHtml <span class="st">&quot;&#39;&quot;</span>
+<pre class="{.haskell}"><code>displayNote :: Entity -&gt; H.Html
+displayNote note = fromMaybe (return ()) $ do
+  text &lt;- edmString &quot;text&quot; note
+  author &lt;- edmString &quot;author&quot; note
+  return $ H.li $ do
+    H.toHtml &quot;&#39;&quot;
     H.toHtml text
-    H.toHtml <span class="st">&quot;&#39;&quot;</span>
-    H.i <span class="fu">$</span> <span class="kw">do</span> 
-      H.toHtml <span class="st">&quot; says &quot;</span>
-      H.toHtml author</code></pre>
+    H.toHtml &quot;&#39;&quot;
+    H.i $ do 
+      H.toHtml &quot; says &quot;
+      H.toHtml author
+</code></pre>
 <p>Here, we use the <code>edmString</code> helper function to extract a string-valued column from the list of columns returned by the query. This <code>Maybe</code>-valued function returns Just a string if the named column is indeed string valued, and Nothing if the column is missing or has a different type. The tablestorage package provides corresponding functions for the other column types.</p>
 <p>Finally, we can create a web application using the <code>getNotes</code> and <code>postNote</code> routes:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">routes ::</span> [<span class="dt">ServerPartT</span> <span class="dt">IO</span> <span class="dt">Response</span>]
-routes <span class="fu">=</span> [ getNotes, postNote ]</code></pre>
+<pre class="{.haskell}"><code>routes :: [ServerPartT IO Response]
+routes = [ getNotes, postNote ]
+</code></pre>
 <p>The <code>main</code> function performs the setup step of creating the notes table if the table does not already exist. The helper function <code>createTableIfNecessary</code> simplifies this check:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">main ::</span> <span class="dt">IO</span> ()
-main <span class="fu">=</span> <span class="kw">do</span> 
-  result <span class="ot">&lt;-</span> createTableIfNecessary account <span class="st">&quot;notes&quot;</span>
-  <span class="kw">case</span> result <span class="kw">of</span>
-    <span class="kw">Left</span> err <span class="ot">-&gt;</span> <span class="fu">putStrLn</span> err
-    <span class="kw">Right</span> _ <span class="ot">-&gt;</span> simpleHTTP nullConf <span class="fu">$</span> msum routes</code></pre>
+<pre class="{.haskell}"><code>main :: IO ()
+main = do 
+  result &lt;- createTableIfNecessary account &quot;notes&quot;
+  case result of
+    Left err -&gt; putStrLn err
+    Right _ -&gt; simpleHTTP nullConf $ msum routes
+</code></pre>
 <p>The web application can be deployed to the development fabric by using the <code>cspack</code> and <code>csrun</code> command line utilities.</p>
 <p>We need to add a few basic configuration files. The web server will run in a worker role, which we set up in the ServiceDefinition.csdef file. We need to add a worker role definition, something like the following:</p>
 <pre><code>-- &lt;ServiceDefinition name=&quot;Notes&quot; xmlns=&quot;http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceDefinition&quot;&gt;
@@ -122,24 +123,22 @@ main <span class="fu">=</span> <span class="kw">do</span>
 --       &lt;InputEndpoint name=&quot;happstackEndpoint&quot; protocol=&quot;tcp&quot; port=&quot;80&quot; /&gt;
 --     &lt;/Endpoints&gt;
 --   &lt;/WorkerRole&gt;
--- &lt;/ServiceDefinition&gt;</code></pre>
+-- &lt;/ServiceDefinition&gt;
+</code></pre>
 <p>The <code>ServiceConfiguration.*.cfg</code> files should contain a role section with the same worker role name:</p>
 <pre><code>-- &lt;Role name=&quot;WebServer&quot;&gt;
 --   &lt;ConfigurationSettings /&gt;
 --   &lt;Instances count=&quot;1&quot; /&gt;
--- &lt;/Role&gt;</code></pre>
+-- &lt;/Role&gt;
+</code></pre>
 <p>After the web application is built, the <code>Main.exe</code> executable is placed in the WebServer role subdirectory, and the package can be built for development deployment using</p>
-<pre><code>-- cspack /copyOnly ServiceDefinition.csdef</code></pre>
+<pre><code>-- cspack /copyOnly ServiceDefinition.csdef
+</code></pre>
 <p>The package can then be deployed locally using</p>
-<pre><code>-- csrun Notes.csx ServiceConfiguration.Local.cscfg</code></pre>
+<pre><code>-- csrun Notes.csx ServiceConfiguration.Local.cscfg
+</code></pre>
 <p>You should be able to add new notes, display existing notes, and switch notebooks by editing the query string.</p>
 <p>When you are ready to deploy to Azure in staging or production (you will need to replace the development storage account in the code with the account credentials copied from the management portal), you can build a cspkg file for upload to Azure with</p>
-<pre><code>-- cspack ServiceDefinition.csdef</code></pre>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+<pre><code>-- cspack ServiceDefinition.csdef
+</code></pre>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

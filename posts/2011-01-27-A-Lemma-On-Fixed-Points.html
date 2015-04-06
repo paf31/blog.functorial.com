@@ -1,57 +1,55 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - A Lemma on Fixed Points</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/x-mathjax-config">MathJax.Hub.Config({
-    config: ['MMLorHTML.js'],
-    jax: ['input/TeX'],
-    extensions: ['tex2jax.js'],
-    TeX: {
-        extensions: ['AMSmath.js', 'AMSsymbols.js', 'noErrors.js','noUndefined.js']
-    },
-    tex2jax: {
-        inlineMath: [['$','$'], ['\\(','\\)']]
-    }
-});
-</script><script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js"></script><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>A Lemma on Fixed Points</h2><p><small>by Phil Freeman on 2011/01/27</small></p><hr><p>I was reading some of my older notes on least fixed point types and found this. It's hardly groundbreaking I'm sure you'll agree, but I thought it was quite a nice little result.</p>
-<h2 id="lemma">Lemma</h2>
+<html><head><title>Functorial Blog - A Lemma on Fixed Points</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>A Lemma on Fixed Points</h2><p><small>by Phil Freeman on 2011/01/27</small></p><p>I was reading some of my older notes on least fixed point types and found this. It&#39;s hardly groundbreaking I&#39;m sure you&#39;ll agree, but I thought it was quite a nice little result.</p>
+<h2>Lemma</h2>
 <p>Suppose</p>
-<p><span class="math">\(F : (X, Y) \rightarrow (F_1 X, F_2 (X, Y))\)</span></p>
+<p>$F : (X, Y) \rightarrow (F_1 X, F_2 (X, Y))$</p>
 <p>is a functor with an initial algebra. Then the initial algebra is isomorphic to</p>
-<p><span class="math">\(\mu_F \cong (\mu F_1, \mu (X \rightarrow F_2 (\mu F_1, X)))\)</span></p>
+<p>$\mu_F \cong (\mu F_1, \mu (X \rightarrow F_2 (\mu F_1, X)))$</p>
 <p>when all defined terms exist.</p>
-<h2 id="example">Example</h2>
-<p>Let <span class="math">\(F (X, Y) = (1 + X, 1 + X \times Y)\)</span>.</p>
+<h2>Example</h2>
+<p>Let $F (X, Y) = (1 + X, 1 + X \times Y)$.</p>
 <p>By the lemma we have</p>
-<p><span class="math">\(\mu F = (\mu (X \rightarrow 1 + X), \mu (Y \rightarrow 1 + Y \times \mu (X \rightarrow 1 + X)))\)</span></p>
-<p>That is, <span class="math">\(\mu F = (\mathbb{N}, [\mathbb{N}])\)</span>.</p>
-<h2 id="proof">Proof</h2>
-<p>We show that the term on the right of the isomorphism relation is an initial <span class="math">\(F\)</span>-algebra. Then, by uniqueness, it must be isomorphic to <span class="math">\(\mu F\)</span>.</p>
+<p>$\mu F = (\mu (X \rightarrow 1 + X), \mu (Y \rightarrow 1 + Y \times \mu (X \rightarrow 1 + X)))$</p>
+<p>That is, $\mu F = (\mathbb{N}, [\mathbb{N}])$.</p>
+<h2>Proof</h2>
+<p>We show that the term on the right of the isomorphism relation is an initial $F$-algebra. Then, by uniqueness, it must be isomorphic to $\mu F$.</p>
 <p>Let</p>
-<p><span class="math">\(\chi (X) = F_2(\mu F_1, X)\)</span></p>
-<p>First we show that <span class="math">\((\mu F_1, \mu \chi)\)</span> is an <span class="math">\(F\)</span>-algebra. The algebra morphism is</p>
-<p><span class="math">\(\begin{array}{ccc}   F (\mu F_1, \mu \chi) &amp; =           &amp; (F_1 \mu F_1, F_2 (\mu F_1, \mu \chi)) \\                         &amp; =           &amp; (F_1 \mu F_1, \chi (\mu \chi)) \\                         &amp; \rightarrow &amp; (\mu F_1, \mu \chi) \end{array}\)</span></p>
-<p>where the two components of the final map are the initial algebra morphisms for <span class="math">\(\mu F_1\)</span> and <span class="math">\(\mu \chi\)</span>.</p>
-<p>It is required to prove that <span class="math">\((\mu F_1, \mu \chi)\)</span> is an initial algebra, that is, for any <span class="math">\(F\)</span>-algebra <span class="math">\(F A \rightarrow A\)</span>, there is a unique morphism of algebras <span class="math">\((\mu F_1, \mu \chi) \rightarrow A\)</span>.</p>
-<p>We seek morphisms <span class="math">\(\mu F_1 \rightarrow \pi_1 A\)</span> and <span class="math">\(\mu \chi \rightarrow \pi_2 A\)</span> such that the following diagrams commute:</p>
-<p><span class="math">\(\require{AMSmath}     \newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex}     \newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex}     \newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}}     \begin{array}{ccc}       F_1 \mu F_1&amp; \ra{} &amp; F_1 \pi_1 A \\       \da{\operatorname{out}} &amp; &amp; \da{\phi} \\       \mu F_1&amp; \ras{} &amp; \pi_1 A     \end{array}     \begin{array}{ccc}       \chi \mu \chi &amp; \ra{} &amp; \chi \pi_2 A \\       \da{\operatorname{out}} &amp; &amp; \da{} \\       \mu \chi&amp; \ras{\pi_2 A} &amp; \pi_2 A     \end{array}\)</span></p>
-<p>The first morphism is determined uniquely by the definition of <span class="math">\(\mu F_1\)</span>.</p>
-<p>We just need to show that <span class="math">\(\pi_2 A\)</span> is a <span class="math">\(\chi\)</span>-algebra. Then, the second morphism is given uniquely by the definition of <span class="math">\(\mu \chi\)</span>.</p>
+<p>$\chi (X) = F_2(\mu F_1, X)$</p>
+<p>First we show that $(\mu F_1, \mu \chi)$ is an $F$-algebra. The algebra morphism is</p>
+<p>$\begin{array}{ccc}
+F (\mu F_1, \mu \chi) &amp; = &amp; (F_1 \mu F_1, F_2 (\mu F_1, \mu \chi)) \
+&amp; = &amp; (F_1 \mu F_1, \chi (\mu \chi)) \
+&amp; \rightarrow &amp; (\mu F_1, \mu \chi)
+\end{array}$</p>
+<p>where the two components of the final map are the initial algebra morphisms for $\mu F_1$ and $\mu \chi$.</p>
+<p>It is required to prove that $(\mu F_1, \mu \chi)$ is an initial algebra, that is, for any $F$-algebra $F A \rightarrow A$, there is a unique morphism of algebras $(\mu F_1, \mu \chi) \rightarrow A$.</p>
+<p>We seek morphisms $\mu F_1 \rightarrow \pi_1 A$ and $\mu \chi \rightarrow \pi_2 A$ such that the following diagrams commute:</p>
+<p>$\require{AMSmath}
+\newcommand{\ra}[1]{\kern-1.5ex\xrightarrow{\ \ #1\ \ }\phantom{}\kern-1.5ex}
+\newcommand{\ras}[1]{\kern-1.5ex\xrightarrow{\ \ \smash{#1}\ \ }\phantom{}\kern-1.5ex}
+\newcommand{\da}[1]{\bigg\downarrow\raise.5ex\rlap{\scriptstyle#1}}
+\begin{array}{ccc}
+F_1 \mu F_1&amp; \ra{} &amp; F_1 \pi_1 A \
+\da{\operatorname{out}} &amp; &amp; \da{\phi} \
+\mu F_1&amp; \ras{} &amp; \pi_1 A
+\end{array}
+\begin{array}{ccc}
+\chi \mu \chi &amp; \ra{} &amp; \chi \pi_2 A \
+\da{\operatorname{out}} &amp; &amp; \da{} \
+\mu \chi&amp; \ras{\pi_2 A} &amp; \pi_2 A
+\end{array}$</p>
+<p>The first morphism is determined uniquely by the definition of $\mu F_1$.</p>
+<p>We just need to show that $\pi_2 A$ is a $\chi$-algebra. Then, the second morphism is given uniquely by the definition of $\mu \chi$.</p>
 <p>We have morphisms</p>
-<p><span class="math">\(\begin{array}{ccc}   f       &amp; :: &amp; \mu F_1 \rightarrow \pi_1 A \\   \pi_2 a &amp; :: &amp; F_2 (\pi_1 A, \pi_2 A) \rightarrow \pi_2 A \end{array}\)</span></p>
+<p>$\begin{array}{ccc}
+f &amp; :: &amp; \mu F_1 \rightarrow \pi_1 A \
+\pi_2 a &amp; :: &amp; F_2 (\pi_1 A, \pi_2 A) \rightarrow \pi_2 A
+\end{array}$</p>
 <p>which compose to give</p>
-<p><span class="math">\(\begin{array}{ccc}   \chi \pi_2 A &amp; =           &amp; F_2 (\mu F_1, \pi_2 A) \\                &amp; \rightarrow &amp; F_2 (\pi_1 A, \pi_2 A) \\                &amp; \rightarrow &amp; \pi_2 A \end{array}\)</span></p>
+<p>$\begin{array}{ccc}
+\chi \pi_2 A &amp; = &amp; F_2 (\mu F_1, \pi_2 A) \
+&amp; \rightarrow &amp; F_2 (\pi_1 A, \pi_2 A) \
+&amp; \rightarrow &amp; \pi_2 A
+\end{array}$</p>
 <p>﻿This completes the proof.</p>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

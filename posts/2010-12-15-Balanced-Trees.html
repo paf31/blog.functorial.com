@@ -1,13 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Value Lifting, Bounded Existentials and the Visitor Pattern</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Value Lifting, Bounded Existentials and the Visitor Pattern</h2><p><small>by Phil Freeman on 2010/12/15</small></p><hr><p>Suppose we want to define a type of balanced binary trees in C#. That is, we want to define a type <code>Balanced&lt;T&gt;</code> of trees such that it is a type error to attempt to create a tree in <code>Balanced&lt;T&gt;</code> which has nodes at different depths. How might we go about this?</p>
+<html><head><title>Functorial Blog - Value Lifting, Bounded Existentials and the Visitor Pattern</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Value Lifting, Bounded Existentials and the Visitor Pattern</h2><p><small>by Phil Freeman on 2010/12/15</small></p><p>Suppose we want to define a type of balanced binary trees in C#. That is, we want to define a type <code>Balanced&lt;T&gt;</code> of trees such that it is a type error to attempt to create a tree in <code>Balanced&lt;T&gt;</code> which has nodes at different depths. How might we go about this?</p>
 <p>We could use nested datatypes. For example,</p>
 <blockquote>
 <p>Balanced T = T + Balanced (Pair T)</p>
@@ -19,13 +11,14 @@ _gaq.push(['_trackPageview']);
 <p>Balanced 0 = T</p>
 <p>Balanced n = Pair Balanced (n - 1)</p>
 </blockquote>
-<p>but we don't have the luxury of parameterizing a type with a term such as a natural number in this way.</p>
+<p>but we don&#39;t have the luxury of parameterizing a type with a term such as a natural number in this way.</p>
 <p>What we can do is lift the values of the type Nat to singleton types:</p>
 <pre><code>public interface Nat { }
 
 public class Z : Nat { }
 
-public class S&lt;N&gt; : Nat where N : Nat { }</code></pre>
+public class S&lt;N&gt; : Nat where N : Nat { }
+</code></pre>
 <p>Now we can parameterize balanced trees as follows:</p>
 <pre><code>public interface BalancedTree&lt;T, N&gt; where N : Nat { }
 
@@ -57,7 +50,8 @@ public class Branch&lt;T, N&gt; : BalancedTree&lt;T, S&lt;N&gt;&gt; where N : Na
         get;
         set;
     }
-}</code></pre>
+}
+</code></pre>
 <p>We now have a well-typed version of a balanced tree of a given depth. We can also wrap the natural number type parameter in an existential package to define a type of balanced trees of an unknown depth:</p>
 <pre><code>public interface TreeVisitor&lt;T, R&gt;
 {
@@ -67,13 +61,15 @@ public class Branch&lt;T, N&gt; : BalancedTree&lt;T, S&lt;N&gt;&gt; where N : Na
 public interface BalancedTree&lt;T&gt;
 {
     R AcceptVisitor&lt;R&gt;(TreeVisitor&lt;T, R&gt; v);
-}</code></pre>
-<p>The problem is finding a good way to get values out of the existential package. We want our functions to take different values based on the subclass of Nat appearing in the existential package. In C#, we can use the visitor pattern to distinguish behavior between subclasses. Let's alter our definition of the visitor class to branch based on the subclass of BalancedTree on the left hand side of the function:</p>
+}
+</code></pre>
+<p>The problem is finding a good way to get values out of the existential package. We want our functions to take different values based on the subclass of Nat appearing in the existential package. In C#, we can use the visitor pattern to distinguish behavior between subclasses. Let&#39;s alter our definition of the visitor class to branch based on the subclass of BalancedTree on the left hand side of the function:</p>
 <pre><code>public interface TreeVisitor&lt;T, R&gt;
 {
     R VisitEmpty(Empty&lt;T&gt; e);
     R VisitBranch&lt;N&gt;(Branch&lt;T, N&gt; b) where N : Nat;
-}</code></pre>
+}
+</code></pre>
 <p>and add methods to the tree classes to dispatch visitors to the correct subclass:</p>
 <pre><code>public class Empty&lt;T&gt; : BalancedTree&lt;T, Z&gt;
 {
@@ -94,7 +90,8 @@ public class Branch&lt;T, N&gt; : BalancedTree&lt;T, S&lt;N&gt;&gt; where N : Na
     }
 
     ...
-}</code></pre>
+}
+</code></pre>
 <p>Now we can define methods on our existential type using the visitor pattern. For example, here is a map which takes a balanced tree and flattens it into a list:</p>
 <pre><code>class FlattenVisitor&lt;T&gt; : TreeVisitor&lt;T, IEnumerable&lt;T&gt;&gt;
 {
@@ -116,7 +113,8 @@ public class Branch&lt;T, N&gt; : BalancedTree&lt;T, S&lt;N&gt;&gt; where N : Na
 public static IEnumerable&lt;T&gt; Flatten&lt;T&gt;(this BalancedTree&lt;T&gt; b)
 {
     return b.AcceptVisitor&lt;IEnumerable&lt;T&gt;&gt;(new FlattenVisitor&lt;T&gt;());
-}</code></pre>
+}
+</code></pre>
 <p>We can also forget the depth of a tree by wrapping it in an existential package:</p>
 <pre><code>class ForgetfulTree&lt;T, N&gt; : BalancedTree&lt;T&gt; where N : Nat
 {
@@ -137,7 +135,8 @@ public static IEnumerable&lt;T&gt; Flatten&lt;T&gt;(this BalancedTree&lt;T&gt; b
 public static BalancedTree&lt;T&gt; Forget&lt;T, N&gt;(this BalancedTree&lt;T, N&gt; b) where N : Nat
 {
     return new ForgetfulTree&lt;T, N&gt;(b);
-}</code></pre>
+}
+</code></pre>
 <p>Finally, here is an example calculation:</p>
 <pre><code>BalancedTree&lt;int, S&lt;S&lt;S&lt;Z&gt;&gt;&gt;&gt; treeOfKnownDepth =
     new Branch&lt;int, S&lt;S&lt;Z&gt;&gt;&gt;
@@ -168,8 +167,9 @@ public static BalancedTree&lt;T&gt; Forget&lt;T, N&gt;(this BalancedTree&lt;T, N
             Right = new Empty&lt;int&gt; { Value = 8 }
         }
     }
-}</code></pre>
-<p>We can take this 'tree of known depth' and forget its depth:</p>
+}
+</code></pre>
+<p>We can take this &#39;tree of known depth&#39; and forget its depth:</p>
 <blockquote>
 <p>var treeOfUnknownDepth = treeOfKnownDepth.Forget();</p>
 </blockquote>
@@ -178,11 +178,4 @@ public static BalancedTree&lt;T&gt; Forget&lt;T, N&gt;(this BalancedTree&lt;T, N
 <p>treeOfUnknownDepth.Flatten();</p>
 <p>[ 1, 2, 3, 4, 5, 6, 7, 8 ]</p>
 </blockquote>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

@@ -1,13 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Greatest Fixed Points Part 2 - The Conaturals</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Greatest Fixed Points Part 2 - The Conaturals</h2><p><small>by Phil Freeman on 2010/12/06</small></p><hr><p>As a continuation of my last post on the encoding of greatest fixed point types, I'd like to give a treatment of another interesting greatest fixed point type - the conatural numbers, the greatest fixed point of the functor</p>
+<html><head><title>Functorial Blog - Greatest Fixed Points Part 2 - The Conaturals</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Greatest Fixed Points Part 2 - The Conaturals</h2><p><small>by Phil Freeman on 2010/12/06</small></p><p>As a continuation of my last post on the encoding of greatest fixed point types, I&#39;d like to give a treatment of another interesting greatest fixed point type - the conatural numbers, the greatest fixed point of the functor</p>
 <blockquote>
 <p>F (X) = 1 + X</p>
 </blockquote>
@@ -26,9 +18,10 @@ interface ConatFunction&lt;R&gt;
 interface Conat
 {
     R Apply&lt;R&gt;(ConatFunction&lt;R&gt; f);
-}</code></pre>
-<p>Let's interpret this: a conatural number with a (hidden) base type T is a finite or infinite chain of elements of T. Two conaturals are equivalent as existential packages if and only if their chains are both infinite or have the same finite length.</p>
-<p>Let's define some conatural numbers:</p>
+}
+</code></pre>
+<p>Let&#39;s interpret this: a conatural number with a (hidden) base type T is a finite or infinite chain of elements of T. Two conaturals are equivalent as existential packages if and only if their chains are both infinite or have the same finite length.</p>
+<p>Let&#39;s define some conatural numbers:</p>
 <pre><code>class ConatOne : Conat
 {
     public R Apply&lt;R&gt;(ConatFunction&lt;R&gt; f)
@@ -51,7 +44,8 @@ class ConatInfinity : Conat
             Generator = n =&gt; Either&lt;Unit, Unit&gt;.inr(new Unit())
         });
     }
-}</code></pre>
+}
+</code></pre>
 <p>The chain corresponding to the conatural <code>one</code> is parameterized by the <code>Unit</code> type and terminates after one step.</p>
 <p>The chain corresponding to the conatural <code>infinity</code> is parameterized by the <code>Unit</code> type and cycles indefinitely.</p>
 <p>To define a successor conatural, we can replace the underlying type T with the type <code>1 + T</code>, the extra unit type being required here to add an extra step to the chain defining the successor:</p>
@@ -66,7 +60,8 @@ class ConatInfinity : Conat
                 u1 =&gt; Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inl(new Unit()),
                 e2 =&gt; Either&lt;Unit, Either&lt;Unit, T&gt;&gt;.inr(Either&lt;Unit, T&gt;.inr(e2))));
     }
-}</code></pre>
+}
+</code></pre>
 <p>Addition of conaturals can be defined by summing base types, essentially gluing the end of the first chain to the start of the first:</p>
 <pre><code>class ConatAdd&lt;T1, T2&gt; : Conat&lt;Either&lt;T1, T2&gt;&gt;
 {
@@ -81,7 +76,8 @@ class ConatInfinity : Conat
                 u1 =&gt; Either&lt;Unit, Either&lt;T1, T2&gt;&gt;.inr(Either&lt;T1, T2&gt;.inl(n.Seed)),
                 e1 =&gt; Either&lt;Unit, Either&lt;T1, T2&gt;&gt;.inr(Either&lt;T1, T2&gt;.inr(e1))));
     }
-}</code></pre>
+}
+</code></pre>
 <p>Multiplication can be defined similarly over the product type. We can visualize this as traversing the elements of one chain several times, once for each step in the second chain:</p>
 <pre><code>class ConatMult&lt;T1, T2&gt; : Conat&lt;Tuple&lt;T1, T2&gt;&gt;
 {
@@ -94,12 +90,6 @@ class ConatInfinity : Conat
                     t2 =&gt; Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;.inr(Tuple.Create&lt;T1, T2&gt;(n.Seed, t2))),
                 t1 =&gt; Either&lt;Unit, Tuple&lt;T1, T2&gt;&gt;.inr(Tuple.Create&lt;T1, T2&gt;(t1, p.Item2)));
     }
-}</code></pre>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+}
+</code></pre>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

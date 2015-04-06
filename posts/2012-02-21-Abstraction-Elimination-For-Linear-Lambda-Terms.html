@@ -1,16 +1,9 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Abstraction Elimination For Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Abstraction Elimination For Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/21</small></p><hr><p>Last time, I wrote a little bit about encoding linear lambda terms in Haskell using promoted datatypes to represent the set of variables appearing in a term. This time I'd like to look at an algorithm for abstraction elimination for linear lambda terms.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="co">{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators, FlexibleInstances #-</span>
+<html><head><title>Functorial Blog - Abstraction Elimination For Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Abstraction Elimination For Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/21</small></p><p>Last time, I wrote a little bit about encoding linear lambda terms in Haskell using promoted datatypes to represent the set of variables appearing in a term. This time I&#39;d like to look at an algorithm for abstraction elimination for linear lambda terms.</p>
+<pre class="{.haskell}"><code>{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators, FlexibleInstances #-
 
-<span class="co">module Elim where</span></code></pre>
+module Elim where
+</code></pre>
 <p>I covered abstraction elimination once before when I wrote about adding lambdas to the Purity compiler. Abstraction elimination is the process by which lambda expressions are converted into pointfree expressions. In the simply typed lambda calculus, abstraction elimination uses the basis <code>{S, K, I}</code>. However, in the linear case the combinators <code>S</code> and <code>K</code> cannot be expressed as we saw last time. This time, we will see that the combinators <code>B</code>, <code>C</code> and <code>I</code> form a basis for the linear terms.</p>
 <p>The typical abstraction elimination algorithm basically replaces applications with the combinator <code>S</code>, and variables with the combinator <code>I</code>. The <code>K</code> combinator is used in the case when a variable does not appear in a subexpression, but in the linear case this will never occur. The application case is split into two smaller cases: while eliminating a variable <code>x</code> at an application, <code>x</code> can appear on the left of the application or on the right, but not in both.</p>
 <p>Looking at the definitions of the combinators <code>B</code> and <code>C</code>, we can see how they correspond to these two cases. In <code>B</code>, the third argument <code>z</code> only appears on the right, and in <code>C</code> it only appears on the left:</p>
@@ -20,97 +13,112 @@ _gaq.push(['_trackPageview']);
 -- ghci&gt; :t b&#39;
 -- (t1 -&gt; t) -&gt; (t2 -&gt; t1) -&gt; t2 -&gt; t
 -- ghci&gt; :t c&#39;
--- (t1 -&gt; t2 -&gt; t) -&gt; t2 -&gt; t1 -&gt; t</code></pre>
-<p>Let's recall the code from last time. I defined a type of context splittings, used to divide up the variables in an application into two subsets:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Splitting</span> v1 v2 s <span class="kw">where</span>
-  <span class="dt">E</span><span class="ot"> ::</span> <span class="dt">Splitting</span> <span class="ch">&#39;[] &#39;</span>[] <span class="ch">&#39;[]</span>
-  <span class="dt">L</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="fu">-</span><span class="dt">Splitting</span> (x <span class="ch">&#39;: xs) ys (x &#39;</span><span class="fu">:</span> s)
-  <span class="dt">R</span><span class="ot"> ::</span> <span class="dt">Splitting</span> xs ys s <span class="fu">-</span><span class="dt">Splitting</span> xs (y <span class="ch">&#39;: ys) (y &#39;</span><span class="fu">:</span> s)</code></pre>
+-- (t1 -&gt; t2 -&gt; t) -&gt; t2 -&gt; t1 -&gt; t
+</code></pre>
+<p>Let&#39;s recall the code from last time. I defined a type of context splittings, used to divide up the variables in an application into two subsets:</p>
+<pre class="{.haskell}"><code>data Splitting v1 v2 s where
+  E :: Splitting &#39;[] &#39;[] &#39;[]
+  L :: Splitting xs ys s -Splitting (x &#39;: xs) ys (x &#39;: s)
+  R :: Splitting xs ys s -Splitting xs (y &#39;: ys) (y &#39;: s)
+</code></pre>
 <p>I then defined the following type of linear terms, and a few inhabitants:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Lin</span> vars <span class="kw">where</span>
-  <span class="dt">Var</span><span class="ot"> ::</span> v <span class="fu">-</span><span class="dt">Lin</span> (v <span class="ch">&#39;: &#39;</span>[])
-  <span class="dt">App</span><span class="ot"> ::</span> <span class="dt">Splitting</span> vs ws s <span class="fu">-</span><span class="dt">Lin</span> vs <span class="fu">-</span><span class="dt">Lin</span> ws <span class="fu">-</span><span class="dt">Lin</span> s
-  <span class="dt">Abs</span><span class="ot"> ::</span> (forall v<span class="fu">.</span> v <span class="fu">-</span><span class="dt">Lin</span> (v <span class="ch">&#39;: vars)) -Lin vars</span>
+<pre class="{.haskell}"><code>data Lin vars where
+  Var :: v -Lin (v &#39;: &#39;[])
+  App :: Splitting vs ws s -Lin vs -Lin ws -Lin s
+  Abs :: (forall v. v -Lin (v &#39;: vars)) -Lin vars
 
-i <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Var</span> x)
+i = Abs (\x -&gt; Var x)
 
-b <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\z <span class="ot">-&gt;</span> <span class="dt">App</span> (<span class="dt">R</span> <span class="fu">$</span> <span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">Var</span> x) (<span class="dt">App</span> (<span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">Var</span> y) (<span class="dt">Var</span> z)))))
+b = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (R $ R $ L $ E) (Var x) (App (R $ L $ E) (Var y) (Var z)))))
 
-c <span class="fu">=</span> <span class="dt">Abs</span> (\x <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\y <span class="ot">-&gt;</span> <span class="dt">Abs</span> (\z <span class="ot">-&gt;</span> <span class="dt">App</span> (<span class="dt">L</span> <span class="fu">$</span> <span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">App</span> (<span class="dt">R</span> <span class="fu">$</span> <span class="dt">L</span> <span class="fu">$</span> <span class="dt">E</span>) (<span class="dt">Var</span> x) (<span class="dt">Var</span> z)) (<span class="dt">Var</span> y))))</code></pre>
+c = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (L $ R $ L $ E) (App (R $ L $ E) (Var x) (Var z)) (Var y))))
+</code></pre>
 <p>Now, we will show that these three terms form a basis for all linear terms. That is, these three terms, along with applications, are enough to express all linear lambda terms.</p>
-<p>We seek a function from the type <code>Lin</code> to trees which only mention applications and the three terms <code>B</code>, <code>C</code> and <code>I</code>. Let's define an extended version of the type <code>Lin</code>, which adds three constructors for the three combinators:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">Lin&#39;</span> vars <span class="kw">where</span>
-  <span class="dt">B</span><span class="ot"> ::</span> <span class="dt">Lin&#39;</span> <span class="ch">&#39;[]</span>
-  <span class="dt">C</span><span class="ot"> ::</span> <span class="dt">Lin&#39;</span> <span class="ch">&#39;[]</span>
-  <span class="dt">I</span><span class="ot"> ::</span> <span class="dt">Lin&#39;</span> <span class="ch">&#39;[]</span>
-  <span class="dt">Var&#39;</span><span class="ot"> ::</span> v <span class="fu">-</span><span class="dt">Lin&#39;</span> (v <span class="ch">&#39;: &#39;</span>[])
-  <span class="dt">App&#39;</span><span class="ot"> ::</span> <span class="dt">Splitting</span> vs ws s <span class="fu">-</span><span class="dt">Lin&#39;</span> vs <span class="fu">-</span><span class="dt">Lin&#39;</span> ws <span class="fu">-</span><span class="dt">Lin&#39;</span> s
-  <span class="dt">Abs&#39;</span><span class="ot"> ::</span> (forall v<span class="fu">.</span> v <span class="fu">-</span><span class="dt">Lin&#39;</span> (v <span class="ch">&#39;: vars)) -Lin&#39;</span> vars
+<p>We seek a function from the type <code>Lin</code> to trees which only mention applications and the three terms <code>B</code>, <code>C</code> and <code>I</code>. Let&#39;s define an extended version of the type <code>Lin</code>, which adds three constructors for the three combinators:</p>
+<pre class="{.haskell}"><code>data Lin&#39; vars where
+  B :: Lin&#39; &#39;[]
+  C :: Lin&#39; &#39;[]
+  I :: Lin&#39; &#39;[]
+  Var&#39; :: v -Lin&#39; (v &#39;: &#39;[])
+  App&#39; :: Splitting vs ws s -Lin&#39; vs -Lin&#39; ws -Lin&#39; s
+  Abs&#39; :: (forall v. v -Lin&#39; (v &#39;: vars)) -Lin&#39; vars
 
-<span class="kw">instance</span> <span class="kw">Show</span> (<span class="dt">Lin&#39;</span> <span class="ch">&#39;[]) where</span>
-  <span class="fu">show</span> <span class="dt">B</span> <span class="fu">=</span> <span class="st">&quot;B&quot;</span>
-  <span class="fu">show</span> <span class="dt">C</span> <span class="fu">=</span> <span class="st">&quot;C&quot;</span>
-  <span class="fu">show</span> <span class="dt">I</span> <span class="fu">=</span> <span class="st">&quot;I&quot;</span>
-  <span class="fu">show</span> (<span class="dt">App&#39;</span> <span class="dt">E</span> t1 t2) <span class="fu">=</span> <span class="st">&quot;(&quot;</span> <span class="fu">++</span> (<span class="fu">show</span> t1) <span class="fu">++</span> <span class="st">&quot; &quot;</span> <span class="fu">++</span> (<span class="fu">show</span> t2) <span class="fu">++</span> <span class="st">&quot;)&quot;</span></code></pre>
-<p>The idea is to progressively replace the <code>Abs'</code> and <code>Var'</code> constructors with the remaining constructors, until there are no more abstractions appearing in the expression, and therefore no more variables.</p>
+instance Show (Lin&#39; &#39;[]) where
+  show B = &quot;B&quot;
+  show C = &quot;C&quot;
+  show I = &quot;I&quot;
+  show (App&#39; E t1 t2) = &quot;(&quot; ++ (show t1) ++ &quot; &quot; ++ (show t2) ++ &quot;)&quot;
+</code></pre>
+<p>The idea is to progressively replace the <code>Abs&#39;</code> and <code>Var&#39;</code> constructors with the remaining constructors, until there are no more abstractions appearing in the expression, and therefore no more variables.</p>
 <p>We will walk the expression tree looking for abstractions. When one is found, we have a polymorphic function with type</p>
-<pre><code>-- forall v. v -&gt; Lin&#39; (v &#39;: vars)</code></pre>
+<pre><code>-- forall v. v -&gt; Lin&#39; (v &#39;: vars)
+</code></pre>
 <p>We can pass in a name for the variable <code>v</code> and get back another expression. Parametricity forces the name of all instances of the variable <code>v</code> in this expression to be equal to the value we passed in to the polymorphic function, so we can look for that value, and replace it with the <code>I</code> combinator recursively.</p>
 <p>We need a supply of unique variable names:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">VarSupply</span> a <span class="fu">=</span> <span class="dt">VarSupply</span> {<span class="ot"> runSupply ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> (a, <span class="dt">Int</span>) }
+<pre class="{.haskell}"><code>newtype VarSupply a = VarSupply { runSupply :: Int -&gt; (a, Int) }
 
-<span class="kw">instance</span> <span class="kw">Monad</span> <span class="dt">VarSupply</span> <span class="kw">where</span>
-  <span class="fu">return</span> a <span class="fu">=</span> <span class="dt">VarSupply</span> (\i <span class="ot">-&gt;</span> (a, i))
-  f <span class="fu">&gt;&gt;=</span> g <span class="fu">=</span> <span class="dt">VarSupply</span> (\i <span class="ot">-&gt;</span> <span class="kw">let</span> (a, j) <span class="fu">=</span> runSupply f i <span class="kw">in</span> runSupply (g a) j)</code></pre>
+instance Monad VarSupply where
+  return a = VarSupply (\i -&gt; (a, i))
+  f &gt;&gt;= g = VarSupply (\i -&gt; let (a, j) = runSupply f i in runSupply (g a) j)
+</code></pre>
 <p>This action generates a new variable name:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">nextVar ::</span> <span class="dt">VarSupply</span> <span class="dt">Int</span>
-nextVar <span class="fu">=</span> <span class="dt">VarSupply</span> (\i <span class="ot">-&gt;</span> (i, i <span class="fu">+</span> <span class="dv">1</span>))</code></pre>
+<pre class="{.haskell}"><code>nextVar :: VarSupply Int
+nextVar = VarSupply (\i -&gt; (i, i + 1))
+</code></pre>
 <p>The final piece before we can implement the elimination function is a helper function used to create context splittings. This function creates trivial splittings with all variables on the right. These will be used to construct applications of the combinators <code>B</code> and <code>C</code>, which mention no variables at all (and so all variables in the application must occur in the right hand subexpression):</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">trivial ::</span> <span class="dt">Lin&#39;</span> vars <span class="ot">-&gt;</span> <span class="dt">Splitting</span> <span class="ch">&#39;[] vars vars</span>
-trivial (<span class="dt">Var&#39;</span> _) <span class="fu">=</span> <span class="dt">R</span> <span class="fu">$</span> <span class="dt">E</span>
-trivial (<span class="dt">App&#39;</span> s t1 t2) <span class="fu">=</span> trivial&#39; s <span class="kw">where</span>
-<span class="ot">  trivial&#39; ::</span> <span class="dt">Splitting</span> v1 v2 s <span class="ot">-&gt;</span> <span class="dt">Splitting</span> <span class="ch">&#39;[] s s</span>
-  trivial&#39; <span class="dt">E</span> <span class="fu">=</span> <span class="dt">E</span>
-  trivial&#39; (<span class="dt">L</span> s) <span class="fu">=</span> <span class="dt">R</span> <span class="fu">$</span> trivial&#39; s
-  trivial&#39; (<span class="dt">R</span> s) <span class="fu">=</span> <span class="dt">R</span> <span class="fu">$</span> trivial&#39; s
-trivial (<span class="dt">Abs&#39;</span> f) <span class="fu">=</span> <span class="kw">case</span> trivial (f ()) <span class="kw">of</span> (<span class="dt">R</span> s) <span class="ot">-&gt;</span> s
-trivial <span class="dt">B</span> <span class="fu">=</span> <span class="dt">E</span>
-trivial <span class="dt">C</span> <span class="fu">=</span> <span class="dt">E</span>
-trivial <span class="dt">I</span> <span class="fu">=</span> <span class="dt">E</span></code></pre>
+<pre class="{.haskell}"><code>trivial :: Lin&#39; vars -&gt; Splitting &#39;[] vars vars
+trivial (Var&#39; _) = R $ E
+trivial (App&#39; s t1 t2) = trivial&#39; s where
+  trivial&#39; :: Splitting v1 v2 s -&gt; Splitting &#39;[] s s
+  trivial&#39; E = E
+  trivial&#39; (L s) = R $ trivial&#39; s
+  trivial&#39; (R s) = R $ trivial&#39; s
+trivial (Abs&#39; f) = case trivial (f ()) of (R s) -&gt; s
+trivial B = E
+trivial C = E
+trivial I = E
+</code></pre>
 <p>Now we can define the elimination function:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">elim ::</span> <span class="dt">Lin</span> vars <span class="ot">-&gt;</span> <span class="dt">Lin&#39;</span> vars
-elim t <span class="fu">=</span> <span class="fu">fst</span> <span class="fu">$</span> runSupply (elim&#39; <span class="fu">$</span> inj t) <span class="dv">0</span> <span class="kw">where</span></code></pre>
-<p>The helper function <code>inj</code> injects values in the type <code>Lin</code> into the type <code>Lin'</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">  inj ::</span> <span class="dt">Lin</span> vars <span class="fu">-</span><span class="dt">Lin&#39;</span> vars
-  inj (<span class="dt">Var</span> v) <span class="fu">=</span> <span class="dt">Var&#39;</span> v
-  inj (<span class="dt">App</span> s t1 t2) <span class="fu">=</span> <span class="dt">App&#39;</span> s (inj t1) (inj t2)
-  inj (<span class="dt">Abs</span> f) <span class="fu">=</span> <span class="dt">Abs&#39;</span> (\v <span class="fu">-</span>inj <span class="fu">$</span> f v)</code></pre>
-<p>The <code>elim</code> method uses a helper method <code>elim'</code> which runs in the <code>VarSupply</code> monad to generate new variable names. Every time an abstraction is found, a new variable name is generated, used to create a subexpression, and then eliminated from the subexpression.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">  elim&#39; ::</span> <span class="dt">Lin&#39;</span> vars <span class="ot">-&gt;</span> <span class="dt">VarSupply</span> (<span class="dt">Lin&#39;</span> vars)
-  elim&#39; (<span class="dt">App&#39;</span> s t1 t2) <span class="fu">=</span> <span class="kw">do</span>
-    t1&#39; <span class="ot">&lt;-</span> elim&#39; t1
-    t2&#39; <span class="ot">&lt;-</span> elim&#39; t2
-    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">App&#39;</span> s t1&#39; t2&#39;
-  elim&#39; (<span class="dt">Abs&#39;</span> f) <span class="fu">=</span> <span class="kw">do</span>
-    name <span class="ot">&lt;-</span> nextVar
+<pre class="{.haskell}"><code>elim :: Lin vars -&gt; Lin&#39; vars
+elim t = fst $ runSupply (elim&#39; $ inj t) 0 where
+</code></pre>
+<p>The helper function <code>inj</code> injects values in the type <code>Lin</code> into the type <code>Lin&#39;</code>:</p>
+<pre class="{.haskell}"><code>  inj :: Lin vars -Lin&#39; vars
+  inj (Var v) = Var&#39; v
+  inj (App s t1 t2) = App&#39; s (inj t1) (inj t2)
+  inj (Abs f) = Abs&#39; (\v -inj $ f v)
+</code></pre>
+<p>The <code>elim</code> method uses a helper method <code>elim&#39;</code> which runs in the <code>VarSupply</code> monad to generate new variable names. Every time an abstraction is found, a new variable name is generated, used to create a subexpression, and then eliminated from the subexpression.</p>
+<pre class="{.haskell}"><code>  elim&#39; :: Lin&#39; vars -&gt; VarSupply (Lin&#39; vars)
+  elim&#39; (App&#39; s t1 t2) = do
+    t1&#39; &lt;- elim&#39; t1
+    t2&#39; &lt;- elim&#39; t2
+    return $ App&#39; s t1&#39; t2&#39;
+  elim&#39; (Abs&#39; f) = do
+    name &lt;- nextVar
     elim&#39;&#39; name (f name)
-  elim&#39; x <span class="fu">=</span> <span class="fu">return</span> <span class="fu">$</span> x</code></pre>
-<p>The key function is <code>elim''</code> which eliminates a specific variable from a subexpression. Again, <code>elim''</code> runs in the <code>VarSupply</code> monad.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">  elim&#39;&#39; ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Lin&#39;</span> (<span class="dt">Int</span> <span class="ch">&#39;: vars) -&gt; VarSupply (Lin&#39;</span> vars)</code></pre>
+  elim&#39; x = return $ x
+</code></pre>
+<p>The key function is <code>elim&#39;&#39;</code> which eliminates a specific variable from a subexpression. Again, <code>elim&#39;&#39;</code> runs in the <code>VarSupply</code> monad.</p>
+<pre class="{.haskell}"><code>  elim&#39;&#39; :: Int -&gt; Lin&#39; (Int &#39;: vars) -&gt; VarSupply (Lin&#39; vars)
+</code></pre>
 <p>A variable can be eliminated using the <code>I</code> combinator. Note that it is not necessary to check that names are equal here, because linearity means that if we were to encounter a different variable here, we would have taken a different path at an application further up the expression tree.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">Var&#39;</span> _) <span class="fu">=</span> <span class="fu">return</span> <span class="dt">I</span></code></pre>
+<pre class="{.haskell}"><code>  elim&#39;&#39; name (Var&#39; _) = return I
+</code></pre>
 <p>In the case of an application, our choices are limited by the types of the subexpression. The splitting context tells us how to proceed. If the eliminated variable occurs on the left of the application, we use the combinator <code>C</code>. If it occurs on the right, we use the combinator <code>B</code>. In either case, we only need to eliminate the variable recursively on one side of the application:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">App&#39;</span> (<span class="dt">L</span> s) t1 t2) <span class="fu">=</span> <span class="kw">do</span>
-    t1&#39; <span class="ot">&lt;-</span> elim&#39;&#39; name t1
-    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">App&#39;</span> s (<span class="dt">App&#39;</span> (trivial t1&#39;) <span class="dt">C</span> t1&#39;) t2
-  elim&#39;&#39; name (<span class="dt">App&#39;</span> (<span class="dt">R</span> s) t1 t2) <span class="fu">=</span> <span class="kw">do</span>
-    t2&#39; <span class="ot">&lt;-</span> elim&#39;&#39; name t2
-    <span class="fu">return</span> <span class="fu">$</span> <span class="dt">App&#39;</span> s (<span class="dt">App&#39;</span> (trivial t1) <span class="dt">B</span> t1) t2&#39;</code></pre>
+<pre class="{.haskell}"><code>  elim&#39;&#39; name (App&#39; (L s) t1 t2) = do
+    t1&#39; &lt;- elim&#39;&#39; name t1
+    return $ App&#39; s (App&#39; (trivial t1&#39;) C t1&#39;) t2
+  elim&#39;&#39; name (App&#39; (R s) t1 t2) = do
+    t2&#39; &lt;- elim&#39;&#39; name t2
+    return $ App&#39; s (App&#39; (trivial t1) B t1) t2&#39;
+</code></pre>
 <p>In the case of a nested abstraction, we generate a new variable name, and then eliminate both variables in turn:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell">  elim&#39;&#39; name (<span class="dt">Abs&#39;</span> f) <span class="fu">=</span> <span class="kw">do</span>
-    name&#39; <span class="ot">&lt;-</span> nextVar
-    tmp <span class="ot">&lt;-</span> elim&#39;&#39; name (f name)
-    elim&#39;&#39; name&#39; tmp</code></pre>
+<pre class="{.haskell}"><code>  elim&#39;&#39; name (Abs&#39; f) = do
+    name&#39; &lt;- nextVar
+    tmp &lt;- elim&#39;&#39; name (f name)
+    elim&#39;&#39; name&#39; tmp
+</code></pre>
 <p>Now we can test the eliminate method in ghci:</p>
 <pre><code>-- ghci&gt; elim i
 -- I
@@ -119,18 +127,13 @@ elim t <span class="fu">=</span> <span class="fu">fst</span> <span class="fu">$<
 -- ((C ((B B) ((B B) I))) ((C ((B B) I)) I))
 --
 -- ghci&gt; elim c
--- ((C ((B B) ((B C) ((C ((B B) I)) I)))) I)</code></pre>
-<p>These expressions can be written using the combinators <code>b'</code>, <code>c'</code> and <code>id</code>, and we can verify that the types of the eliminated terms are correct:</p>
+-- ((C ((B B) ((B C) ((C ((B B) I)) I)))) I)
+</code></pre>
+<p>These expressions can be written using the combinators <code>b&#39;</code>, <code>c&#39;</code> and <code>id</code>, and we can verify that the types of the eliminated terms are correct:</p>
 <pre><code>-- ghci&gt; :t ((c&#39; ((b&#39; b&#39;) ((b&#39; b&#39;) id))) ((c&#39; ((b&#39; b&#39;) id)) id))
 -- (t1 -&gt; t) -&gt; (t2 -&gt; t1) -&gt; t2 -&gt; t
 -- 
 -- ghci&gt; :t ((c&#39; ((b&#39; b&#39;) ((b&#39; c&#39;) ((c&#39; ((b&#39; b&#39;) id)) id)))) id)
--- (t2 -&gt; t1 -&gt; t) -&gt; t1 -&gt; t2 -&gt; t</code></pre>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+-- (t2 -&gt; t1 -&gt; t) -&gt; t1 -&gt; t2 -&gt; t
+</code></pre>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

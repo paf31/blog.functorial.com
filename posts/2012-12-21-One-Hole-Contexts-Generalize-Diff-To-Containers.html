@@ -1,213 +1,212 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - One-Hole Contexts Generalize Diff To Containers</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>One-Hole Contexts Generalize Diff To Containers</h2><p><small>by Phil Freeman on 2012/12/21</small></p><hr><p>Text-based diff is of limited usefulness for analysing changes to a large code base over time. I've wondered for a while how one might generalize the <code>diff</code> and <code>patch</code> functions on lists to more general data structures such as abstract syntax trees.</p>
-<p>It's pretty easy to write down a version of the <code>diff</code> function for, say, binary trees, but less simple to write a function which works generically across multiple data types. As usual, I spent a while thinking about this before realizing the problem had already been solved ([1], [2]). I'm still quite happy with the approach I came up with, and I think it's sufficiently interesting to write about here anyway.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">{-# LANGUAGE TypeFamilies #-}</span>
-<span class="ot">{-# LANGUAGE StandaloneDeriving #-}</span>
-<span class="ot">{-# LANGUAGE FlexibleContexts #-}</span>
-<span class="ot">{-# LANGUAGE UndecidableInstances #-}</span>
+<html><head><title>Functorial Blog - One-Hole Contexts Generalize Diff To Containers</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>One-Hole Contexts Generalize Diff To Containers</h2><p><small>by Phil Freeman on 2012/12/21</small></p><p>Text-based diff is of limited usefulness for analysing changes to a large code base over time. I&#39;ve wondered for a while how one might generalize the <code>diff</code> and <code>patch</code> functions on lists to more general data structures such as abstract syntax trees.</p>
+<p>It&#39;s pretty easy to write down a version of the <code>diff</code> function for, say, binary trees, but less simple to write a function which works generically across multiple data types. As usual, I spent a while thinking about this before realizing the problem had already been solved ([1], [2]). I&#39;m still quite happy with the approach I came up with, and I think it&#39;s sufficiently interesting to write about here anyway.</p>
+<pre class="{.haskell}"><code>{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
-<span class="kw">module</span> <span class="dt">Diff</span> <span class="kw">where</span>
+module Diff where
 
-<span class="kw">import</span> Data.Function (on)
-<span class="kw">import</span> Data.List (maximumBy)</code></pre>
-<h2 id="longest-common-subsequences-and-largest-common-substructures">Longest Common Subsequences and Largest Common Substructures</h2>
+import Data.Function (on)
+import Data.List (maximumBy)
+</code></pre>
+<h2>Longest Common Subsequences and Largest Common Substructures</h2>
 <p>The <code>diff</code> function can be specified as follows: for lists <code>xs</code> and <code>ys</code>, find the shortest edit sequence taking <code>xs</code> to <code>ys</code>. We can reduce the problem to finding the longest common subsequence of <code>xs</code> and <code>ys</code>: to obtain the least common subsequence, first remove a subset of elements from <code>xs</code>, and then to obtain <code>ys</code>, insert a subset of elements of <code>ys</code> into the least common subsequence.</p>
-<p>Ignoring optimization for the time being, let's take this as our starting point. We'll generalize the longest common subsequence to the largest common substructure.</p>
-<p>First, let's examine the inductive definition of all subsequences of a list:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">subsequences ::</span> [a] <span class="ot">-&gt;</span> [[a]]
-subsequences [] <span class="fu">=</span> [[]]
-subsequences (x<span class="fu">:</span>xs) <span class="fu">=</span> [ xs&#39;&#39; <span class="fu">|</span> xs&#39; <span class="ot">&lt;-</span> subsequences xs, xs&#39;&#39; <span class="ot">&lt;-</span> [ xs&#39;, x<span class="fu">:</span>xs&#39; ] ]</code></pre>
+<p>Ignoring optimization for the time being, let&#39;s take this as our starting point. We&#39;ll generalize the longest common subsequence to the largest common substructure.</p>
+<p>First, let&#39;s examine the inductive definition of all subsequences of a list:</p>
+<pre class="{.haskell}"><code>subsequences :: [a] -&gt; [[a]]
+subsequences [] = [[]]
+subsequences (x:xs) = [ xs&#39;&#39; | xs&#39; &lt;- subsequences xs, xs&#39;&#39; &lt;- [ xs&#39;, x:xs&#39; ] ]
+</code></pre>
 <p>In words: if the input list has no elements, return just the input, otherwise, for each subsequence of the tail, yield two lists: the first including the head of the input, and the second excluding it.</p>
-<p>Let's recast that definition in the more generic language of containers:</p>
+<p>Let&#39;s recast that definition in the more generic language of containers:</p>
 <p>If the input has no subcontainers, return just the input, otherwise, for each substructure of each subcontainer, yield two substructures: the first including the structure of the input, and the second including only the substructure.</p>
-<p>Let's define a type class:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">newtype</span> <span class="dt">Rec</span> f <span class="fu">=</span> <span class="dt">Rec</span> {<span class="ot"> runRec ::</span> f (<span class="dt">Rec</span> f) }
+<p>Let&#39;s define a type class:</p>
+<pre class="{.haskell}"><code>newtype Rec f = Rec { runRec :: f (Rec f) }
 
-<span class="kw">class</span> <span class="dt">Container</span> f <span class="kw">where</span>
-  <span class="kw">data</span> <span class="dt">Context</span><span class="ot"> f ::</span> <span class="fu">*</span> <span class="ot">-&gt;</span> <span class="fu">*</span>
-<span class="ot">  children ::</span> f a <span class="ot">-&gt;</span> [(a, <span class="dt">Context</span> f a)]
-<span class="ot">  plugIn ::</span> a <span class="ot">-&gt;</span> <span class="dt">Context</span> f a <span class="ot">-&gt;</span> f a
-<span class="ot">  childAt ::</span> f a <span class="ot">-&gt;</span> <span class="dt">Context</span> f a <span class="ot">-&gt;</span> a</code></pre>
+class Container f where
+  data Context f :: * -&gt; *
+  children :: f a -&gt; [(a, Context f a)]
+  plugIn :: a -&gt; Context f a -&gt; f a
+  childAt :: f a -&gt; Context f a -&gt; a
+</code></pre>
 <p>The type <code>Rec f</code> is the usual type of recursive data structures of shape <code>f</code>. The <code>Container</code> class contains a few methods which deserve explanation.</p>
-<p>The associated data type <code>Context f</code> is the type of one-hole contexts of <code>f</code> [3]. The <code>children</code> function takes an input of type <code>f a</code> and returns an array of the contained <code>a</code>'s along with their one-hole contexts. The <code>plugIn</code> method takes an <code>a</code> and a context, and plugs the <code>a</code> into the hole defined by context. Finally, the <code>childAt</code> function takes an input of type <code>f a</code> and a context, and returns the <code>a</code> in the input at that context.</p>
+<p>The associated data type <code>Context f</code> is the type of one-hole contexts of <code>f</code> [3]. The <code>children</code> function takes an input of type <code>f a</code> and returns an array of the contained <code>a</code>&#39;s along with their one-hole contexts. The <code>plugIn</code> method takes an <code>a</code> and a context, and plugs the <code>a</code> into the hole defined by context. Finally, the <code>childAt</code> function takes an input of type <code>f a</code> and a context, and returns the <code>a</code> in the input at that context.</p>
 <p>There are some fairly obvious laws which instances of the <code>Container</code> class should satisfy:</p>
 <pre><code>childAt (plugIn a c) c = a
 plugIn (childAt a c) c = a
-(childAt a c) `elem` (children a)</code></pre>
-<p>Let's define the type of changes for structures of shape <code>f</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">Step</span> f <span class="fu">=</span> <span class="dt">Context</span> f (<span class="dt">Rec</span> f)
+(childAt a c) `elem` (children a)
+</code></pre>
+<p>Let&#39;s define the type of changes for structures of shape <code>f</code>:</p>
+<pre class="{.haskell}"><code>type Step f = Context f (Rec f)
 
-<span class="kw">data</span> <span class="dt">Change</span> f <span class="fu">=</span> <span class="dt">Skip</span> (<span class="dt">Step</span> f) <span class="fu">|</span> <span class="dt">Take</span> (<span class="dt">Step</span> f) <span class="fu">|</span> <span class="dt">Replace</span> (<span class="dt">Rec</span> f) (<span class="dt">Rec</span> f)
+data Change f = Skip (Step f) | Take (Step f) | Replace (Rec f) (Rec f)
 
-<span class="kw">type</span> <span class="dt">Path</span> f <span class="fu">=</span> [<span class="dt">Change</span> f]</code></pre>
+type Path f = [Change f]
+</code></pre>
 <p>and derive some instances:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">deriving</span> <span class="kw">instance</span> (<span class="kw">Eq</span> (f (<span class="dt">Rec</span> f))) <span class="ot">=&gt;</span> <span class="kw">Eq</span> (<span class="dt">Rec</span> f)
+<pre class="{.haskell}"><code>deriving instance (Eq (f (Rec f))) =&gt; Eq (Rec f)
 
-<span class="kw">deriving</span> <span class="kw">instance</span> (<span class="kw">Show</span> (f (<span class="dt">Rec</span> f))) <span class="ot">=&gt;</span> <span class="kw">Show</span> (<span class="dt">Rec</span> f)
+deriving instance (Show (f (Rec f))) =&gt; Show (Rec f)
 
-<span class="kw">deriving</span> <span class="kw">instance</span> (<span class="kw">Show</span> (<span class="dt">Context</span> f (<span class="dt">Rec</span> f)), <span class="kw">Show</span> (<span class="dt">Rec</span> f)) <span class="ot">=&gt;</span> <span class="kw">Show</span> (<span class="dt">Change</span> f)</code></pre>
-<p>With that, let's define the generalization of <code>subsequences</code>:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">InContext</span> f <span class="fu">=</span> (<span class="dt">Rec</span> f, <span class="dt">Path</span> f)
+deriving instance (Show (Context f (Rec f)), Show (Rec f)) =&gt; Show (Change f)
+</code></pre>
+<p>With that, let&#39;s define the generalization of <code>subsequences</code>:</p>
+<pre class="{.haskell}"><code>type InContext f = (Rec f, Path f)
 
-<span class="ot">substructures ::</span> (<span class="dt">Container</span> f) <span class="ot">=&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> [<span class="dt">InContext</span> f]
-substructures (<span class="dt">Rec</span> x) 
-  <span class="fu">|</span> <span class="fu">null</span> <span class="fu">$</span> children x <span class="fu">=</span> [(<span class="dt">Rec</span> x, [])]
-  <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> 
+substructures :: (Container f) =&gt; Rec f -&gt; [InContext f]
+substructures (Rec x) 
+  | null $ children x = [(Rec x, [])]
+  | otherwise = 
     [ substructure
-    <span class="fu">|</span> (x&#39;, ctx) <span class="ot">&lt;-</span> children x,
-      (x&#39;&#39;, ctxs) <span class="ot">&lt;-</span> substructures x&#39;,
-      substructure <span class="ot">&lt;-</span> [ (x&#39;&#39;, <span class="dt">Skip</span> ctx<span class="fu">:</span>ctxs), (<span class="dt">Rec</span> <span class="fu">$</span> plugIn x&#39;&#39; ctx, <span class="dt">Take</span> ctx<span class="fu">:</span>ctxs) ] ]</code></pre>
+    | (x&#39;, ctx) &lt;- children x,
+      (x&#39;&#39;, ctxs) &lt;- substructures x&#39;,
+      substructure &lt;- [ (x&#39;&#39;, Skip ctx:ctxs), (Rec $ plugIn x&#39;&#39; ctx, Take ctx:ctxs) ] ]
+</code></pre>
 <p>Here, the <code>plugIn</code> and <code>children</code> methods are used to generalize the inclusion/exclusion which took place when we calculated subsequences of a list.</p>
 <p>We can now easily find the largest common substructure, and therefore the difference of two structures.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">type</span> <span class="dt">ChangeSet</span> f <span class="fu">=</span> (<span class="dt">Path</span> f, <span class="dt">Path</span> f)
+<pre class="{.haskell}"><code>type ChangeSet f = (Path f, Path f)
 
-<span class="ot">common ::</span> (<span class="dt">Container</span> f, <span class="kw">Eq</span> (<span class="dt">Rec</span> f)) <span class="ot">=&gt;</span> [<span class="dt">InContext</span> f] <span class="ot">-&gt;</span> [<span class="dt">InContext</span> f] <span class="ot">-&gt;</span> [<span class="dt">ChangeSet</span> f]
-common xs ys <span class="fu">=</span> [ (p1, p2) <span class="fu">|</span> (s1, p1) <span class="ot">&lt;-</span> xs, (s2, p2) <span class="ot">&lt;-</span> ys, s1 <span class="fu">==</span> s2 ]
+common :: (Container f, Eq (Rec f)) =&gt; [InContext f] -&gt; [InContext f] -&gt; [ChangeSet f]
+common xs ys = [ (p1, p2) | (s1, p1) &lt;- xs, (s2, p2) &lt;- ys, s1 == s2 ]
 
-<span class="ot">takes ::</span> <span class="dt">Path</span> f <span class="ot">-&gt;</span> <span class="dt">Path</span> f
-takes <span class="fu">=</span> <span class="fu">filter</span> <span class="fu">take</span> <span class="kw">where</span>
-  <span class="fu">take</span> (<span class="dt">Take</span> _) <span class="fu">=</span> <span class="kw">True</span>
-  <span class="fu">take</span> _ <span class="fu">=</span> <span class="kw">False</span>
+takes :: Path f -&gt; Path f
+takes = filter take where
+  take (Take _) = True
+  take _ = False
 
-<span class="ot">size ::</span> <span class="dt">ChangeSet</span> f <span class="ot">-&gt;</span> <span class="dt">Int</span>
-size (xs, ys) <span class="fu">=</span> <span class="fu">length</span> (takes xs) <span class="fu">+</span> <span class="fu">length</span> (takes ys)
+size :: ChangeSet f -&gt; Int
+size (xs, ys) = length (takes xs) + length (takes ys)
 
-<span class="ot">largest ::</span> [<span class="dt">ChangeSet</span> f] <span class="ot">-&gt;</span> <span class="dt">ChangeSet</span> f
-largest <span class="fu">=</span> maximumBy (<span class="fu">compare</span> <span class="ot">`on`</span> size)
+largest :: [ChangeSet f] -&gt; ChangeSet f
+largest = maximumBy (compare `on` size)
 
-<span class="ot">diff ::</span> (<span class="dt">Container</span> f, <span class="kw">Eq</span> (<span class="dt">Rec</span> f)) <span class="ot">=&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">ChangeSet</span> f
-diff old new <span class="fu">=</span> largest <span class="fu">$</span> (common <span class="ot">`on`</span> substructures) old new</code></pre>
-<h2 id="example-1---lists">Example 1 - Lists</h2>
-<p>Let's verify the code on the simple case of lists.</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ListF</span> a x <span class="fu">=</span> <span class="dt">Nil</span> <span class="fu">|</span> <span class="dt">Cons</span> a x <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
+diff :: (Container f, Eq (Rec f)) =&gt; Rec f -&gt; Rec f -&gt; ChangeSet f
+diff old new = largest $ (common `on` substructures) old new
+</code></pre>
+<h2>Example 1 - Lists</h2>
+<p>Let&#39;s verify the code on the simple case of lists.</p>
+<pre class="{.haskell}"><code>data ListF a x = Nil | Cons a x deriving (Show, Eq)
 
-<span class="kw">type</span> <span class="dt">List</span> a <span class="fu">=</span> <span class="dt">Rec</span> (<span class="dt">ListF</span> a)
+type List a = Rec (ListF a)
 
-<span class="kw">instance</span> <span class="dt">Container</span> (<span class="dt">ListF</span> a) <span class="kw">where</span>
-  <span class="kw">data</span> <span class="dt">Context</span> (<span class="dt">ListF</span> a) x <span class="fu">=</span> <span class="dt">ListContext</span> a <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
-  children <span class="dt">Nil</span> <span class="fu">=</span> []
-  children (<span class="dt">Cons</span> a x) <span class="fu">=</span> [(x, <span class="dt">ListContext</span> a)]
-  plugIn x (<span class="dt">ListContext</span> a) <span class="fu">=</span> <span class="dt">Cons</span> a x
-  childAt (<span class="dt">Cons</span> _ x) (<span class="dt">ListContext</span> _) <span class="fu">=</span> x
+instance Container (ListF a) where
+  data Context (ListF a) x = ListContext a deriving (Show, Eq)
+  children Nil = []
+  children (Cons a x) = [(x, ListContext a)]
+  plugIn x (ListContext a) = Cons a x
+  childAt (Cons _ x) (ListContext _) = x
 
-<span class="ot">nil ::</span> <span class="dt">List</span> a
-nil <span class="fu">=</span> <span class="dt">Rec</span> <span class="dt">Nil</span>
+nil :: List a
+nil = Rec Nil
 
-<span class="ot">cons ::</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> a <span class="ot">-&gt;</span> <span class="dt">List</span> a
-cons a x <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> <span class="dt">Cons</span> a x
+cons :: a -&gt; List a -&gt; List a
+cons a x = Rec $ Cons a x
 
-<span class="ot">fromList ::</span> [a] <span class="ot">-&gt;</span> <span class="dt">List</span> a
-fromList <span class="fu">=</span> <span class="fu">foldr</span> cons nil</code></pre>
+fromList :: [a] -&gt; List a
+fromList = foldr cons nil
+</code></pre>
 <p>In GHCi:</p>
 <pre><code>&gt; diff (fromList [1,2,3]) (fromList [2,3,4])
 ([Skip (ListContext 1), Take (ListContext 2), Take (ListContext 3)],
- [Take (ListContext 2), Take (ListContext 3), Skip (ListContext 4)])</code></pre>
+ [Take (ListContext 2), Take (ListContext 3), Skip (ListContext 4)])
+</code></pre>
 <p>The result is as expected: from the first list we skip the first element and take the rest, and from the second list we skip the last element and take the rest.</p>
-<h2 id="example-2-lambda-terms">Example 2 : Lambda Terms</h2>
-<p>Now here's a more exciting example - the type of untyped lambda terms:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="kw">data</span> <span class="dt">ExprF</span> x <span class="fu">=</span> <span class="dt">App</span> x x <span class="fu">|</span> <span class="dt">Abst</span> <span class="dt">String</span> x <span class="fu">|</span> <span class="dt">Var</span> <span class="dt">String</span> <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
+<h2>Example 2 : Lambda Terms</h2>
+<p>Now here&#39;s a more exciting example - the type of untyped lambda terms:</p>
+<pre class="{.haskell}"><code>data ExprF x = App x x | Abst String x | Var String deriving (Show, Eq)
 
-<span class="kw">type</span> <span class="dt">Expr</span> a <span class="fu">=</span> <span class="dt">Rec</span> <span class="dt">ExprF</span>
+type Expr a = Rec ExprF
 
-<span class="kw">instance</span> <span class="dt">Container</span> <span class="dt">ExprF</span> <span class="kw">where</span>
-  <span class="kw">data</span> <span class="dt">Context</span> <span class="dt">ExprF</span> x <span class="fu">=</span> <span class="dt">AppContext</span> (<span class="dt">Either</span> x x) <span class="fu">|</span> <span class="dt">AbstContext</span> <span class="dt">String</span> <span class="kw">deriving</span> (<span class="kw">Show</span>, <span class="kw">Eq</span>)
-  children (<span class="dt">App</span> f x) <span class="fu">=</span> [(f, <span class="dt">AppContext</span> <span class="fu">$</span> <span class="kw">Right</span> x), (x, <span class="dt">AppContext</span> <span class="fu">$</span> <span class="kw">Left</span> f)]
-  children (<span class="dt">Abst</span> i x) <span class="fu">=</span> [(x, <span class="dt">AbstContext</span> i)]
-  children (<span class="dt">Var</span> _) <span class="fu">=</span> []
-  plugIn x (<span class="dt">AppContext</span> (<span class="kw">Left</span> f)) <span class="fu">=</span> <span class="dt">App</span> f x
-  plugIn f (<span class="dt">AppContext</span> (<span class="kw">Right</span> x)) <span class="fu">=</span> <span class="dt">App</span> f x
-  plugIn x (<span class="dt">AbstContext</span> i) <span class="fu">=</span> <span class="dt">Abst</span> i x
-  childAt (<span class="dt">App</span> _ x) (<span class="dt">AppContext</span> (<span class="kw">Left</span> _)) <span class="fu">=</span> x
-  childAt (<span class="dt">App</span> f _) (<span class="dt">AppContext</span> (<span class="kw">Right</span> _)) <span class="fu">=</span> f
-  childAt (<span class="dt">Abst</span> _ x) (<span class="dt">AbstContext</span> _) <span class="fu">=</span> x
+instance Container ExprF where
+  data Context ExprF x = AppContext (Either x x) | AbstContext String deriving (Show, Eq)
+  children (App f x) = [(f, AppContext $ Right x), (x, AppContext $ Left f)]
+  children (Abst i x) = [(x, AbstContext i)]
+  children (Var _) = []
+  plugIn x (AppContext (Left f)) = App f x
+  plugIn f (AppContext (Right x)) = App f x
+  plugIn x (AbstContext i) = Abst i x
+  childAt (App _ x) (AppContext (Left _)) = x
+  childAt (App f _) (AppContext (Right _)) = f
+  childAt (Abst _ x) (AbstContext _) = x
 
-<span class="ot">abst ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span>
-abst i x <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> <span class="dt">Abst</span> i x
+abst :: Int -&gt; Expr -&gt; Expr
+abst i x = Rec $ Abst i x
 
-<span class="ot">app ::</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span>
-app f x <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> <span class="dt">App</span> f x
+app :: Expr -&gt; Expr -&gt; Expr
+app f x = Rec $ App f x
 
-<span class="ot">var ::</span> <span class="dt">Int</span> <span class="ot">-&gt;</span> <span class="dt">Expr</span>
-var i <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> <span class="dt">Var</span> i
+var :: Int -&gt; Expr
+var i = Rec $ Var i
 
-<span class="ot">k ::</span> <span class="dt">Expr</span>
-k <span class="fu">=</span> abst <span class="st">&quot;x&quot;</span> <span class="fu">$</span> abst <span class="st">&quot;y&quot;</span> <span class="fu">$</span> var <span class="st">&quot;x&quot;</span>
+k :: Expr
+k = abst &quot;x&quot; $ abst &quot;y&quot; $ var &quot;x&quot;
 
-<span class="ot">s ::</span> <span class="dt">Expr</span>
-s <span class="fu">=</span> abst <span class="st">&quot;x&quot;</span> <span class="fu">$</span> abst <span class="st">&quot;y&quot;</span> <span class="fu">$</span> abst <span class="st">&quot;z&quot;</span> <span class="fu">$</span> app (app (var <span class="st">&quot;x&quot;</span>) (var <span class="st">&quot;z&quot;</span>)) (app (var <span class="st">&quot;y&quot;</span>) (var <span class="st">&quot;z&quot;</span>))</code></pre>
+s :: Expr
+s = abst &quot;x&quot; $ abst &quot;y&quot; $ abst &quot;z&quot; $ app (app (var &quot;x&quot;) (var &quot;z&quot;)) (app (var &quot;y&quot;) (var &quot;z&quot;))
+</code></pre>
 <p>And again, we can test in GHCi:</p>
 <pre><code>diff s k
 &gt; ([Take (AbstContext &quot;x&quot;), Take (AbstContext &quot;y&quot;), 
     Skip (AbstContext &quot;z&quot;), Skip (AppContext (Right (Rec {runRec = App (Rec { runRec = Var &quot;y&quot; }) ... }))), 
     Skip (AppContext (Right (Rec { runRec = Var &quot;z&quot; })))],
    [Take (AbstContext &quot;x&quot;), Take (AbstContext &quot;y&quot;)])
-   </code></pre>
+</code></pre>
 <p>The diff algorithm has identified <code>k</code> as the largest common substructure, and the path through <code>s</code> which picks out this substructure discards the third abstraction over the variable <code>z</code> and the corresponding applications.</p>
-<h2 id="applying-patches">Applying Patches</h2>
+<h2>Applying Patches</h2>
 <p>We can also define a function <code>patch</code> which applies the result of <code>diff</code> to a structure:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">patch ::</span> (<span class="dt">Container</span> f, <span class="kw">Eq</span> (<span class="dt">Rec</span> f)) <span class="ot">=&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">ChangeSet</span> f <span class="ot">-&gt;</span> <span class="dt">Rec</span> f
-patch old (inserts, deletes) <span class="fu">=</span> <span class="fu">foldr</span> wrap (unwrap old inserts) deletes <span class="kw">where</span>
-  wrap (<span class="dt">Skip</span> _) x <span class="fu">=</span> x
-  wrap (<span class="dt">Take</span> ctx) x <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> plugIn x ctx
-  wrap (<span class="dt">Replace</span> x y) _ <span class="fu">=</span> y
-  unwrap x [] <span class="fu">=</span> x
-  unwrap x (<span class="dt">Skip</span> ctx<span class="fu">:</span>cs) <span class="fu">=</span> <span class="dt">Rec</span> <span class="fu">$</span> plugIn (unwrap (childAt (runRec x) ctx) cs) ctx
-  unwrap x (<span class="dt">Take</span> ctx<span class="fu">:</span>cs) <span class="fu">=</span> unwrap (childAt (runRec x) ctx) cs
-  unwrap _ (<span class="dt">Replace</span> x y<span class="fu">:</span>cs) <span class="fu">=</span> unwrap x cs</code></pre>
+<pre class="{.haskell}"><code>patch :: (Container f, Eq (Rec f)) =&gt; Rec f -&gt; ChangeSet f -&gt; Rec f
+patch old (inserts, deletes) = foldr wrap (unwrap old inserts) deletes where
+  wrap (Skip _) x = x
+  wrap (Take ctx) x = Rec $ plugIn x ctx
+  wrap (Replace x y) _ = y
+  unwrap x [] = x
+  unwrap x (Skip ctx:cs) = Rec $ plugIn (unwrap (childAt (runRec x) ctx) cs) ctx
+  unwrap x (Take ctx:cs) = unwrap (childAt (runRec x) ctx) cs
+  unwrap _ (Replace x y:cs) = unwrap x cs
+</code></pre>
 <p>The functions <code>plugIn</code> and <code>childAt</code> play a key role, since we need to be able to glue structures together and take them apart again based on the content of the changeset.</p>
 <p>We can verify using the examples above (and others) that <code>diff</code> and <code>patch</code> satisfy the required laws <code>patch x $ diff x y = y</code> and <code>diff x $ patch x p = p</code>.</p>
-<h2 id="optimization">Optimization</h2>
+<h2>Optimization</h2>
 <p>The function <code>diff</code> above does its job, but has exponential complexity in the size of its input, due to the need to generate all substructures.</p>
 <p>The key observation is that if two substructures are unequal, then two larger structures can never be equal, so we can prune large subtrees from the search tree by testing equality of contexts.</p>
 <p>Here is the optimized version of <code>diff</code>, which is observably much faster than the original:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">diff2 ::</span> (<span class="dt">Container</span> f, <span class="kw">Eq</span> (<span class="dt">Context</span> f (<span class="dt">Rec</span> f))) <span class="ot">=&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">Rec</span> f <span class="ot">-&gt;</span> <span class="dt">ChangeSet</span> f
+<pre class="{.haskell}"><code>diff2 :: (Container f, Eq (Context f (Rec f))) =&gt; Rec f -&gt; Rec f -&gt; ChangeSet f
 diff2 old new 
-  <span class="fu">|</span> <span class="fu">null</span> <span class="fu">$</span> children <span class="fu">$</span> runRec old <span class="fu">=</span> ([], [<span class="dt">Replace</span> old new])
-  <span class="fu">|</span> <span class="fu">null</span> <span class="fu">$</span> children <span class="fu">$</span> runRec new <span class="fu">=</span> ([<span class="dt">Replace</span> old new], [])
-  <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> <span class="kw">let</span> matches <span class="fu">=</span> [ (x&#39;, y&#39;, ctx1)  
-                              <span class="fu">|</span> (x&#39;, ctx1) <span class="ot">&lt;-</span> children <span class="fu">$</span> runRec old 
-                              , (y&#39;, ctx2) <span class="ot">&lt;-</span> children <span class="fu">$</span> runRec new
-                              , ctx1 <span class="fu">==</span> ctx2 ] <span class="kw">in</span>
-                <span class="kw">if</span> <span class="fu">null</span> matches <span class="kw">then</span>
-                  largest <span class="fu">$</span> [ <span class="kw">let</span> (xs, ys) <span class="fu">=</span> diff2 x&#39; new <span class="kw">in</span> (<span class="dt">Skip</span> ctx<span class="fu">:</span>xs, ys)
-                            <span class="fu">|</span> (x&#39;,ctx) <span class="ot">&lt;-</span> children <span class="fu">$</span> runRec old ] <span class="fu">++</span>
-                            [ <span class="kw">let</span> (xs, ys) <span class="fu">=</span> diff2 old y&#39; <span class="kw">in</span> (xs, <span class="dt">Skip</span> ctx<span class="fu">:</span>ys)
-                            <span class="fu">|</span> (y&#39;,ctx) <span class="ot">&lt;-</span> children <span class="fu">$</span> runRec new ]
-                <span class="kw">else</span>
-                  largest [ <span class="kw">let</span> (xs, ys) <span class="fu">=</span> diff2 x&#39; y&#39; <span class="kw">in</span> (<span class="dt">Take</span> ctx<span class="fu">:</span>xs, <span class="dt">Take</span> ctx<span class="fu">:</span>ys) 
-                          <span class="fu">|</span> (x&#39;, y&#39;, ctx) <span class="ot">&lt;-</span> matches ]</code></pre>
+  | null $ children $ runRec old = ([], [Replace old new])
+  | null $ children $ runRec new = ([Replace old new], [])
+  | otherwise = let matches = [ (x&#39;, y&#39;, ctx1)  
+                              | (x&#39;, ctx1) &lt;- children $ runRec old 
+                              , (y&#39;, ctx2) &lt;- children $ runRec new
+                              , ctx1 == ctx2 ] in
+                if null matches then
+                  largest $ [ let (xs, ys) = diff2 x&#39; new in (Skip ctx:xs, ys)
+                            | (x&#39;,ctx) &lt;- children $ runRec old ] ++
+                            [ let (xs, ys) = diff2 old y&#39; in (xs, Skip ctx:ys)
+                            | (y&#39;,ctx) &lt;- children $ runRec new ]
+                else
+                  largest [ let (xs, ys) = diff2 x&#39; y&#39; in (Take ctx:xs, Take ctx:ys) 
+                          | (x&#39;, y&#39;, ctx) &lt;- matches ]
+</code></pre>
 <p>Notice that the new constraints only require equality of contexts, not of structures.</p>
 <p>Compare this implementation with the dynamic programming implementation of the longest common subsequence on lists:</p>
-<pre class="sourceCode haskell"><code class="sourceCode haskell"><span class="ot">diffList ::</span> (<span class="kw">Eq</span> a) <span class="ot">=&gt;</span> [a] <span class="ot">-&gt;</span> [a] <span class="ot">-&gt;</span> [a]
-diffList [] new <span class="fu">=</span> []
-diffList old [] <span class="fu">=</span> []
-diffList old<span class="fu">@</span>(x<span class="fu">:</span>xs) new<span class="fu">@</span>(y<span class="fu">:</span>ys) 
-  <span class="fu">|</span> x <span class="fu">==</span> y <span class="fu">=</span> (x<span class="fu">:</span>diffList xs ys)
-  <span class="fu">|</span> <span class="fu">otherwise</span> <span class="fu">=</span> maximumBy (<span class="fu">compare</span> <span class="ot">`on`</span> <span class="fu">length</span>) [ diff old ys, diff xs new ]</code></pre>
+<pre class="{.haskell}"><code>diffList :: (Eq a) =&gt; [a] -&gt; [a] -&gt; [a]
+diffList [] new = []
+diffList old [] = []
+diffList old@(x:xs) new@(y:ys) 
+  | x == y = (x:diffList xs ys)
+  | otherwise = maximumBy (compare `on` length) [ diff old ys, diff xs new ]
+</code></pre>
 <p>Hopefully the structural similarity of the two algorithms is clear.</p>
-<h2 id="conclusion">Conclusion</h2>
+<h2>Conclusion</h2>
 <p>One-hole contexts give a pleasant generalization of <code>diff</code> and <code>patch</code> to containers.</p>
 <p>There are still some issues remaining with this implementation, such as the lack of memoization and the incorrect handling of containers with multiple non-recursive constructors, or structures with no common substructures.</p>
 <p>It would also be interesting to explore the extension to mutually recursive types, such as the types of statements and expressions in an abstract syntax tree.</p>
-<h2 id="references">References</h2>
-<ol type="1">
+<h2>References</h2>
+<ol>
 <li>Package Data.Generic.Diff on Hackage</li>
 <li>Generic type-safe diff and patch for families of datatypes by Eelco Lempsick, 2009</li>
 <li>The Derivative of a Regular Type is its Type of One-Hole Contexts by Conor McBride</li>
 </ol>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>

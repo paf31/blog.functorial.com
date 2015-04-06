@@ -1,13 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>functorial.com - Decorating Recursive Types</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Lato:300,400,700"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Ubuntu+Mono"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script type="text/javascript">var _gaq = _gaq || [];
-_gaq.push(['_setAccount', 'UA-33896432-1']);
-_gaq.push(['_trackPageview']);
-(function() {
-  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-})();
-</script></head><body><div id="header"><div class="centered"><h1><a href="../index.html" style="text-decoration: none; color: white;">functorial</a></h1><p>Type Theory and Programming Languages Blog</p></div><div id="splitter"></div></div><div class="centered"><div id="navigation"><a href="../index.html">Home</a>&nbsp;<a href="../feed.xml">RSS Feed</a></div><h2>Decorating Recursive Types</h2><p><small>by Phil Freeman on 2012/02/03</small></p><hr><p>Suppose we have a recursive type and we want to add additional functionality in such a way that each structurally smaller value also gets that additional functionality. For example, consider the following type, whose values look like nameless lambda terms (de Bruijin terms):</p>
+<html><head><title>Functorial Blog - Decorating Recursive Types</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Decorating Recursive Types</h2><p><small>by Phil Freeman on 2012/02/03</small></p><p>Suppose we have a recursive type and we want to add additional functionality in such a way that each structurally smaller value also gets that additional functionality. For example, consider the following type, whose values look like nameless lambda terms (de Bruijin terms):</p>
 <pre><code>interface Exp { }
 
 class App : Exp
@@ -51,7 +43,8 @@ class Abs : Exp
     {
         return &quot;\\. &quot; + Body.ToString();
     }
-}</code></pre>
+}
+</code></pre>
 <p>The three subclasses <code>App</code>, <code>Var</code> and <code>Abs</code> correspond to function applications, variables and lambda abstractions respectively. We can define simple untyped lambda terms, for example:</p>
 <pre><code>new Abs
 (
@@ -62,9 +55,10 @@ class Abs : Exp
     )
 );
 
-&quot;\. 0 0&quot;</code></pre>
+&quot;\. 0 0&quot;
+</code></pre>
 <p>Now suppose that we want to add additional properties, methods or events to the class in such a way that all of the subtrees expose the same new functionality.</p>
-<p>We might think of subclassing <code>Exp</code>, but that's no good since only the root of the tree would see the new functionality.</p>
+<p>We might think of subclassing <code>Exp</code>, but that&#39;s no good since only the root of the tree would see the new functionality.</p>
 <p>One thing we can do is to use the functor which defines <code>Exp</code> as a recursive type to leave holes for the structurally smaller values in the tree. Here, we have named the type of the holes by the type variable <code>E</code>:</p>
 <pre><code>interface Exp&lt;E&gt; where E : Exp&lt;E&gt; { }
 
@@ -109,12 +103,14 @@ class Abs&lt;E&gt; : Exp&lt;E&gt; where E : Exp&lt;E&gt;
     {
         return &quot;\\. &quot; + Body.ToString();
     }
-}</code></pre>
-<p>Notice first of all that the various subclasses don't explicitly mention instances of <code>Exp&lt;E&gt;</code>. They only refer to their child nodes by the type variable <code>E</code>.</p>
-<p>Also notice the type constraint where <code>E : Exp&lt;E&gt;</code> appearing throughout the code: this serves to make sure that however we decorate the type <code>Exp</code>, its children are also instances of <code>Exp</code> and are decorated in the same way, so that we don't have different types of <code>Exp</code>s throughout the tree.</p>
+}
+</code></pre>
+<p>Notice first of all that the various subclasses don&#39;t explicitly mention instances of <code>Exp&lt;E&gt;</code>. They only refer to their child nodes by the type variable <code>E</code>.</p>
+<p>Also notice the type constraint where <code>E : Exp&lt;E&gt;</code> appearing throughout the code: this serves to make sure that however we decorate the type <code>Exp</code>, its children are also instances of <code>Exp</code> and are decorated in the same way, so that we don&#39;t have different types of <code>Exp</code>s throughout the tree.</p>
 <p>We can &quot;tie the knot&quot; and remove the mysterious parameter <code>E</code> by defining the recursive type <code>Exp</code> as</p>
-<pre><code>interface Exp : Exp&lt;Exp&gt; { }</code></pre>
-<p>What's going on here? Well an <code>Exp</code> is an expression whose holes are filled in by expressions of type <code>Exp</code>. In turn, a subexpression appearing in a hole has subexpressions of type <code>Exp</code>, and so on...</p>
+<pre><code>interface Exp : Exp&lt;Exp&gt; { }
+</code></pre>
+<p>What&#39;s going on here? Well an <code>Exp</code> is an expression whose holes are filled in by expressions of type <code>Exp</code>. In turn, a subexpression appearing in a hole has subexpressions of type <code>Exp</code>, and so on...</p>
 <p>We can also wire up types for all of our subclasses, and our original code remains valid:</p>
 <pre><code>class App : App&lt;Exp&gt;, Exp
 {
@@ -132,7 +128,8 @@ class Var : Var&lt;Exp&gt;, Exp
 {
     public Var(int index)
         : base(index) { }
-}</code></pre>
+}
+</code></pre>
 <p>However, now we are free to replace the particular kind of expression appearing in any holes, as long as every subexpression is decorated in the same way. This is how we are going to add new functionality to the class.</p>
 <p>For example, suppose we want to create a new version of the structure where terms are given explicit names. Here it is:</p>
 <pre><code>interface DecoratedExp : Exp, Exp&lt;DecoratedExp&gt; { }
@@ -164,7 +161,8 @@ class DecoratedVar : Var&lt;DecoratedExp&gt;, DecoratedExp
     public string Name { get; set; }
 
     public override string ToString() { return Name; }
-}</code></pre>
+}
+</code></pre>
 <p>Now each <code>Var</code> and each <code>Abs</code> carries an explicit name. We can create decorated lambda terms as long as all subterms are decorated in the same way:</p>
 <pre><code>Exp dec = new DecoratedAbs
 (&quot;x&quot;,
@@ -174,7 +172,8 @@ class DecoratedVar : Var&lt;DecoratedExp&gt;, DecoratedExp
     )
 );
 
-&quot;\x. x x&quot;</code></pre>
+&quot;\x. x x&quot;
+</code></pre>
 <p>But an attempt to mix expression types within a structure is not allowed:</p>
 <pre><code>/* Generates a type error */
 
@@ -184,12 +183,6 @@ new DecoratedAbs
         new DecoratedVar(&quot;x&quot;, 0),
         new Var(0)
     )
-);</code></pre>
-<hr><div id="disqus_thread"><script type="text/javascript">var disqus_shortname = 'functorial';
-/* * * DON'T EDIT BELOW THIS LINE * * */
-(function() {
-var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus</a></noscript><a href="http://disqus.com" class="dsq-brlink">Comments powered by <span class="logo-disqus">Disqus</span></a></div></div></body></html>
+);
+</code></pre>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
