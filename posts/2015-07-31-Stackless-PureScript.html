@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Stackless Coroutines in PureScript</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Stackless Coroutines in PureScript</h2><p><small>by Phil Freeman on 2015/07/31</small></p><p>In this post, I&#39;m going to describe how a neat trick known to the PureScript community allows us to write a
+<html><head><title>Functorial Blog - Stackless Coroutines in PureScript</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Stackless Coroutines in PureScript</h2><p><small>by Phil Freeman on 2015/07/31</small></p><p>In this post, I&#39;m going to describe how a neat trick known to the PureScript community allows us to write a
 stack-safe implementation of the <em>free monad transformer</em> for a functor.</p>
 <h2>Free Monads and Coroutines</h2>
 <p>Free monads are a useful tool in Haskell (and Scala, and PureScript, and other languages) when you want to separate
@@ -43,10 +43,11 @@ of the inner action.</p>
 <p>By translating the implementation in the paper, <code>purescript-free</code> builds a stack-safe free monad implementation for PureScript, which
 has been used to construct several useful libraries.</p>
 <p>However, in [2], when discussing the extension to a monad transformer, it is correctly observed that:</p>
-<pre><code>In the present implementation in Scala, it&#39;s necessary to forego the parameterization on an additional monad, in order to
-preserve tail call elimination. Instead of being written as a monad transformer itself, Free could be transformed by a monad 
-transformer for the same effect.
-</code></pre>
+<blockquote>
+<p>In the present implementation in Scala, it&#39;s necessary to forego the parameterization on an additional monad, in order to
+preserve tail call elimination. Instead of being written as a monad transformer itself, Free could be transformed by a monad
+transformer for the same effect.</p>
+</blockquote>
 <p>That is, it&#39;s not clear how to extend the <code>Gosub</code> trick to the free monad <em>transformer</em> if we want to be able to transform an arbitrary monad.</p>
 <p>Additionally, the approach of putting a monad transformer <em>outside</em> <code>Free</code> is not as useful as we&#39;d like if we want to be able to use free monad
 transformers in PureScript to describe coroutines, since we often want the <code>Eff</code> monad at the bottom of the stack, and there is no <code>EffT</code>
