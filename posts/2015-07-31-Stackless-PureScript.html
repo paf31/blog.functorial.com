@@ -48,10 +48,10 @@ preserve tail call elimination. Instead of being written as a monad transformer 
 transformer for the same effect.
 </code></pre>
 <p>That is, it&#39;s not clear how to extend the <code>Gosub</code> trick to the free monad <em>transformer</em> if we want to be able to transform an arbitrary monad.</p>
-<p>Additionally, the approach of putting a monad transformer <em>outside</em> free is not as useful as we&#39;d like if we want to be able to use free monad
+<p>Additionally, the approach of putting a monad transformer <em>outside</em> <code>Free</code> is not as useful as we&#39;d like if we want to be able to use free monad
 transformers in PureScript to describe coroutines, since we often want the <code>Eff</code> monad at the bottom of the stack, and there is no <code>EffT</code>
 transformer!</p>
-<p>Fortunately, not all is lost. A neat trick known to the PureScript community saves the day.</p>
+<p>Fortunately, all is not lost. A neat trick known to the PureScript community saves the day.</p>
 <h2>Tail Recursive Monads</h2>
 <p>The PureScript compiler performs tail-call elimination for self-recursive functions, so that a function like</p>
 <pre class="haskell"><code>pow :: Int -&gt; Int -&gt; Int
