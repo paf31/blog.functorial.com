@@ -98,8 +98,8 @@ data FreeT f m a
   = FreeT (Unit -&gt; m (Either a (f (FreeT f m a)))) 
   | Gosub (Exists (GosubF f m a))
 </code></pre>
-<p>The instances for <code>Monad</code> and friends generalize nicely from <code>Free</code> to <code>FreeT</code>, composing binds by nesting <code>Gosub</code> constructors.
-The tricky problem is how to <em>run</em> a computation in a free monad computation.</p>
+<p>The instances for <code>Monad</code> and friends generalize nicely from <code>Free</code> to <code>FreeT</code>, composing binds by nesting <code>Gosub</code> constructors. This allows
+us to build computations safely using recursion. The difficult problem is how to <em>run</em> a computation once it has been built.</p>
 <p>Instead of allowing interpretation in any monad, we only support interpretation in one of our tail recursive monads. We can reduce
 the process of interpreting the computation to a tail recursive function in that monad:</p>
 <pre class="haskell"><code>runFreeT :: forall f m a. (Functor f, MonadRec m) =&gt; (forall a. f a -&gt; m a) -&gt; FreeT f m a -&gt; m a
@@ -125,8 +125,9 @@ combination of tricks above:</p>
 </code></pre>
 <p>The <code>purescript-coroutines</code> library supports a handful of combinators for connecting producers, consumers and transformers,
 as well as more powerful, generic coroutine machinery taken from [1].</p>
-<p>I hope that this library will become the basis of an ecosystem of streaming utility libraries in PureScript. If you&#39;re interested in
-contributing, join us on the #purescript Freenode channel to discuss it!</p>
+<p>I hope that this library will become the basis of an ecosystem of streaming utility libraries in PureScript, supporting streaming access
+to resources like the filesystem, databases and web services. If you&#39;re interested in contributing, join us on the #purescript Freenode
+channel to discuss it!</p>
 <h2>References</h2>
 <ol>
 <li><em>Coroutine Pipelines</em>, by Mario Blazevic, in <em>The Monad Reader</em>, <em>Issue 19</em>.</li>
