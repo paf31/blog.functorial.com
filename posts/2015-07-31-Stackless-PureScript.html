@@ -89,10 +89,9 @@ following type class in the <code>purescript-tailrec</code> library:</p>
   tailRecM :: forall a b. (a -&gt; m (Either a b)) -&gt; a -&gt; m b
 </code></pre>
 <p>It turns out that this class of &quot;tail recursive monads&quot; is large enough to be useful, including base monads like <code>Eff</code> and <code>Identity</code>, and
-closed under transformers like <code>StateT</code>, <code>ErrorT</code>, <code>WriterT</code> etc. It is also enough to rescue the implementation <code>FreeT</code>!</p>
+closed under transformers like <code>StateT</code>, <code>ErrorT</code>, <code>WriterT</code> etc. It is also enough to rescue the implementation of <code>FreeT</code>.</p>
 <h2>Stack-Safe Free Monad Transformers</h2>
-<p>We can steal the <code>Gosub</code> trick from the <code>Free</code> monad implementation and apply it to our proposed <code>FreeT</code>:
-<code>FreeT</code> is named <code>Co</code>:</p>
+<p>We can steal the <code>Gosub</code> trick from the <code>Free</code> monad implementation and apply it to our proposed <code>FreeT</code>:</p>
 <pre class="haskell"><code>data GosubF f m b a = GosubF (Unit -&gt; FreeT f m a) (a -&gt; FreeT f m b)
 
 data FreeT f m a 
