@@ -105,7 +105,7 @@ us to build computations safely using recursion. The difficult problem is how to
 the process of interpreting the computation to a tail recursive function in that monad:</p>
 <pre class="haskell"><code>runFreeT :: forall f m a. (Functor f, MonadRec m) =&gt; (forall a. f a -&gt; m a) -&gt; FreeT f m a -&gt; m a
 </code></pre>
-<p>See the <a href="https://github.com/paf31/purescript-coroutines/blob/4ca466573c581f487745a3c4ff88c30d63fc6c3a/src/Control/Coroutine.purs#L103">implementation of <code>runFreeT</code></a> for more details.</p>
+<p>See the <a href="https://github.com/paf31/purescript-freet/blob/cdbaf6ddfcd97eb6816f6854672cc5126d36c603/src/Control/Monad/Free/Trans.purs#L102-L109">implementation of <code>runFreeT</code></a> for more details.</p>
 <h2>Stackless Coroutines</h2>
 <p>Given a stack-safe implementation of the free monad transformer, it becomes simple to translate the coroutines from [1] into PureScript. Here is
 an example of a producer/consumer pair described using two coroutines:</p>
