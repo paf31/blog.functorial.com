@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Building a Task List Application with Thermite</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Building a Task List Application with Thermite</h2><p><small>by Phil Freeman on 2015/11/20</small></p><h2>Introduction</h2>
+<p>Thermite is a simple layer on top of the <code>text-react</code> library which supports the &quot;single state atom&quot; approach, popularized by ClojureScript&#39;s <a href="https://github.com/omcljs/om">Om</a> and the <a href="https://github.com/evancz/elm-architecture-tutorial/">Elm Architecture</a>.</p>
+<p>The library has been changing rapidly since the it was created, but the API is finally starting to become stable, so I&#39;d like to write a blog post covering the basics of creating applications with Thermite.</p>
+<h2>Anatomy of a Thermite App</h2>
+<p>A Thermite application is defined by its <em>specification</em>, which is parameterized by <em>four</em> type arguments:</p>
+<pre class="text"><code>newtype Spec eff state props action
+</code></pre>
+<p>In Thermite applications, we rely less on component-local state, choosing instead to represent all application state using a single monolithic value. In the <code>Spec</code> type, the type of this value is named <code>state</code>.</p>
+<p>The <code>action</code> type describes the <em>actions</em> which we can use inside our components to update the state and invoke external, asynchronous actions.</p>
+<p>The <code>props</code> type corresponds to the React component props, and is relatively infrequently used. We won&#39;t use it here.</p>
+<p>Finally, the <code>eff</code> argument represents the <em>effects</em> which our component will use. For an introduction to effects in PureScript, see the <a href="http://purescript.org/learn/eff">article on the PureScript website</a>.</p>
+<p>We can create a specification for our component by using the <code>simpleSpec</code> function:</p>
+<pre class="text"><code>simpleSpec ::
+  forall eff state props action.
+    PerformAction eff state props action -&gt;
+    Render state props action -&gt;
+    Spec eff state props action
+</code></pre>
+<p><code>simpleSpec</code> takes two arguments: a <code>PerformAction</code> function, and a <code>Render</code> function. <code>PerformAction</code> will be responsible for interpreting actions invoked by the user, and <code>Render</code> will render our component as a React virtual DOM tree. The type synonyms are defined like this (eliding unimportant details using type wildcards):</p>
+<pre class="text"><code>type PerformAction eff state props action 
+  = action -&gt; _ -&gt; state -&gt; (state -&gt; Eff eff Unit) -&gt; Eff eff Unit
+
+type Render state props action 
+  = (action -&gt; EventHandler) -&gt; _ -&gt; state -&gt; _ -&gt; Array ReactElement
+</code></pre>
+<p><code>PerformAction</code> takes the current component state, and an action, and interprets that action. It also has access to a callback of type <code>state -&gt; Eff eff Unit</code>, which can be used to <em>update</em> the component state.</p>
+<p><code>Render</code> takes the current component state, and an event handler which can be used to invoke an action, and returns an array of virtual DOM trees representing the component.</p>
+<p>And that&#39;s it! We have enough information to define our first Thermite component.</p>
+<p>Let&#39;s start simple, by defining a <em>counter</em> component. First we define our state and action types:</p>
+<pre class="text"><code>import qualified Thermite as T
+
+import qualified React as R
+import qualified React.DOM as R
+import qualified React.DOM.Props as RP
+
+data Action = Increment | Decrement
+
+type State = { counter :: Int }
+</code></pre>
+<p>Our <code>State</code> type is a record containing the value of the counter, and the <code>Action</code> type defines two actions, <code>Increment</code> and <code>Decrement</code>.</p>
+<p>The <code>render</code> function might look like this:</p>
+<pre class="text"><code>render :: T.Render State _ Action
+render send _ state _ =
+  [ R.p&#39; [ R.text (show state.counter)
+         , R.button [ RP.onClick \_ -&gt; send Increment ]
+                    [ R.text &quot;Increment&quot; ]
+         , R.button [ RP.onClick \_ -&gt; send Decrement ]
+                    [ R.text &quot;Decrement&quot; ]
+         ]
+  ]
+</code></pre>
+<p>The <code>send</code> function here is the event handler that can be used to invoke actions. Notice how it gets wired up to the <code>button</code> elements.</p>
+<p>The <code>PerformAction</code> function interprets an action by matching its constructor using pattern matching:</p>
+<pre class="text"><code>performAction :: T.PerformAction _ State _ Action
+performAction action _ state update = 
+  update { counter: case action of 
+                      Increment -&gt; state.counter + 1 
+                      Decrement -&gt; state.counter - 1
+         }
+</code></pre>
+<p>The <code>update</code> function is the callback which allows us to update the state atom. We call the <code>update</code> function, providing a new record containing the new counter value.</p>
+<p>We can use <code>simpleSpec</code> to create our specification from these parts:</p>
+<pre class="text"><code>spec :: T.Spec _ State _ Action
+spec = T.simpleSpec performAction render
+</code></pre>
+<p>From here, we can use the <code>createClass</code> function to turn our specification into a regular React component class by specifying the initial component state:</p>
+<pre class="text"><code>main = do
+  let initialState = { counter: 0 }
+      component = T.createClass spec initialState
+  ...
+</code></pre>
+<p><code>text-react</code> defines functions for rendering a component class, or we could use the <a href="http://purescript.org/learn/ffi">foreign function interface</a> to use our component class from Javascript code. We won&#39;t cover those topics here, but the Thermite <a href="https://github.com/paf31/purescript-thermite/tree/master/test">example project</a> contains an end-to-end application for reference.</p>
+<h2>A Task Component</h2>
+<p>Let&#39;s start to assemble our task list application. Our application will consist of three components:</p>
+<ul>
+<li>A component for a single task, which will display a text box for a task and a button to remove it from the list,</li>
+<li>A header component containing a button to add a new task,</li>
+<li>A task list component, which will combine several task components and a single header component.</li>
+</ul>
+<p>Let&#39;s start with the first and simplest component here - the task component. As before, we start by choosing action and state types for our component. In this case, these types are very simple:</p>
+<pre class="text"><code>data TaskAction
+  = EditText String
+  | RemoveTask
+
+type TaskState = { text :: String }
+</code></pre>
+<p>We have two actions - <code>EditText</code>, which will update the text for a task, and <code>RemoveTask</code>, which will remove it from the list.</p>
+<p>Now let&#39;s implement our <code>PerformAction</code> function to interpret these actions:</p>
+<pre class="text"><code>performAction :: T.PerformAction _ TaskState _ TaskAction
+performAction (EditText text) _ _ update = update { text: text }
+performAction _ _ _ _ = pure unit
+</code></pre>
+<p>The interpretation of <code>EditText</code> is straightforward, but <code>RemoveTask</code> is missing. Instead, the <code>RemoveTask</code> falls through the first case to the catch-all case which performs no action.</p>
+<p>This is because the task component does not understand how to remove itself from a list of tasks - there is no list yet! As we&#39;ll see, the <em>parent</em> component will be responsible for interpreting the <code>RemoveTask</code> action instead.</p>
+<p>Now let&#39;s implement the <code>Render</code> function. It is also straightforward:</p>
+<pre class="text"><code>render :: T.Render TaskState _ TaskAction
+render send _ s _ =
+  [ R.p&#39; [ R.input [ RP.value s.text
+                   , RP.onChange \e -&gt; send (EditText (unsafeEventValue e))
+                   ] []
+         , R.button [ RP.onClick \_ -&gt; send RemoveTask ] [ R.text &quot;✖&quot; ]
+         ]
+  ]
+</code></pre>
+<p>This function looks like our counter component&#39;s <code>render</code> function. However, here we need to deal with the <code>onChange</code> event of the <code>input</code> element. The <code>unsafeEventValue</code> helper function is used to extract the new text from the form event:</p>
+<pre class="text"><code>unsafeEventValue :: forall event. event -&gt; String
+unsafeEventValue e = (unsafeCoerce e).target.value
+</code></pre>
+<p>Thermite does not provide any tools for dealing with DOM events, hence the call to <code>unsafeCoerce</code> here. Other libraries may provide safer, alternative approaches.</p>
+<p>At this point, we could call <code>createClass</code> to create a React component class for a single task. However, we are instead going to <em>compose</em> our task component with another component to build our application.</p>
+<h2>A Header Component</h2>
+<p>We are going to compose our task component with a header component to build our task list application. We will use the same action and state types for the header as for the full application component:</p>
+<pre class="text"><code>data TaskListAction
+  = NewTask
+  | TaskAction Int TaskAction
+  
+type TaskListState = { tasks :: L.List TaskState }
+</code></pre>
+<p>The action type identifies two classes of action: the <code>NewTask</code> action, which creates a new task, and the <code>TaskAction</code> action constructor, which identifies any <code>TaskAction</code> as an action in the full <code>TaskListAction</code> type. A <code>TaskAction</code> is also tagged with an <code>Int</code>, the index of the task which it originated from.</p>
+<p>The state type is simply a record containing a list of task states.</p>
+<p>The header component is defined as follows:</p>
+<pre class="text"><code>header :: T.Spec _ TaskListState _ TaskListAction
+header = T.simpleSpec performAction render
+  where
+  render :: T.Render TaskListState _ TaskListAction
+  render send _ state _ = 
+    [ R.p&#39; [ R.button [ RP.onClick \_ -&gt; send NewTask ] 
+                      [ R.text &quot;New Task&quot; 
+                      ] 
+           ]
+    ]
+
+  performAction :: T.PerformAction _ TaskListState _ TaskListAction
+  performAction NewTask                   _ state update = 
+    update $ state { tasks = L.Cons { text: &quot;&quot; } state.tasks }
+  performAction (TaskAction i RemoveTask) _ state update = 
+    update $ state { tasks = fromMaybe state.tasks (L.deleteAt i state.tasks) }
+  performAction _ _ _ _ = pure unit
+</code></pre>
+<p>The interesting part here is that the <code>RemoveTask</code> actions from the child components are handled by the header. This is because the header has access to the full application state, so is able to modify the list at an index.</p>
+<p>Now that we have our individual components defined, we can compose them to build our application.</p>
+<h2>Lens Primer</h2>
+<p>In Thermite, components are composed using <em>lenses</em> and <em>prisms</em>, defined in the <code>text-profunctor-lenses</code> library. I will not cover lenses and prisms in detail here, but I will show how to create simple lenses and prisms for use with Thermite.</p>
+<p>Intuitively, a <em>lens</em> represents a pair of a getter and a setter for a property of one type inside another, larger type.</p>
+<p>We can create a lens using the <code>lens</code> function, by passing in an explicit getter and setter. For example, we can create a lens for the <code>tasks</code> property on our <code>TaskListState</code> record:</p>
+<pre class="text"><code>_tasks :: LensP TaskListState (L.List TaskState)
+_tasks = lens _.tasks (_ { tasks = _ })
+</code></pre>
+<p>The first type argument identifies the larger type, and the second type argument identifies the type of the property we are interested in.</p>
+<p>The definition of the <code>_tasks</code> lens uses record wildcards for both the getter and setter, but desugars into this simpler expression:</p>
+<pre class="text"><code>_tasks = lens (\state -&gt; state.tasks) 
+              (\state tasks -&gt; state { tasks = tasks })
+</code></pre>
+<p>If we can think of lenses as generalized property accessors, then a good intuition for prisms is as generalized data constructors. For example, we can create a prism for the <code>TaskAction</code> data constructor using the <code>prism</code> function, as follows:</p>
+<pre class="text"><code>_TaskAction :: PrismP TaskListAction (Tuple Int TaskAction)
+_TaskAction = prism (uncurry TaskAction) \ta -&gt;
+  case ta of
+    TaskAction i a -&gt; Right (Tuple i a)
+    _ -&gt; Left ta
+</code></pre>
+<p>The power of lenses comes from their composability: lenses and prisms are both examples of the more general concept of <em>optics</em>, and we can compose different types of optics to reach deeply into our data structures in different ways.</p>
+<h2>Composing Components</h2>
+<p>The two most important combinators for composing components in Thermite are <code>focus</code> and <code>foreach</code>.</p>
+<p><code>focus</code> uses a lens to identify the state type of a subcomponent as a smaller part of the state type of a parent component, and a prism to identify the action type of the parent component as constructible from the action type of the subcomponent. Here is its type:</p>
+<pre class="text"><code>focus :: forall state1 state2 action1 action2. 
+         LensP state2 state1 -&gt; 
+         PrismP action2 action1 -&gt;
+         Spec _ state1 _ action1 -&gt; 
+         Spec _ state2 _ action2
+</code></pre>
+<p>The <code>foreach</code> function allows us to create a specification for a component from a list of subcomponent specifications. Its type is:</p>
+<pre class="text"><code>foreach :: forall _ _ state action. 
+           (Int -&gt; Spec _ state _ action) -&gt; 
+           Spec _ (L.List state) _ (Tuple Int action)
+</code></pre>
+<p>Note that <code>foreach</code> keeps the action type the same, but modifies the state type to accomodate a <em>list of states</em>.</p>
+<p><em>Aside</em>: These combinators were inspired by the excellent <a href="https://github.com/zrho/purescript-optic-ui">OpticUI</a> library, which also uses optics for composing components, but in a more general way (the list of subcomponents passed to <code>foreach</code> is replaced by a more general <em>traversal</em> of the component&#39;s state type).</p>
+<p>With these combinators, we can assemble the specification for our application component as follows:</p>
+<pre class="text"><code>taskList :: T.Spec _ TaskListState _ TaskListAction
+taskList = header &lt;&gt; T.focus _tasks _TaskAction (T.foreach \_ -&gt; taskSpec)
+</code></pre>
+<p>Let&#39;s pick apart this definition.</p>
+<p>First of all, the <code>Monoid</code> instance for <code>Spec</code> allows us to compose the <code>Spec</code> for the header with the <code>Spec</code> we get back from <code>focus</code>, by using the <code>&lt;&gt;</code> operator. The <code>Monoid</code> instance for <code>Spec</code> appends virtual DOM trees, one after the other, and composes <code>PerformAction</code> functions so that all action handlers get run.</p>
+<p>Next, the expression <code>T.foreach \_ -&gt; taskSpec</code> turns our task component <code>Spec</code> into a specification of type <code>Spec _ (L.List TaskState) _ (Tuple Int TaskAction)</code>. Here, the <code>Int</code> appearing in the action type is used to apply any <code>TaskAction</code>s from a task subcomponent to the correct state value.</p>
+<p>Finally, the <code>focus</code> operator applies the <code>_tasks</code> lens and <code>_TaskAction</code> prism, to make the state and action types match the types for the application component.</p>
+<p>And that&#39;s it! We can now create a React component class for our application and attach it to the DOM.</p>
+<pre class="text"><code>main :: Eff (dom :: DOM.DOM) Unit
+main = do
+  let component = T.createClass taskList { tasks: L.Nil }
+  ...
+</code></pre>
+<p><a href="https://gist.github.com/paf31/bdcb1fb0df19e565ade2">This gist</a> contains the full, working code from this tutorial, and the <a href="https://github.com/paf31/purescript-thermite">Thermite repository</a> contains a more complete task list application, demonstrating different types of composition.</p>
+<h2>Conclusion</h2>
+<p>Thermite provides a simple way to specify React components using a purely functional approach, separating a component into a rendering function, and an action interpreter.</p>
+<p>In addition, we can compose components using lenses and prisms, which allows us to build our application in parts, using reusable pieces. Since lenses and prisms are first-class values, we can pass them as arguments to functions, to enable powerful forms of reusability.</p>
+</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
