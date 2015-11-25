@@ -141,7 +141,7 @@ header = T.simpleSpec performAction render
 <p>The interesting part here is that the <code>RemoveTask</code> actions from the child components are handled by the header. This is because the header has access to the full application state, so is able to modify the list at an index.</p>
 <p>Now that we have our individual components defined, we can compose them to build our application.</p>
 <h2>Lens Primer</h2>
-<p>In Thermite, components are composed using <em>lenses</em> and <em>prisms</em>, defined in the <code>text-profunctor-lenses</code> library. I will not cover lenses and prisms in detail here, but I will show how to create simple lenses and prisms for use with Thermite.</p>
+<p>In Thermite, components are composed using <em>lenses</em> and <em>prisms</em>, defined in the <code>purescript-profunctor-lenses</code> library. I will not cover lenses and prisms in detail here, but I will show how to create simple lenses and prisms for use with Thermite.</p>
 <p>Intuitively, a <em>lens</em> represents a pair of a getter and a setter for a property of one type inside another, larger type.</p>
 <p>We can create a lens using the <code>lens</code> function, by passing in an explicit getter and setter. For example, we can create a lens for the <code>tasks</code> property on our <code>TaskListState</code> record:</p>
 <pre class="text"><code>_tasks :: LensP TaskListState (L.List TaskState)
