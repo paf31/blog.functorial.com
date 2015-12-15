@@ -120,14 +120,20 @@ class (Applicative m, Bind m) &lt;= Monad m
 <pre class="haskell"><code>data Op a b = Op (b -&gt; a)
 </code></pre>
 <p><code>Op</code> can be made into a contravariant functor, described by the <code>Contravariant</code> type class, which we will not cover here.</p>
-<p>Another example is given by <code>Set</code>, in which the type argument appears covariantly, but where the type class laws fail to hold.</p>
 <h3>A Functor which is not an Apply</h3>
+<p>There is a functor for any type constructor, given by the Yoneda lemma:</p>
+<pre class="haskell"><code>newtype Yoneda f a = Yoneda (forall r. (a -&gt; r) -&gt; f r)
+</code></pre>
+<p><code>Yoneda f</code> is always a <code>Functor</code>, but cannot be made into an instance of <code>Apply</code> in general, since to implement <code>&lt;*&gt;</code>, we would require a function of type:</p>
+<pre class="haskell"><code>forall a b r. (forall r. ((a -&gt; b) -&gt; r) -&gt; f r) -&gt;
+              (forall r. (a        -&gt; r) -&gt; f r) -&gt;
+                         (b        -&gt; r) -&gt; f r
+</code></pre>
+<h3>An Apply which is not an Applicative</h3>
 <p>The constant functor</p>
 <pre class="haskell"><code>data Const k a = Const k
 </code></pre>
-<p>cannot be made into an instance of <code>Apply</code> in general, since <code>&lt;*&gt;</code> would require us to combine two values of the unrestricted type <code>k</code>.</p>
-<h3>An Apply which is not an Applicative</h3>
-<p><code>Const k</code> can be made into an <code>Apply</code> (but not an <code>Applicative</code>) whenever <code>k</code> is an instance of <code>Semigroup</code> (but not <code>Monoid</code>).</p>
+<p>can be made into an <code>Apply</code> (but not an <code>Applicative</code>) whenever <code>k</code> is an instance of <code>Semigroup</code> (but not <code>Monoid</code>).</p>
 <p><code>NonEmpty</code> is another example of an <code>Apply</code> which is not an <code>Applicative</code>.</p>
 <h3>An Applicative which is not a Monad</h3>
 <p>We have already seen that the validation functor is an example of an <code>Applicative</code> which is not a <code>Monad</code>, and therefore also an example of an <code>Apply</code> which is not a <code>Bind</code>.</p>
