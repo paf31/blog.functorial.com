@@ -204,10 +204,10 @@ class (Semigroupoid a) &lt;= Category a where
 <h3>A Semigroupoid which is not a Category</h3>
 <p><code>Tuple</code> is an example of a <code>Semigroupoid</code> which is not a <code>Category</code>. We can think of <code>Tuple</code> as a strange function space in which we identify only a single point in the domain and a single point in the codomain.</p>
 <p>In the same vein, another example is given by</p>
-<pre class="haskell"><code>data Graph a b = Graph (List (Tuple a b))
+<pre class="haskell"><code>newtype Relation a b = Relation (List (Tuple a b))
 </code></pre>
 <p>in which we choose a selection of pairs of points from the domain and codomain. Again, there is no <code>Category</code> instance, since we cannot construct</p>
-<pre><code>id :: forall a b. Graph a b
+<pre><code>id :: forall a. Relation a a
 </code></pre>
 <p>in general, unless both the domain and codomain are enumerable.</p>
 <p>Kleisli arrows form a <code>Semigroupoid</code> whenever <code>f</code> is a <code>Bind</code>, but not a <code>Category</code> in general, unless <code>f</code> is also a <code>Monad</code>:</p>
