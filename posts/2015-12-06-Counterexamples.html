@@ -134,7 +134,6 @@ class (Applicative m, Bind m) &lt;= Monad m
 <pre class="haskell"><code>data Const k a = Const k
 </code></pre>
 <p>can be made into an <code>Apply</code> (but not an <code>Applicative</code>) whenever <code>k</code> is an instance of <code>Semigroup</code> (but not <code>Monoid</code>).</p>
-<p><code>NonEmpty</code> is another example of an <code>Apply</code> which is not an <code>Applicative</code>.</p>
 <h3>An Applicative which is not a Monad</h3>
 <p>We have already seen that the validation functor is an example of an <code>Applicative</code> which is not a <code>Monad</code>, and therefore also an example of an <code>Apply</code> which is not a <code>Bind</code>.</p>
 <p>Another example is given by the <code>ZipList</code> functor, where <code>apply</code> is implemented using <code>zipWith</code>:</p>
