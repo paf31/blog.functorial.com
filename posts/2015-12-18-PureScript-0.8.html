@@ -1,11 +1,11 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Announcing PureScript 0.8</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Announcing PureScript 0.8</h2><p><small>by Phil Freeman on 2015/12/18</small></p><p>This week, we created the first candidate for the 0.8 release of the PureScript compiler, after about six months of work. Since 0.7, the PureScript compiler and its tools have seen some rather interesting developments, and I&#39;d like to write a little about each of them.</p>
+<html><head><title>Functorial Blog - Announcing PureScript 0.8</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Announcing PureScript 0.8</h2><p><small>by Phil Freeman on 2016/01/31</small></p><p>It has been a very long release cycle, but the 0.8 release of the PureScript compiler is now ready, after about six months of work. Since 0.7, the PureScript compiler and its tools have seen some rather interesting developments, and I&#39;d like to write a little about each of them.</p>
 <h2>Google Summer of Code</h2>
 <p>This year, PureScript took part in the <a href="https://developers.google.com/open-source/gsoc/">Google Summer of Code</a> program, thanks to the Haskell organisation, who generously gave us two of their own slots. I&#39;m happy to report that both projects were a fantastic success.</p>
 <h3>Exhaustivity Checking</h3>
 <p>The first GSOC project involved making changes to the PureScript compiler to alert the user whenever a pattern match does not match all possible cases. This is called <em>exhaustivity checking</em>.</p>
 <p>For example, the following pattern match is incomplete:</p>
-<pre class="haskell"><code>f :: Maybe Int -&gt; Int
+<pre class="text"><code>f :: Maybe Int -&gt; Int
 f (Just x) = x
 </code></pre>
 <p>and the compiler now helpfully gives us two suggestions:</p>
@@ -18,7 +18,7 @@ Or alternatively, add a Partial constraint to the type of the enclosing value.
 Non-exhaustive patterns for values without a `Partial` constraint will be disallowed in PureScript 0.9.
 </code></pre>
 <p>We can either choose to handle the missing case, or use the type system to track partiality using the <code>Partial</code> type class:</p>
-<pre class="haskell"><code>f :: Partial =&gt; Maybe Int -&gt; Int
+<pre class="text"><code>f :: Partial =&gt; Maybe Int -&gt; Int
 f (Just x) = x
 </code></pre>
 <p>In the second case, it becomes the responsibility of the caller to ensure that any calls are safe.</p>
@@ -34,7 +34,7 @@ f (Just x) = x
 <li>Space leak fixes</li>
 <li>Parallel builds</li>
 </ul>
-<p>First, after a large amount of testing, we identified a large space leak due to the use of the <code>WriterT</code> monad transformer. It turns out that even the <code>Control.Monad.Trans.Writer.Strict</code> variant is not strict enough to avoid a tower of thunks (per the <a href="https://hackage.haskell.org/package/transformers-0.4.3.0/docs/Control-Monad-Trans-Writer-Strict.html">documentation</a>, <em>&quot;although the output is built strictly, it is not possible to achieve constant space behaviour with this transformer&quot;</em>), and in fact it is generally recommended that <code>WriterT</code> not be used at all in production code.</p>
+<p>First, after a large amount of testing, we identified a large space leak due to the use of the <code>WriterT</code> monad transformer. It turns out that even the <code>Control.Monad.Trans.Writer.Strict</code> variant is not strict enough to avoid a tower of thunks (per the <a href="https://hackage..org/package/transformers-0.4.3.0/docs/Control-Monad-Trans-Writer-Strict.html">documentation</a>, <em>&quot;although the output is built strictly, it is not possible to achieve constant space behaviour with this transformer&quot;</em>), and in fact it is generally recommended that <code>WriterT</code> not be used at all in production code.</p>
 <p>The fix was simple enough: since all of our code was only using <code>WriterT</code> <em>indirectly</em> via the <code>MonadWriter</code> type class, we were able to keep the interface the same but switch in a safe implementation based on <code>IO</code>. (This is not quite as trivial as it sounds - implementing <code>tell</code> is simple, <code>listen</code> and <code>pass</code> slightly less so, and ensuring the same semantics when combined with <code>ExceptT</code> was slightly tricky...)</p>
 <p>The second change was to introduce <em>parallel builds</em>. Thanks to Haskell&#39;s lightweight threads and excellent concurrency primitives such as <code>MVar</code>, this code was a joy to write. Each module gets its own thread, and <code>MVar</code>s are used to signal completion of compilation to downstream dependencies.</p>
 <p>On a single core machine, the compilation time for large projects might actually increase, but on 4 and 8 core machines, the performance improvements have been considerable. For example, here is an approximate comparison based on the <code>purescript-halogen</code> library, a large project involving over 200 modules, running on my MacBook Pro over four cores:</p>
@@ -68,26 +68,26 @@ f (Just x) = x
 <h2>Field puns</h2>
 <p>PureScript now supports <em>field puns</em> which make it very easy to construct and deconstruct extensible records.</p>
 <p>For example, suppose you are reading a JSON object which represents a person:</p>
-<pre class="haskell"><code>read value = do
+<pre class="text"><code>read value = do
   name    &lt;- readProp &quot;name&quot; value
   address &lt;- readProp &quot;address&quot; value
   return $ Person { name: name, address: address }
 </code></pre>
 <p>The last line is quite noisy, and can be shortened using field puns:</p>
-<pre class="haskell"><code>read value = do
+<pre class="text"><code>read value = do
   name    &lt;- readProp &quot;name&quot; value
   address &lt;- readProp &quot;address&quot; value
   return $ Person { name, address }
 </code></pre>
 <p>The same works for binders, allowing us to deconstruct a person record using the same syntax:</p>
-<pre class="haskell"><code>printPerson (Person { name, address }) =
+<pre class="text"><code>printPerson (Person { name, address }) =
   printName name &lt;&gt; &quot;: &quot; &lt;&gt; printAddress address
 </code></pre>
 <h2>Improved error messages</h2>
 <p>The quality of the error messages generated by the compiler has been improved a great deal in recent versions.</p>
 <p>Improvements range from simple changes to the way information is laid out, to including new, relevant information in error messages.</p>
 <p>I urge you to compare the error messages for yourself, but here is a quick example. Given the following incorrect definition:</p>
-<pre class="haskell"><code>f :: forall a. a -&gt; a
+<pre class="text"><code>f :: forall a. a -&gt; a
 f _ = 0
 </code></pre>
 <p>the 0.7 compiler would have generated this error message:</p>
@@ -142,9 +142,12 @@ where a0 is a rigid type variable
 <li>The new <code>--json-errors</code> flag</li>
 <li>A new &quot;externs&quot; file format</li>
 </ul>
-<p>The <code>--json-errors</code> flag can be used to render error messages and warnings as a JSON data structure, making it easier for editors to access line numbers and module names in errors.</p>
+<p>The <code>--json-errors</code> flag can be used to render error messages and warnings as a JSON data structure, making it easier for editors to access line numbers and module names in errors. The output of <code>--json-errors</code> also includes any suggested text replacements, which makes it much easier for plugins to implement things like automatically minifying import lists, and adding type declarations.</p>
 <p>Externs files are generated by the PureScript compiler, and used during incremental compilation. In earlier versions, externs files were actual PureScript modules which used the FFI to make already-compiled modules available to the compiler. However, this approach was slow and involved unnecessary typechecking, so the latest versions of the compiler use a JSON representation for externs, and skip unnecessary steps in compilation when processing these files.</p>
 <p>The new JSON representation makes it possible for external tools to read information about PureScript source code. For example, the <code>psc-ide</code> tool reads the files and uses the data to enable features like type-lookup and autocomplete in various editors (currently, Emacs and Atom are supported).</p>
+<h2>Try PureScript!</h2>
+<p>The <a href="https://try.purescript.org/">Try PureScript</a> website has been completely overhauled for the 0.8 release, including a new backend API and the ability to test out any of the PureScript core libraries.</p>
+<p>In addition, the new API-based approach has made it easier to deploy similar sites for other libraries, and so far we have deployed <a href="https://paf31.github.io/try-thermite/">Try Thermite!</a> and <a href="https://sharkdp.github.io/try-flare/">Try Flare!</a>, which allow interactive code editing for two popular PureScript UI libraries. Eventually, I would like to deploy something similar for the Halogen library, as well as the code samples from the PureScript book.</p>
 <h2>Future Work</h2>
 <p>PureScript 0.8 contains certain changes which will become breaking in version 0.9. To prepare for these, we&#39;ve added new warnings to the compiler, which will warn users whenever a deprecated approach is being used.</p>
 <h3>Partial Functions</h3>
@@ -152,7 +155,7 @@ where a0 is a rigid type variable
 <p>The motivation for this change is the following: we want to avoid partial functions, since they make code error-prone. However, partial functions can be useful, so we sometimes want to be able to use them. The <code>Partial</code> constraint gives us the best of both worlds, since it allows us to signal to callers that a function is partial in a way that is checked and propagated by the typechecker.</p>
 <h3>Operators as Aliases</h3>
 <p>In PureScript, it is possible to define custom operators. For example:</p>
-<pre class="haskell"><code>(+*) :: Int -&gt; Int -&gt; Int
+<pre class="text"><code>(+*) :: Int -&gt; Int -&gt; Int
 (+*) x y = x * y + y
 </code></pre>
 <p>However, in version 0.8, this code will generate a warning:</p>
@@ -164,16 +167,16 @@ Operator aliases are declared by using a fixity declaration, for example:
 Support for value-declared operators will be removed in PureScript 0.9.
 </code></pre>
 <p>This warning indicates that we should instead define our operator as an <em>alias</em> for a regular (named) function:</p>
-<pre class="haskell"><code>myAdd :: Int -&gt; Int -&gt; Int
+<pre class="text"><code>myAdd :: Int -&gt; Int -&gt; Int
 myAdd x y = x * y + y
 
 infixl 9 myAdd as +*
 </code></pre>
 <p>The motivation for this restriction is an improvement in the quality of generated code. Compare the generated code for a simple application <code>2 +* 2</code>:</p>
-<pre class="javascript"><code>$plus$times(2)(2)
+<pre class="text"><code>$plus$times(2)(2)
 </code></pre>
 <p>to the generated code using the operator as an alias:</p>
-<pre class="javascript"><code>myAdd(2)(2)
+<pre class="text"><code>myAdd(2)(2)
 </code></pre>
 <p>In the previous version, we were forced to generated a mangled function name for the operator. With operator aliases, we have a nice compromise: we can generate nice names for operators, but still use them with operator syntax in the PureScript source.</p>
 <h3>Deprecated Import Syntax</h3>
@@ -189,14 +192,16 @@ Should instead use the form:
 The deprecated syntax will be removed in PureScript 0.9.
 </code></pre>
 <p>In 0.9, this new class import syntax will become the default, and imports will look like this:</p>
-<pre class="purescript"><code>import Prelude ( class Monad
+<pre class="text"><code>import Prelude ( class Monad
                , bind
                , Unit
                , unit
                )
 </code></pre>
 <p>Note that empty parentheses are no longer required when importing a type without its data constructors.</p>
-<p>In addition, any &quot;open&quot; imports (which do not specify the imported names explicitly, e.g. <code>import Prelude</code>) will generate a warning going forward. Explicit imports are recommended instead, although this check can be bypassed using the <code>import Prelude(..)</code> wildcard syntax.</p>
+<p>In addition, any &quot;open&quot; imports (which do not specify the imported names explicitly, e.g. <code>import Prelude</code>) will generate a warning going forward. Explicit imports are recommended instead.</p>
+<h3>Source Maps</h3>
+<p>A <a href="https://github.com/purescript/purescript/pull/1693">pull request</a> which will bring <em>source map support</em> is almost ready, and should be merged before release 0.8.1. This means the ability to debug directly on PureScript source code in web browsers which support source maps!</p>
 <h2>Conclusion</h2>
 <p>I hope you&#39;ll agree that PureScript 0.8 has some pretty great new features! I&#39;d like to thank everyone who was involved in the implementation, filing bugs, writing documentation, and testing out new features.</p>
 <p>We also have a fairly full roadmap for 0.9, which will focus on new typechecker features, improved support for alternative compiler backends, and code generation. As always, we&#39;re looking for new contributors, and happy to mentor any developers who are looking to work on open source Haskell. I hope to meet you on #purescript IRC!</p>
