@@ -1,10 +1,10 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - A Typed Markup Language Based On Haskell</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>A Typed Markup Language Based On Haskell</h2><p><small>by Phil Freeman on 2013/05/18</small></p><p>In this post, I&#39;m going to implement a simple markup language including a parser and type checker. The language&#39;s syntax will be based on Haskell&#39;s syntax, and the type system will look a little bit like System F.</p>
+<html><head><title>Functorial Blog - A Typed Markup Language Based On Haskell</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>A Typed Markup Language Based On Haskell</h2><p><small>by Phil Freeman on 2013/05/18</small></p><p>In this post, I&#39;m going to implement a simple markup language including a parser and type checker. The language&#39;s syntax will be based on Haskell&#39;s syntax, and the type system will look a little bit like System F.</p>
 <p>Why am I interested in implementing such a markup language? Well, markup languages like JSON are good at describing the values in a dataset, but not their types, and XML extends this by allowing you to specify a schema, which corresponds to a set of typing rules. Languages like XAML allow you to extend this idea even futher by using an actual type system as a sort of global schema, and then extending the expressiveness of the language with things like subclass polymorphism.</p>
 <p>In my opinion, XAML is great for quickly bootstrapping a DSL without having to worry about parsing, but the lack of generics makes it impossible to encode some simple constraints in the schema. I often find myself wanting a markup language which looks like Haskell and which uses similar typing rules.</p>
 <p>The simplicity of the language below allows for a very simple implementation: typing is a simple bottom-up pass over a term.</p>
 <p>With that, let&#39;s include some modules:</p>
-<pre class="{.haskell}"><code>module Markup where
+<pre class="{.text}"><code>module Markup where
 
 import Text.Parsec
 import qualified Text.Parsec.Token as P
@@ -20,7 +20,7 @@ import qualified Control.Monad.State as S
 </code></pre>
 <h2>Language Definition and Examples</h2>
 <p>I would like separate languages for type declarations and values. Here are some examples of the sorts of things I would like to be able to write (note, not all of these are expected to pass the typechecker):</p>
-<pre class="{.haskell}"><code>exampleSchema = unlines 
+<pre class="{.text}"><code>exampleSchema = unlines 
   [ &quot;Nil :: List Z a;&quot;
   , &quot;Singleton :: a -&gt; List (S Z) a;&quot;
   , &quot;Cons :: a -&gt; List n a -&gt; List (S n) a;&quot;
@@ -45,7 +45,7 @@ example9 = unlines
 <p>Notice that the type definition language supports things like type constructors and phantom types to allow me to encode simple constraints in the type of a declaration. For example, I can enforce the fact that the Zip constructor takes two lists of the same length. Also, there are no higher order functions, since there are no user-defined functions other than constructors, and no data declarations: all types are open for extension.</p>
 <p>The value language copies several ideas from Haskell: infix constructors using backticks, and application using both juxtaposition and <code>$</code>. Other than that, the syntax is very simple.</p>
 <p>Here are the data types which represent terms and types, along with their pretty printing functions:</p>
-<pre class="{.haskell}"><code>data Tm 
+<pre class="{.text}"><code>data Tm 
   = TmName String
   | TmAtom String 
   | TmStr String 
@@ -75,7 +75,7 @@ prettyTy (TyArr t1 t2) = prettyTy t1 ++ &quot; -&gt; (&quot; ++ prettyTy t2 ++ &
 </code></pre>
 <h2>Parsing Types and Values Using Parsec</h2>
 <p>Now let&#39;s implement a parser. To keep things simple, I&#39;m going to use the lexer generator from <code>Text.Parsec.Token</code>.</p>
-<pre class="{.haskell}"><code>languageDef :: P.LanguageDef st
+<pre class="{.text}"><code>languageDef :: P.LanguageDef st
 languageDef = L.haskellStyle 
   { P.opStart         = fail &quot;Operators are not supported&quot;
   , P.opLetter        = fail &quot;Operators are not supported&quot;
@@ -100,7 +100,7 @@ identl :: Parsec String u String
 identl = lookAhead lower &gt;&gt; identifier
 </code></pre>
 <p>There are parsers for terms:</p>
-<pre class="{.haskell}"><code>tmName :: Parsec String u Tm
+<pre class="{.text}"><code>tmName :: Parsec String u Tm
 tmName = lexeme $ identl &gt;&gt;= return . TmName
   
 tmAtom :: Parsec String u Tm
@@ -123,7 +123,7 @@ tm = E.buildExpressionParser
      (tmBracket &lt;|&gt; tmStr &lt;|&gt; tmInt &lt;|&gt; try tmName &lt;|&gt; tmAtom)
 </code></pre>
 <p>and parsers for types:</p>
-<pre class="{.haskell}"><code>tyVar :: Parsec String u Ty
+<pre class="{.text}"><code>tyVar :: Parsec String u Ty
 tyVar = lexeme $ identl &gt;&gt;= return . TyVar
 
 tyCon :: Parsec String u Ty
@@ -139,7 +139,7 @@ ty = E.buildExpressionParser
      (tyBracket &lt;|&gt; try tyVar &lt;|&gt; tyCon)
 </code></pre>
 <p>The parsers <code>tm</code> and <code>ty</code> are then used to construct top-level parsers <code>schema</code> for type declarations and <code>doc</code> for value declarations:</p>
-<pre class="{.haskell}"><code>valueDecl :: Parsec String u (String, Tm)
+<pre class="{.text}"><code>valueDecl :: Parsec String u (String, Tm)
 valueDecl = do
   name &lt;- identl
   symbol &quot;=&quot;
@@ -171,7 +171,7 @@ schema = do
 <h2>Implementing a Typechecker</h2>
 <p>The next step is to write the typechecker. This is actually quite simple since there are no function types other than constructors, and all quantification over free type variables implicitly happens at the top level.</p>
 <p>The first step is to implement a unification function. This is very easy: types are either equal modulo variable substitution, or they do not unify at all:</p>
-<pre class="{.haskell}"><code>unify :: Ty -&gt; Ty -&gt; Either String [(String, Ty)]
+<pre class="{.text}"><code>unify :: Ty -&gt; Ty -&gt; Either String [(String, Ty)]
 unify (TyVar s) (TyVar t) = return []
 unify (TyVar s) t = return [(s, t)]
 unify t (TyVar s) = return [(s, t)]
@@ -182,14 +182,14 @@ unify (TyArr ty1 ty2) (TyArr ty3 ty4) = (++) &lt;$&gt; unify ty1 ty3 &lt;*&gt; u
 unify t1 t2 = Left $ &quot;Cannot unify &quot; ++ prettyTy t1 ++ &quot; with &quot; ++ prettyTy t2
 </code></pre>
 <p>Type variable substitution is also a simple pattern match:</p>
-<pre class="{.haskell}"><code>subst :: [(String, Ty)] -&gt; Ty -&gt; Ty
+<pre class="{.text}"><code>subst :: [(String, Ty)] -&gt; Ty -&gt; Ty
 subst vs v@(TyVar s) = maybe v id $ lookup s vs
 subst vs (TyApp t1 t2) = TyApp (subst vs t1) (subst vs t2)
 subst vs (TyArr t1 t2) = TyArr (subst vs t1) (subst vs t2)
 subst _ t = t
 </code></pre>
 <p>One important function which is used in the typechecker is <code>specialize</code>, which is used to apply a polymorphic function to an argument. The idea is that <code>specialize f x</code> should return the most general type of <code>f x</code>. The helper function <code>isFunction</code> is used to ensure that each type variable was unified with at most one type.</p>
-<pre class="{.haskell}"><code>isFunction :: (Eq dom, Eq cod) =&gt; [(dom, cod)] -&gt; Bool
+<pre class="{.text}"><code>isFunction :: (Eq dom, Eq cod) =&gt; [(dom, cod)] -&gt; Bool
 isFunction = all ((== 1) . length . nub . map snd) . groupBy ((==) `on` fst)
   
 specialize :: Ty -&gt; Ty -&gt; Either String Ty
@@ -201,7 +201,7 @@ specialize t _ = Left $ &quot;Expected a function, found &quot; ++ prettyTy t
 </code></pre>
 <p>We need one more helper function, which is used to rename free variables in a polymorphic type. This is used to make sure type variables do not overlap when a function application gets typed.</p>
 <p>The <code>renameAll</code> function gives new names to all of the free type variables appearing in a type, using an association list to store the currently-generated names:</p>
-<pre class="{.haskell}"><code>renameAll :: (Eq a) =&gt; a -&gt; Ty -&gt; S.State [((String, a), String)] Ty
+<pre class="{.text}"><code>renameAll :: (Eq a) =&gt; a -&gt; Ty -&gt; S.State [((String, a), String)] Ty
 renameAll _ t@(TyCon _) = return t
 renameAll key (TyVar v) = do
   m &lt;- S.get
@@ -218,7 +218,7 @@ unusedName :: [String] -&gt; String
 unusedName used = head $ map ((&quot;t&quot; ++) . show) [0..] \\ used
 </code></pre>
 <p>We can now write the typechecker. It is a simple application of the <code>specialize</code> and <code>renameAll</code> helper functions:</p>
-<pre class="{.haskell}"><code>typeOf :: [(String, Ty)] -&gt; Tm -&gt; Either String Ty
+<pre class="{.text}"><code>typeOf :: [(String, Ty)] -&gt; Tm -&gt; Either String Ty
 typeOf ctx (TmName s) = maybe (Left $ &quot;Unknown name &quot; ++ s) Right $ lookup s ctx
 typeOf ctx (TmAtom s) = maybe (Left $ &quot;Unknown constructor &quot; ++ s) Right $ lookup s ctx
 typeOf _ (TmInt _) = return (TyCon &quot;Int&quot;)
@@ -240,7 +240,7 @@ typesOf ctx ((name, tm):tms) = do
   return (first:rest)
 </code></pre>
 <p>Let&#39;s test the typechecker and parser on some of the examples at the top of the post:</p>
-<pre class="{.haskell}"><code>parseErr p = either (Left . show) Right . parse p &quot;&quot;
+<pre class="{.text}"><code>parseErr p = either (Left . show) Right . parse p &quot;&quot;
   
 test sch val = do
   s &lt;- parseErr schema sch
@@ -259,7 +259,7 @@ Right [(&quot;x&quot;,&quot;Tree (S (S Z)) Int&quot;)]
 <p>There are a few other small additions to the language that I would like to make such as infix operators, kind checking, better error messages and support for other primitive types.</p>
 <h2>A Mini Language For Relational Queries</h2>
 <p>As a more useful example, I&#39;ve put together a minimal DSL for partially typed relational queries. The type system is used to make sure pairs of columns equated in joins have the same type, and to track the tables used in a query. Try replacing some of the constructors to see the ways in which the type system is used!</p>
-<pre class="{.haskell}"><code>relationSchema = unlines 
+<pre class="{.text}"><code>relationSchema = unlines 
   [ &quot;UserID         :: Column User PK;&quot;
   , &quot;UserName       :: Column User String;&quot;
   , &quot;UserCompanyID  :: Column User PK;&quot;
@@ -287,7 +287,7 @@ Right [(&quot;query&quot;,&quot;Query (Cross (Table User) (Table Company))&quot;
 <p>Ensuring terms are well-typed is pretty useless if the type language is itself typeless, so let&#39;s implement a kind checker for type definitions in a schema.</p>
 <p>The kind checker below is a modified version of a type checker from an earlier post. It works by generating kind constraints by performing a bottom-up traversal of a type, and then solving tose constraints by substitution.</p>
 <p>Here is the type of kinds, including placeholders for unknown kinds:</p>
-<pre class="{.haskell}"><code>type Unknown = Int
+<pre class="{.text}"><code>type Unknown = Int
   
 data Kind
   = KindUnknown Unknown
@@ -301,7 +301,7 @@ prettyKind (KindArr k1@(KindArr _ _) k2) = &quot;(&quot; ++ prettyKind k1 ++ &qu
 prettyKind (KindArr k1 k2) = prettyKind k1 ++ &quot; -&gt; &quot; ++ prettyKind k2
 </code></pre>
 <p>I&#39;ll start as usual with some basic utility functions which will be used during kind checking. Two crucial functions are the replacement of an unknown with another kind, and an occurs-check function:</p>
-<pre class="{.haskell}"><code>replace :: Unknown -&gt; Kind -&gt; Kind -&gt; Kind
+<pre class="{.text}"><code>replace :: Unknown -&gt; Kind -&gt; Kind -&gt; Kind
 replace i x u@(KindUnknown j) 
   | i == j = x
   | otherwise = u
@@ -316,7 +316,7 @@ occursCheck i x = occursCheck&#39; i x where
   occursCheck&#39; _ _ = return ()
 </code></pre>
 <p>Constraint generation happens by unification. The <code>unify</code> function takes two kinds and generates the constraints imposed by their equality, or returns a unification error.</p>
-<pre class="{.haskell}"><code>type KindConstraint = (Unknown, Kind)
+<pre class="{.text}"><code>type KindConstraint = (Unknown, Kind)
 
 type SolutionSet = Unknown -&gt; Kind
 
@@ -328,7 +328,7 @@ unifyKinds (KindArr k1 k2) (KindArr k3 k4) = (++) &lt;$&gt; unifyKinds k1 k3 &lt
 unifyKinds k1 k2 = fail $ &quot;Cannot unify &quot; ++ show k1 ++ &quot; with &quot; ++ show k2
 </code></pre>
 <p>The general constraint generation function works bottom-up over the structure of a type:</p>
-<pre class="{.haskell}"><code>generateConstraints :: (Monad m, S.MonadState ([(String, Unknown)], Unknown) m) =&gt; Ty -&gt; m [KindConstraint]
+<pre class="{.text}"><code>generateConstraints :: (Monad m, S.MonadState ([(String, Unknown)], Unknown) m) =&gt; Ty -&gt; m [KindConstraint]
 generateConstraints ty = do
   (cs, n) &lt;- generateConstraints&#39; ty
   return $ (n, KindStar) : cs
@@ -361,7 +361,7 @@ newUnknown :: (Monad m, S.MonadState (a, Unknown) m) =&gt; m Unknown
 newUnknown = S.modify (id *** (+1)) &gt;&gt; S.get &gt;&gt;= return . snd
 </code></pre>
 <p>Constraints are solved by substitution using <code>replace</code>:</p>
-<pre class="{.haskell}"><code>solve :: [KindConstraint] -&gt; Either String SolutionSet
+<pre class="{.text}"><code>solve :: [KindConstraint] -&gt; Either String SolutionSet
 solve cs = solve&#39; cs KindUnknown where
   solve&#39; [] ss = return ss
   solve&#39; (c@(i, x):cs) ss = do
@@ -376,7 +376,7 @@ solve cs = solve&#39; cs KindUnknown where
   substSolutionSet (i, x) = (.) (replace i x)
 </code></pre>
 <p>Now we can write the kind checker. The <code>applications</code> function splits an arrow type into parts, so that kind checking can work on each part.</p>
-<pre class="{.haskell}"><code>applications :: Ty -&gt; [Ty]
+<pre class="{.text}"><code>applications :: Ty -&gt; [Ty]
 applications t = applications&#39; t [] where
   applications&#39; (TyArr t1 t2) = applications&#39; t1 . applications&#39; t2
   applications&#39; t = (:) t
@@ -406,4 +406,4 @@ Right [
   (&quot;Z&quot;, &quot;k10&quot;),
   (&quot;List&quot;, &quot;k10 -&gt; * -&gt; *&quot;) ]
 </code></pre>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

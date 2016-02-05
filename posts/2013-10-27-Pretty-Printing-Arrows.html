@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Pretty Printing Arrows</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Pretty Printing Arrows</h2><p><small>by Phil Freeman on 2013/10/27</small></p><p>I&#39;d like to show a neat use of arrows for pretty printing an AST.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE GADTs, GeneralizedNewtypeDeriving #-} 
+<html><head><title>Functorial Blog - Pretty Printing Arrows</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Pretty Printing Arrows</h2><p><small>by Phil Freeman on 2013/10/27</small></p><p>I&#39;d like to show a neat use of arrows for pretty printing an AST.</p>
+<pre class="{.text}"><code>{-# LANGUAGE GADTs, GeneralizedNewtypeDeriving #-} 
 
 import Data.Maybe (fromMaybe)
 import Data.Function (fix)
@@ -10,13 +10,13 @@ import qualified Control.Arrow as A
 import Control.Arrow ((***), (&lt;+&gt;))
 </code></pre>
 <p>Suppose you had defined a type of syntax trees and wanted to write a function to print their representations as code:</p>
-<pre class="{.haskell}"><code>data Expr = Var String
+<pre class="{.text}"><code>data Expr = Var String
           | Abs String Expr
           | App Expr Expr deriving Show
 </code></pre>
 <h2>A First Attempt</h2>
 <p>A first attempt might look something like this:</p>
-<pre class="{.haskell}"><code>pretty1 :: Expr -&gt; String
+<pre class="{.text}"><code>pretty1 :: Expr -&gt; String
 pretty1 (Var v) = v
 pretty1 (Abs v e) = &quot;\\&quot; ++ v ++ &quot; -&gt; &quot; ++ pretty1 e
 pretty1 (App e1 e2) = &quot;(&quot; ++ pretty1 e1 ++ &quot;) (&quot; ++ pretty1 e2 ++ &quot;)&quot;
@@ -33,7 +33,7 @@ ghci&gt; pretty1 s
 </code></pre>
 <h2>A Better Approach</h2>
 <p>Another approach is to thread the current precedence level as an argument, and to parenthesize as a last resort:</p>
-<pre class="{.haskell}"><code>type Precedence = Int
+<pre class="{.text}"><code>type Precedence = Int
 
 pretty2 :: Expr -&gt; String
 pretty2 = pretty2&#39; 0
@@ -64,7 +64,7 @@ ghci&gt; pretty2 k
 <p>However, I think the use of arrows provides a novel way to build up patterns into complex pretty printers.</p>
 <p>The really neat thing is that almost all of the required code can be derived using <code>GeneralizedNewtypeDeriving</code>!</p>
 <p>Here is the definition of a <code>Pattern</code> as an <code>Arrow</code>. It takes a value of type <code>a</code>, and either matches successfully, returning a value of type <code>b</code>, or fails. Failure is modelled using the Kleisli category for the <code>Maybe</code> monad:</p>
-<pre class="{.haskell}"><code>newtype Pattern a b = Pattern { runPattern :: A.Kleisli Maybe a b } 
+<pre class="{.text}"><code>newtype Pattern a b = Pattern { runPattern :: A.Kleisli Maybe a b } 
   deriving (C.Category, A.Arrow, A.ArrowZero, A.ArrowPlus)
 
 pattern :: Pattern a b -&gt; a -&gt; Maybe b
@@ -73,12 +73,12 @@ pattern = A.runKleisli . runPattern
 <p>We can derive instances for <code>Category</code>, <code>Arrow</code>, <code>ArrowZero</code>, and <code>ArrowPlus</code>. The intuition here is that <code>Category</code> gives us composition of patterns, i.e. nested patterns, <code>Arrow</code> gives combinators for working with patterns involving tuples, and <code>ArrowZero</code> and <code>ArrowPlus</code> give us a way to deal with failure and backtracking.</p>
 <p>Note: there is also an instance for <code>Applicative</code> which gives another way to work with simultaneous patterns, but I won&#39;t write it out here.</p>
 <p>One thing we can&#39;t immediately <code>derive</code> is the <code>Functor</code> instance for <code>Pattern</code>, which will come in useful later. Fortunately, it is easy to write by hand</p>
-<pre class="{.haskell}"><code>instance Functor (Pattern a) where
+<pre class="{.text}"><code>instance Functor (Pattern a) where
   fmap f p = Pattern $ A.Kleisli $ fmap f . pattern p
 </code></pre>
 <h2>Some Simple Patterns</h2>
 <p>Here are some examples of <code>Pattern</code>s</p>
-<pre class="{.haskell}"><code>var :: Pattern Expr String
+<pre class="{.text}"><code>var :: Pattern Expr String
 var = Pattern $ A.Kleisli var&#39;
   where var&#39; (Var s) = Just s
         var&#39; _ = Nothing
@@ -96,7 +96,7 @@ app = Pattern $ A.Kleisli app&#39;
 <p>I imagine these are the sort of the thing one could write a Template Haskell splice for. They also seem quite similar to Prisms, which might provide another way to write this code.</p>
 <h2>Combining Patterns</h2>
 <p>Now we can write some combinators in the spirit of <code>Text.Parsec</code> which allow us to build up new patterns from old, and to apply a pattern recursively:</p>
-<pre class="{.haskell}"><code>chainl :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Pattern a r -&gt; Pattern a r
+<pre class="{.text}"><code>chainl :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Pattern a r -&gt; Pattern a r
 chainl split f p = fix $ \c -&gt; (split &gt;&gt;&gt; ((c &lt;+&gt; p) *** p) &gt;&gt;&gt; A.arr (uncurry f))
 
 chainr :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Pattern a r -&gt; Pattern a r
@@ -107,7 +107,7 @@ wrap split f p = fix $ \c -&gt; (split &gt;&gt;&gt; (C.id *** (c &lt;+&gt; p)) &
 </code></pre>
 <h2>Precedence Tables</h2>
 <p>In fact, we can go one step further and derive a pattern from a precedence table in the manner of <code>Text.Parsec.Expr</code>:</p>
-<pre class="{.haskell}"><code>data OperatorTable a r = OperatorTable { runOperatorTable :: [ [Operator a r] ] }
+<pre class="{.text}"><code>data OperatorTable a r = OperatorTable { runOperatorTable :: [ [Operator a r] ] }
 
 data Operator a r where
   AssocL :: Pattern a (a, a) -&gt; (r -&gt; r -&gt; r) -&gt; Operator a r
@@ -123,14 +123,14 @@ buildPrettyPrinter table p = foldl (\p&#39; ops -&gt; foldl1 (&lt;+&gt;) (flip m
   ) &lt;+&gt; p&#39;) p $ runOperatorTable table
 </code></pre>
 <p>We need one final function, which parenthesizes an expression:</p>
-<pre class="{.haskell}"><code>parenthesize :: Pattern a String -&gt; Pattern a String
+<pre class="{.text}"><code>parenthesize :: Pattern a String -&gt; Pattern a String
 parenthesize = fmap parens 
   where
   parens s = &#39;(&#39;:s ++ &quot;)&quot;
 </code></pre>
 <h2>Finally ...</h2>
 <p>This gives us the parts we need to express our previous pretty printer as a <code>Pattern</code>:</p>
-<pre class="{.haskell}"><code>expr = buildPrettyPrinter ops (var &lt;+&gt; parenthesize expr)
+<pre class="{.text}"><code>expr = buildPrettyPrinter ops (var &lt;+&gt; parenthesize expr)
   where 
     ops = OperatorTable
       [ [ AssocL app $ \e1 e2 -&gt; e1 ++ &quot; &quot; ++ e2 ]
@@ -143,7 +143,7 @@ pattern3 = fromMaybe (error &quot;Incomplete pattern match&quot;) . pattern expr
 <p>Note that, just like when we define parsers using <code>Text.Parsec.Expr</code>, the use of combinators allows us to write code which directly represents the precedence table!</p>
 <h2>Example - Integer Expressions and Binary Operations</h2>
 <p>Here&#39;s another example, of expressions supporting integer constants and binary operators.</p>
-<pre class="{.haskell}"><code>data Eqn = Const Int
+<pre class="{.text}"><code>data Eqn = Const Int
          | Bin Eqn Char Eqn deriving Show
 
 con :: Pattern Eqn Int
@@ -165,4 +165,4 @@ eqn = buildPrettyPrinter ops (fmap show con &lt;+&gt; parenthesize eqn)
     binOp c = AssocL (bin c) $ \e1 e2 -&gt; e1 ++ c : e2
 </code></pre>
 <p>For yet another (more developed) example, see my current project on GitHub, <a href="http://github.com/paf31/purescript/">here</a>.</p>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Haskell On Azure</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Haskell On Azure</h2><p><small>by Phil Freeman on 2012/04/29</small></p><p>Today, as a change of topic, I&#39;m going to write about getting a Haskell web application to run on Windows Azure.</p>
+<html><head><title>Functorial Blog - Haskell On Azure</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Haskell On Azure</h2><p><small>by Phil Freeman on 2012/04/29</small></p><p>Today, as a change of topic, I&#39;m going to write about getting a Haskell web application to run on Windows Azure.</p>
 <p>Azure provides storage services (the table, queue and blob storage services) exposing REST APIs. I recently uploaded my first cabal package tablestorage to HackageDB, which is a simple wrapper for the web methods of the table storage REST service.</p>
 <p>I&#39;ve chosen to use a combination of the Happstack web server and blaze-html to build a very simple note-taking web application, but it should be possible to switch out the particular web server easily.</p>
-<pre class="{.haskell}"><code>module Main where
+<pre class="{.text}"><code>module Main where
 
 import Data.Maybe
 import Control.Monad
@@ -17,13 +17,13 @@ import Text.Blaze ((!), toValue)
 </code></pre>
 <p>Let&#39;s define the account we are going to be using. An account consists of a service endpoint, an account name and the account&#39;s secret key.</p>
 <p>For now, we&#39;ll use the development account, so you will need to have the Windows Azure storage emulator running on your development machine.</p>
-<pre class="{.haskell}"><code>account :: Account
+<pre class="{.text}"><code>account :: Account
 account = developmentAccount 
 </code></pre>
 <p>When it is time to deploy the account to staging/production, we can replace <code>developmentAccount</code> with a call to defaultAccount with the account information copied from the Azure management portal.</p>
 <p>The note-taking appplication will have simple features: there will be multiple &quot;notebooks&quot;, the ability to list the most recent notes in a notebook, and the ability to add a new note to a notebook. We will shard the notes as necessary based on the notebook. In the table storage model, this means that the notebook being used will be determined by the Partition Key of the note entities.</p>
 <p>We need the ability to generate a new key. We would like note IDs to be approximately sorted by insertion date. In order that more recent notes will be displayed first, we will generate a key based on the current time, subtracting the seconds component of the current time from a large value to reverse the order of the generated keys.</p>
-<pre class="{.haskell}"><code>newId :: IO String
+<pre class="{.text}"><code>newId :: IO String
 newId = do
   (TOD seconds picos) &lt;- getClockTime
   return $ show (9999999999 - seconds) ++ show picos
@@ -31,7 +31,7 @@ newId = do
 <p>With that, we can implement the code which will add a new note. This will be implemented as a POST method which accepts its parameters as form-encoded data in the request body.</p>
 <p>A new key is generated, and then the insertEntity IO action is used to add the newly created note entity to the notes table, along with the author and text properties as string columns.</p>
 <p>If this is successful, we perform a redirect-and-get to display the newly added note to the user. If the insert is not successful, then we respond with 500 - Internal Server Error.</p>
-<pre class="{.haskell}"><code>postNote :: ServerPartT IO Response
+<pre class="{.text}"><code>postNote :: ServerPartT IO Response
 postNote = do 
   methodM POST
   tmp &lt;- liftIO getTemporaryDirectory 
@@ -51,7 +51,7 @@ postNote = do
     Right _ -&gt; seeOther (&quot;?partition=&quot; ++ partition) $ toResponse ()
 </code></pre>
 <p>To list the recent notes in the selected notebook, we use queryEntities to query the top 10 entities from the notes table, filtering based on the partition key.</p>
-<pre class="{.haskell}"><code>getNotes :: ServerPartT IO Response
+<pre class="{.text}"><code>getNotes :: ServerPartT IO Response
 getNotes = do
   methodM GET
   partition &lt;- look &quot;partition&quot; `mplus` return &quot;default&quot;
@@ -64,7 +64,7 @@ getNotes = do
 </code></pre>
 <p>This demonstrates a very basic query, but the tablestorage package supports more complicated queries including multiple filters.</p>
 <p>If the query fails, then we return response code 500. If it is successful, then we return a HTML page built using blaze-html. The is the content of the root function:</p>
-<pre class="{.haskell}"><code>root :: String -&gt; [Entity] -&gt; H.Html
+<pre class="{.text}"><code>root :: String -&gt; [Entity] -&gt; H.Html
 root partition notes = H.html $ do
   H.head $ 
     H.title $ H.toHtml &quot;Notes&quot;
@@ -85,7 +85,7 @@ root partition notes = H.html $ do
 </code></pre>
 <p>The first part of the page contains a form which will allow the user to post a new note. It contains text boxes for the text and author arguments. The partition key is provided as a hidden field on the form, which the user can change by editing the query string.</p>
 <p>The last part of the page lists the most recent ten notes in the selected notebook (partition key). Each note is rendered using the displayNote function:</p>
-<pre class="{.haskell}"><code>displayNote :: Entity -&gt; H.Html
+<pre class="{.text}"><code>displayNote :: Entity -&gt; H.Html
 displayNote note = fromMaybe (return ()) $ do
   text &lt;- edmString &quot;text&quot; note
   author &lt;- edmString &quot;author&quot; note
@@ -99,11 +99,11 @@ displayNote note = fromMaybe (return ()) $ do
 </code></pre>
 <p>Here, we use the <code>edmString</code> helper function to extract a string-valued column from the list of columns returned by the query. This <code>Maybe</code>-valued function returns Just a string if the named column is indeed string valued, and Nothing if the column is missing or has a different type. The tablestorage package provides corresponding functions for the other column types.</p>
 <p>Finally, we can create a web application using the <code>getNotes</code> and <code>postNote</code> routes:</p>
-<pre class="{.haskell}"><code>routes :: [ServerPartT IO Response]
+<pre class="{.text}"><code>routes :: [ServerPartT IO Response]
 routes = [ getNotes, postNote ]
 </code></pre>
 <p>The <code>main</code> function performs the setup step of creating the notes table if the table does not already exist. The helper function <code>createTableIfNecessary</code> simplifies this check:</p>
-<pre class="{.haskell}"><code>main :: IO ()
+<pre class="{.text}"><code>main :: IO ()
 main = do 
   result &lt;- createTableIfNecessary account &quot;notes&quot;
   case result of
@@ -141,4 +141,4 @@ main = do
 <p>When you are ready to deploy to Azure in staging or production (you will need to replace the development storage account in the code with the account credentials copied from the management portal), you can build a cspkg file for upload to Azure with</p>
 <pre><code>-- cspack ServiceDefinition.csdef
 </code></pre>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

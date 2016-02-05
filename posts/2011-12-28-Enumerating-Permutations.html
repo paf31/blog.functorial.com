@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Enumerating Permutations</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Enumerating Permutations</h2><p><small>by Phil Freeman on 2011/12/28</small></p><p>Consider the following Haskell function which enumerates permutations of a given length:</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE GADTs #-}
+<html><head><title>Functorial Blog - Enumerating Permutations</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Enumerating Permutations</h2><p><small>by Phil Freeman on 2011/12/28</small></p><p>Consider the following Haskell function which enumerates permutations of a given length:</p>
+<pre class="{.text}"><code>{-# LANGUAGE GADTs #-}
 {-# LANGUAGE PolyKinds #-}
 
 import Data.List
@@ -45,7 +45,7 @@ insertAt n x (x&#39;:xs) = x&#39;:xs&#39; where xs&#39; = insertAt (n - 1) x xs
 --   { Let xs&#39; = perms (n - 1) !! k) }
 --     so that k = indexOfPerm (n - 1) xs&#39; }
 --   = (j, xs&#39;)
--- 
+--
 -- indexOfPerm n xs
 --   { From earlier }
 --   = j * n + k
@@ -75,14 +75,14 @@ indexOfPerm n xs = n * (indexOfPerm (n - 1) xs&#39;) + j
 --   = (i + 1, x&#39;:xs&#39;)
 </code></pre>
 <p>Now we can define <code>extract</code> as follows:</p>
-<pre class="{.haskell}"><code>extract x (x&#39;:xs) | x == x&#39;    = (0, xs)
+<pre class="{.text}"><code>extract x (x&#39;:xs) | x == x&#39;    = (0, xs)
                   | otherwise  = (i + 1, x&#39;:xs&#39;)
-  where (i, xs&#39;) = extract x xs 
+  where (i, xs&#39;) = extract x xs
 </code></pre>
 <p>One can check that the relation that we are interested in between <code>insertAt</code> and <code>extract</code> actually holds.</p>
 <h2>Generating Permutations</h2>
 <p>We can now combine <code>perms</code> and <code>indexOf</code> to give a function <code>nextPerm</code> which generates the next permutation in the list <code>perms n</code>:</p>
-<pre class="{.haskell}"><code>fact 0 = 1
+<pre class="{.text}"><code>fact 0 = 1
 fact n = n * fact (n - 1)
 
 nextPerm&#39; n xs = perms n !! ((1 + indexOfPerm n xs) `mod` (fact n))
@@ -120,7 +120,7 @@ nextPerm&#39; n xs = perms n !! ((1 + indexOfPerm n xs) `mod` (fact n))
 --     = insertAt 0 n (nextPerm (n - 1) xs&#39;)
 </code></pre>
 <p>Thus we arrive at our final definition of <code>nextPerm</code>:</p>
-<pre class="{.haskell}"><code>nextPerm 0 [] = []
+<pre class="{.text}"><code>nextPerm 0 [] = []
 nextPerm n xs | j == n - 1  = insertAt 0 n (nextPerm (n - 1) xs&#39;)
               | otherwise   = insertAt (j + 1) n xs&#39;
   where (j, xs&#39;) = extract n xs
@@ -129,7 +129,7 @@ nextPerm n xs | j == n - 1  = insertAt 0 n (nextPerm (n - 1) xs&#39;)
 <p>The inverse <code>indexOfPerm</code> is only a partial function, because <code>perms n</code> returns a collection of lists of size <code>n</code>. In addition, the types of lists does not enforce the invariant that each element <code>perms n</code> is a permutation of <code>[1..n]</code>.</p>
 <p>Using the <code>-XPolyKinds</code> GHC extension, we can express a type of permutations, indexed by size, allowing us to strengthen the type of <code>nextPerm</code>, specifying that <code>nextPerm</code> preserves the size of a permutation.</p>
 <p>The following type definition will be lifted to the kind level, generating two constructors <code>Z :: Nat</code> and <code>S :: Nat -&gt; Nat</code></p>
-<pre class="{.haskell}"><code>data Nat = Z | S Nat
+<pre class="{.text}"><code>data Nat = Z | S Nat
 _1 = S Z
 _2 = S $ S Z
 _3 = S $ S $ S Z
@@ -145,17 +145,17 @@ instance Show Nat where
   show = showNat
 </code></pre>
 <p>The type <code>Leq n</code> of natural numbers less than or equal to <code>n</code>. The type is parameterised over the kind <code>Nat</code>.</p>
-<pre class="{.haskell}"><code>data Leq :: Nat -&gt; * where
+<pre class="{.text}"><code>data Leq :: Nat -&gt; * where
   LeqZero :: Leq n
   LeqSucc :: Leq n -&gt; Leq (S n)
 </code></pre>
 <p>We can embed numbers less than or equal to <code>n</code> into numbers less than or equal to <code>n + 1</code> for every <code>n</code>:</p>
-<pre class="{.haskell}"><code>embed :: Leq n -&gt; Leq (S n)
+<pre class="{.text}"><code>embed :: Leq n -&gt; Leq (S n)
 embed LeqZero = LeqZero
 embed (LeqSucc n) = LeqSucc (embed n)
 </code></pre>
 <p>We can convert to and from regular integers:</p>
-<pre class="{.haskell}"><code>leqToInt :: Leq n -&gt; Int
+<pre class="{.text}"><code>leqToInt :: Leq n -&gt; Int
 leqToInt LeqZero = 0
 leqToInt (LeqSucc n) = 1 + leqToInt n
 
@@ -173,7 +173,7 @@ instance Show (Leq n) where
   show = showLeq
 </code></pre>
 <p>The type of natural numbers equal to <code>n</code>, that is, a singleton type for each natural number:</p>
-<pre class="{.haskell}"><code>data EqNat :: Nat -&gt; * where
+<pre class="{.text}"><code>data EqNat :: Nat -&gt; * where
   EqZero :: EqNat Z
   EqSucc :: EqNat n -&gt; EqNat (S n)
 
@@ -183,7 +183,7 @@ eq3 = EqSucc $ EqSucc $ EqSucc EqZero
 eq4 = EqSucc $ EqSucc $ EqSucc $ EqSucc EqZero
 </code></pre>
 <p>We can convert the sole inhabitant of each singleton type to its natural number representation:</p>
-<pre class="{.haskell}"><code>eqToInt :: EqNat n -&gt; Int
+<pre class="{.text}"><code>eqToInt :: EqNat n -&gt; Int
 eqToInt EqZero = 0
 eqToInt (EqSucc n) = 1 + eqToInt n
 
@@ -197,17 +197,17 @@ instance Show (EqNat n) where
   show = showEq
 </code></pre>
 <p>We will need the following helper method, which returns the value of <code>n</code> in the type of numbers less than or equal to <code>n</code>:</p>
-<pre class="{.haskell}"><code>maxLeq :: EqNat n -&gt; Leq n
+<pre class="{.text}"><code>maxLeq :: EqNat n -&gt; Leq n
 maxLeq EqZero = LeqZero
 maxLeq (EqSucc n) = LeqSucc (maxLeq n)
 </code></pre>
 <p>We can turn collect the list of all numbers in <code>Leq n</code> recursively:</p>
-<pre class="{.haskell}"><code>for :: EqNat n -&gt; [Leq n]
+<pre class="{.text}"><code>for :: EqNat n -&gt; [Leq n]
 for EqZero = [LeqZero]
 for (EqSucc n) = LeqZero : map LeqSucc (for n)
 </code></pre>
 <p>Finally, we define the type of permutations, again parameterised by the kind <code>Nat</code> and containing two type constructors: the empty permutation and the permutation obtained by inserting the value <code>n + 1</code> into a permutation of the list <code>[1..n]</code>:</p>
-<pre class="{.haskell}"><code>data Perm :: Nat -&gt; * where
+<pre class="{.text}"><code>data Perm :: Nat -&gt; * where
   Empty :: Perm Z
   Insert :: Leq n -&gt; Perm n -&gt; Perm (S n)
 
@@ -216,49 +216,49 @@ showPerm p = &quot;(&quot; ++ concat (intersperse &quot;,&quot; (map show (toLis
   toList :: Perm n -&gt; Int -&gt; [Int]
   toList Empty m = []
   toList (Insert n p) m = let (l, r) = splitAt (leqToInt n) (toList p (m + 1)) in l ++ [m] ++ r
-                         
+
 instance Show (Perm n) where
   show = showPerm
 </code></pre>
 <p>Note now that invalid permutations are no longer inhabitants of the type <code>Perm n</code> for any <code>n</code>: to insert value <code>n</code> into a permutation of <code>[1..n-1]</code>, we have to specify a position to insert which is in the range <code>[0..n]</code>, and this is enforced by the type <code>Perm n</code>! One cannot, for example, represent a list with a duplicate element - the elements are not even mentioned explicitly.</p>
 <p>The rank of a permutation is the size of the set it permutes:</p>
-<pre class="{.haskell}"><code>rank :: Perm n -&gt; EqNat n
+<pre class="{.text}"><code>rank :: Perm n -&gt; EqNat n
 rank Empty = EqZero
 rank (Insert n p) = EqSucc (rank p)
 </code></pre>
 <p>The identity permutation is easily defined by recursion:</p>
-<pre class="{.haskell}"><code>identity :: EqNat n -&gt; Perm n
+<pre class="{.text}"><code>identity :: EqNat n -&gt; Perm n
 identity EqZero = Empty
 identity (EqSucc n) = Insert LeqZero (identity n)
 </code></pre>
 <p>The method <code>perms</code> translates easily to this new setting:</p>
-<pre class="{.haskell}"><code>perms1 :: EqNat n -&gt; [Perm n]
+<pre class="{.text}"><code>perms1 :: EqNat n -&gt; [Perm n]
 perms1 EqZero = [Empty]
 perms1 (EqSucc n) = [ Insert i xs | xs &lt;- perms1 n, i &lt;- for n ]
 </code></pre>
 <p>We can create a permutation from its list representation by repeatedly extracting the highest element:</p>
-<pre class="{.haskell}"><code>fromList :: EqNat n -&gt; [Int] -&gt; Perm n
+<pre class="{.text}"><code>fromList :: EqNat n -&gt; [Int] -&gt; Perm n
 fromList EqZero [] = Empty
 fromList (EqSucc n) xs = Insert (intToLeq i n) (fromList n (map (flip (-) 1) (delete 0 xs)))
   where Just i = elemIndex 0 xs
 </code></pre>
 <p>We can also translate the function <code>indexOfPerm</code> without difficulty:</p>
-<pre class="{.haskell}"><code>indexOfPerm1 :: Perm n -&gt; EqNat n -&gt; Int
+<pre class="{.text}"><code>indexOfPerm1 :: Perm n -&gt; EqNat n -&gt; Int
 indexOfPerm1 Empty EqZero = 0
 indexOfPerm1 (Insert n p) (EqSucc m) = (indexOfPerm1 p m) * (1 + eqToInt m) + leqToInt n
 </code></pre>
 <p>The following function emulates the indexing function <code>perms r !!</code>, returning the <code>n</code>th permutation in the set of permutations of a given rank:</p>
-<pre class="{.haskell}"><code>nth :: Int -&gt; EqNat n -&gt; Perm n
+<pre class="{.text}"><code>nth :: Int -&gt; EqNat n -&gt; Perm n
 nth 0 EqZero = Empty
 nth m (EqSucc n) = Insert (intToLeq k n) (nth j n)
   where (j, k) = divMod m (1 + eqToInt n)
 </code></pre>
 <p>As before, we can combine <code>nth</code> with <code>indexOfPerm1</code> to step to the next permutation:</p>
-<pre class="{.haskell}"><code>nextPerm1&#39; :: Perm n -&gt; Perm n
+<pre class="{.text}"><code>nextPerm1&#39; :: Perm n -&gt; Perm n
 nextPerm1&#39; p = let r = rank p in nth (indexOfPerm1 p r - 1) r
 </code></pre>
 <p>Finally, we can perform the same fusion as before, and express <code>nextPerm1</code> directly without the need for helper functions <code>nth</code> and <code>indexOfPerm1</code>.</p>
-<pre class="{.haskell}"><code>nextPerm1 :: Perm n -&gt; Perm n
+<pre class="{.text}"><code>nextPerm1 :: Perm n -&gt; Perm n
 nextPerm1 Empty = Empty
 nextPerm1 (Insert LeqZero p) = Insert (maxLeq (rank p)) (nextPerm1 p)
 nextPerm1 (Insert (LeqSucc n) p) = Insert (embed n) p
@@ -268,4 +268,4 @@ nextPerm1 (Insert (LeqSucc n) p) = Insert (embed n) p
 </code></pre>
 <p>That is, <code>nextPerm1</code> preserves the rank of its argument.</p>
 <p>Compile the source in this post with GHC 7.4 or later.</p>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

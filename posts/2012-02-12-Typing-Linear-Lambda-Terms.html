@@ -1,21 +1,21 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Typing Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Typing Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/12</small></p><p>In this post, I&#39;d like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I&#39;d like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
+<html><head><title>Functorial Blog - Typing Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Typing Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/12</small></p><p>In this post, I&#39;d like to look at the problem of encoding linear lambda terms in Haskell. Specifically, I&#39;d like to look at how to restrict the class of expressible lambda terms to only allow variables to be applied exactly once.</p>
 <p>For example, the combinator <code>K x y = x</code> should be disallowed because the variable <code>y</code> is never used, and the combinator <code>S x y z = x z (y z)</code> should be disallowed because the variable <code>z</code> is used more than once.</p>
 <p>The combinators <code>S</code> and <code>K</code> form a basis for the set of unrestricted lambda terms, so one should ask, is there anything interesting left after they are removed? Indeed, one can find a useful basis for the class of linear lambda terms, which we will express in Haskell below.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators #-}
+<pre class="{.text}"><code>{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators #-}
 
 module Lin where
 </code></pre>
 <p>This definition of linear lambda terms depends crucially on the definition of a splitting of a set of variables.</p>
 <p>The thing which prevents <code>S</code> from being an inhabitant of our desired type is that the variable occurs on each side of the application <code>(x z) (y z)</code>.</p>
 <p>We need to ensure that each variable only occurs on one side of each application, and this motivates the following definition of a splitting of a set of variables <code>s</code> into two disjoint sets <code>v1</code>, <code>v2</code> of variables whose union is <code>s</code>. The only splitting of the empty set is <code>E</code>, the empty splitting, and one can obtain a splitting of <code>(v:vs)</code> from a splitting of <code>vs</code> by adding <code>v</code> to either the left set <code>v1</code> or to the right set <code>v2</code>:</p>
-<pre class="{.haskell}"><code>data Splitting v1 v2 s where
+<pre class="{.text}"><code>data Splitting v1 v2 s where
   E :: Splitting &#39;[] &#39;[] &#39;[]
   L :: Splitting xs ys s -&gt; Splitting (x &#39;: xs) ys (x &#39;: s)
   R :: Splitting xs ys s -&gt; Splitting xs (y &#39;: ys) (y &#39;: s)
 </code></pre>
 <p>With that, here is the definition of the set of linear lambda terms. The definition looks similar to a definition of unrestricted lambda terms, modulo extra type constraints.</p>
-<pre class="{.haskell}"><code>data Lin vars where
+<pre class="{.text}"><code>data Lin vars where
   Var :: v -&gt; Lin (v &#39;: &#39;[])
   App :: Splitting vs ws s -&gt; Lin vs -&gt; Lin ws -&gt; Lin s
   Abs :: (forall v. v -&gt; Lin (v &#39;: vars)) -&gt; Lin vars
@@ -25,14 +25,14 @@ module Lin where
 <p>An application splits the set of bound variables into two pieces. Constructing an application term requires the user to specify the splitting explictly as an argument.</p>
 <p>A variable can only be constructed in the context of a single bound variable - this disallows terms such as <code>K</code> where we have a bound variable left over.</p>
 <p>Finally, a closed linear lambda term is a linear lambda term with no free variables:</p>
-<pre class="{.haskell}"><code>type Closed = Lin &#39;[]
+<pre class="{.text}"><code>type Closed = Lin &#39;[]
 </code></pre>
 <p>Now we can express some linear lambda terms. The identity is the simplest example:</p>
-<pre class="{.haskell}"><code>-- I x = x
+<pre class="{.text}"><code>-- I x = x
 i = Abs (\x -Var x)
 </code></pre>
 <p>The <code>B</code> and <code>C</code> combinators are a little trickier, since one has to define the splitting of the set of bound variables for every application. For example, the first application in <code>B</code> says &quot;<code>x</code> goes on the left of the application, <code>y</code> and <code>z</code> go on the right&quot;.</p>
-<pre class="{.haskell}"><code>-- B x y z = x (y z)
+<pre class="{.text}"><code>-- B x y z = x (y z)
 b = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (R $ R $ L $ E) (Var x) (App (R $ L $ E) (Var y) (Var z)))))
 
 -- C x y z = x z y
@@ -50,4 +50,4 @@ c = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (L $ R $ L $ E) (App (R $ L $ 
 --  In the expression: Var x
 </code></pre>
 <p>This error indicates that we have one too many type variables left over at the node of the tree where <code>Var x</code> appears.</p>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

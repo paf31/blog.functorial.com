@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - One-Hole Contexts Generalize Diff To Containers</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>One-Hole Contexts Generalize Diff To Containers</h2><p><small>by Phil Freeman on 2012/12/21</small></p><p>Text-based diff is of limited usefulness for analysing changes to a large code base over time. I&#39;ve wondered for a while how one might generalize the <code>diff</code> and <code>patch</code> functions on lists to more general data structures such as abstract syntax trees.</p>
+<html><head><title>Functorial Blog - One-Hole Contexts Generalize Diff To Containers</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>One-Hole Contexts Generalize Diff To Containers</h2><p><small>by Phil Freeman on 2012/12/21</small></p><p>Text-based diff is of limited usefulness for analysing changes to a large code base over time. I&#39;ve wondered for a while how one might generalize the <code>diff</code> and <code>patch</code> functions on lists to more general data structures such as abstract syntax trees.</p>
 <p>It&#39;s pretty easy to write down a version of the <code>diff</code> function for, say, binary trees, but less simple to write a function which works generically across multiple data types. As usual, I spent a while thinking about this before realizing the problem had already been solved ([1], [2]). I&#39;m still quite happy with the approach I came up with, and I think it&#39;s sufficiently interesting to write about here anyway.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE TypeFamilies #-}
+<pre class="{.text}"><code>{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -15,7 +15,7 @@ import Data.List (maximumBy)
 <p>The <code>diff</code> function can be specified as follows: for lists <code>xs</code> and <code>ys</code>, find the shortest edit sequence taking <code>xs</code> to <code>ys</code>. We can reduce the problem to finding the longest common subsequence of <code>xs</code> and <code>ys</code>: to obtain the least common subsequence, first remove a subset of elements from <code>xs</code>, and then to obtain <code>ys</code>, insert a subset of elements of <code>ys</code> into the least common subsequence.</p>
 <p>Ignoring optimization for the time being, let&#39;s take this as our starting point. We&#39;ll generalize the longest common subsequence to the largest common substructure.</p>
 <p>First, let&#39;s examine the inductive definition of all subsequences of a list:</p>
-<pre class="{.haskell}"><code>subsequences :: [a] -&gt; [[a]]
+<pre class="{.text}"><code>subsequences :: [a] -&gt; [[a]]
 subsequences [] = [[]]
 subsequences (x:xs) = [ xs&#39;&#39; | xs&#39; &lt;- subsequences xs, xs&#39;&#39; &lt;- [ xs&#39;, x:xs&#39; ] ]
 </code></pre>
@@ -23,7 +23,7 @@ subsequences (x:xs) = [ xs&#39;&#39; | xs&#39; &lt;- subsequences xs, xs&#39;&#3
 <p>Let&#39;s recast that definition in the more generic language of containers:</p>
 <p>If the input has no subcontainers, return just the input, otherwise, for each substructure of each subcontainer, yield two substructures: the first including the structure of the input, and the second including only the substructure.</p>
 <p>Let&#39;s define a type class:</p>
-<pre class="{.haskell}"><code>newtype Rec f = Rec { runRec :: f (Rec f) }
+<pre class="{.text}"><code>newtype Rec f = Rec { runRec :: f (Rec f) }
 
 class Container f where
   data Context f :: * -&gt; *
@@ -34,31 +34,31 @@ class Container f where
 <p>The type <code>Rec f</code> is the usual type of recursive data structures of shape <code>f</code>. The <code>Container</code> class contains a few methods which deserve explanation.</p>
 <p>The associated data type <code>Context f</code> is the type of one-hole contexts of <code>f</code> [3]. The <code>children</code> function takes an input of type <code>f a</code> and returns an array of the contained <code>a</code>&#39;s along with their one-hole contexts. The <code>plugIn</code> method takes an <code>a</code> and a context, and plugs the <code>a</code> into the hole defined by context. Finally, the <code>childAt</code> function takes an input of type <code>f a</code> and a context, and returns the <code>a</code> in the input at that context.</p>
 <p>There are some fairly obvious laws which instances of the <code>Container</code> class should satisfy:</p>
-<pre><code>childAt (plugIn a c) c = a
+<pre class="{.text}"><code>childAt (plugIn a c) c = a
 plugIn (childAt a c) c = a
 (childAt a c) `elem` (children a)
 </code></pre>
 <p>Let&#39;s define the type of changes for structures of shape <code>f</code>:</p>
-<pre class="{.haskell}"><code>type Step f = Context f (Rec f)
+<pre class="{.text}"><code>type Step f = Context f (Rec f)
 
 data Change f = Skip (Step f) | Take (Step f) | Replace (Rec f) (Rec f)
 
 type Path f = [Change f]
 </code></pre>
 <p>and derive some instances:</p>
-<pre class="{.haskell}"><code>deriving instance (Eq (f (Rec f))) =&gt; Eq (Rec f)
+<pre class="{.text}"><code>deriving instance (Eq (f (Rec f))) =&gt; Eq (Rec f)
 
 deriving instance (Show (f (Rec f))) =&gt; Show (Rec f)
 
 deriving instance (Show (Context f (Rec f)), Show (Rec f)) =&gt; Show (Change f)
 </code></pre>
 <p>With that, let&#39;s define the generalization of <code>subsequences</code>:</p>
-<pre class="{.haskell}"><code>type InContext f = (Rec f, Path f)
+<pre class="{.text}"><code>type InContext f = (Rec f, Path f)
 
 substructures :: (Container f) =&gt; Rec f -&gt; [InContext f]
-substructures (Rec x) 
+substructures (Rec x)
   | null $ children x = [(Rec x, [])]
-  | otherwise = 
+  | otherwise =
     [ substructure
     | (x&#39;, ctx) &lt;- children x,
       (x&#39;&#39;, ctxs) &lt;- substructures x&#39;,
@@ -66,7 +66,7 @@ substructures (Rec x)
 </code></pre>
 <p>Here, the <code>plugIn</code> and <code>children</code> methods are used to generalize the inclusion/exclusion which took place when we calculated subsequences of a list.</p>
 <p>We can now easily find the largest common substructure, and therefore the difference of two structures.</p>
-<pre class="{.haskell}"><code>type ChangeSet f = (Path f, Path f)
+<pre class="{.text}"><code>type ChangeSet f = (Path f, Path f)
 
 common :: (Container f, Eq (Rec f)) =&gt; [InContext f] -&gt; [InContext f] -&gt; [ChangeSet f]
 common xs ys = [ (p1, p2) | (s1, p1) &lt;- xs, (s2, p2) &lt;- ys, s1 == s2 ]
@@ -87,7 +87,7 @@ diff old new = largest $ (common `on` substructures) old new
 </code></pre>
 <h2>Example 1 - Lists</h2>
 <p>Let&#39;s verify the code on the simple case of lists.</p>
-<pre class="{.haskell}"><code>data ListF a x = Nil | Cons a x deriving (Show, Eq)
+<pre class="{.text}"><code>data ListF a x = Nil | Cons a x deriving (Show, Eq)
 
 type List a = Rec (ListF a)
 
@@ -115,7 +115,7 @@ fromList = foldr cons nil
 <p>The result is as expected: from the first list we skip the first element and take the rest, and from the second list we skip the last element and take the rest.</p>
 <h2>Example 2 : Lambda Terms</h2>
 <p>Now here&#39;s a more exciting example - the type of untyped lambda terms:</p>
-<pre class="{.haskell}"><code>data ExprF x = App x x | Abst String x | Var String deriving (Show, Eq)
+<pre class="{.text}"><code>data ExprF x = App x x | Abst String x | Var String deriving (Show, Eq)
 
 type Expr a = Rec ExprF
 
@@ -148,15 +148,15 @@ s = abst &quot;x&quot; $ abst &quot;y&quot; $ abst &quot;z&quot; $ app (app (var
 </code></pre>
 <p>And again, we can test in GHCi:</p>
 <pre><code>diff s k
-&gt; ([Take (AbstContext &quot;x&quot;), Take (AbstContext &quot;y&quot;), 
-    Skip (AbstContext &quot;z&quot;), Skip (AppContext (Right (Rec {runRec = App (Rec { runRec = Var &quot;y&quot; }) ... }))), 
+&gt; ([Take (AbstContext &quot;x&quot;), Take (AbstContext &quot;y&quot;),
+    Skip (AbstContext &quot;z&quot;), Skip (AppContext (Right (Rec {runRec = App (Rec { runRec = Var &quot;y&quot; }) ... }))),
     Skip (AppContext (Right (Rec { runRec = Var &quot;z&quot; })))],
    [Take (AbstContext &quot;x&quot;), Take (AbstContext &quot;y&quot;)])
 </code></pre>
 <p>The diff algorithm has identified <code>k</code> as the largest common substructure, and the path through <code>s</code> which picks out this substructure discards the third abstraction over the variable <code>z</code> and the corresponding applications.</p>
 <h2>Applying Patches</h2>
 <p>We can also define a function <code>patch</code> which applies the result of <code>diff</code> to a structure:</p>
-<pre class="{.haskell}"><code>patch :: (Container f, Eq (Rec f)) =&gt; Rec f -&gt; ChangeSet f -&gt; Rec f
+<pre class="{.text}"><code>patch :: (Container f, Eq (Rec f)) =&gt; Rec f -&gt; ChangeSet f -&gt; Rec f
 patch old (inserts, deletes) = foldr wrap (unwrap old inserts) deletes where
   wrap (Skip _) x = x
   wrap (Take ctx) x = Rec $ plugIn x ctx
@@ -172,12 +172,12 @@ patch old (inserts, deletes) = foldr wrap (unwrap old inserts) deletes where
 <p>The function <code>diff</code> above does its job, but has exponential complexity in the size of its input, due to the need to generate all substructures.</p>
 <p>The key observation is that if two substructures are unequal, then two larger structures can never be equal, so we can prune large subtrees from the search tree by testing equality of contexts.</p>
 <p>Here is the optimized version of <code>diff</code>, which is observably much faster than the original:</p>
-<pre class="{.haskell}"><code>diff2 :: (Container f, Eq (Context f (Rec f))) =&gt; Rec f -&gt; Rec f -&gt; ChangeSet f
-diff2 old new 
+<pre class="{.text}"><code>diff2 :: (Container f, Eq (Context f (Rec f))) =&gt; Rec f -&gt; Rec f -&gt; ChangeSet f
+diff2 old new
   | null $ children $ runRec old = ([], [Replace old new])
   | null $ children $ runRec new = ([Replace old new], [])
   | otherwise = let matches = [ (x&#39;, y&#39;, ctx1)  
-                              | (x&#39;, ctx1) &lt;- children $ runRec old 
+                              | (x&#39;, ctx1) &lt;- children $ runRec old
                               , (y&#39;, ctx2) &lt;- children $ runRec new
                               , ctx1 == ctx2 ] in
                 if null matches then
@@ -186,15 +186,15 @@ diff2 old new
                             [ let (xs, ys) = diff2 old y&#39; in (xs, Skip ctx:ys)
                             | (y&#39;,ctx) &lt;- children $ runRec new ]
                 else
-                  largest [ let (xs, ys) = diff2 x&#39; y&#39; in (Take ctx:xs, Take ctx:ys) 
+                  largest [ let (xs, ys) = diff2 x&#39; y&#39; in (Take ctx:xs, Take ctx:ys)
                           | (x&#39;, y&#39;, ctx) &lt;- matches ]
 </code></pre>
 <p>Notice that the new constraints only require equality of contexts, not of structures.</p>
 <p>Compare this implementation with the dynamic programming implementation of the longest common subsequence on lists:</p>
-<pre class="{.haskell}"><code>diffList :: (Eq a) =&gt; [a] -&gt; [a] -&gt; [a]
+<pre class="{.text}"><code>diffList :: (Eq a) =&gt; [a] -&gt; [a] -&gt; [a]
 diffList [] new = []
 diffList old [] = []
-diffList old@(x:xs) new@(y:ys) 
+diffList old@(x:xs) new@(y:ys)
   | x == y = (x:diffList xs ys)
   | otherwise = maximumBy (compare `on` length) [ diff old ys, diff xs new ]
 </code></pre>
@@ -209,4 +209,4 @@ diffList old@(x:xs) new@(y:ys)
 <li>Generic type-safe diff and patch for families of datatypes by Eelco Lempsick, 2009</li>
 <li>The Derivative of a Regular Type is its Type of One-Hole Contexts by Conor McBride</li>
 </ol>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

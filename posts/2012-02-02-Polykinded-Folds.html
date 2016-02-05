@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Fun With PolyKinds: Polykinded Folds</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Fun With PolyKinds: Polykinded Folds</h2><p><small>by Phil Freeman on 2012/02/02</small></p><p>In the following, I will write a polykinded version of the combinators <code>fold</code> and <code>unfold</code>, along with three examples: folds for regular datatypes (specialized to kind <code>*</code>), folds for nested datatypes (specialized to kind <code>* -&gt; *</code>), and folds for mutually recursive data types (specialized to the product kind <code>(*, *)</code>). The approach should generalise easily enough to things such as types indexed by another kind (e.g. by specializing to kind <code>Nat -&gt; *</code>, using the <code>DataKinds</code> extension), or higher order nested datatypes (e.g. by specializing to kind <code>(* -&gt; *) -&gt; (* -&gt; *)</code>).</p>
+<html><head><title>Functorial Blog - Fun With PolyKinds: Polykinded Folds</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Fun With PolyKinds: Polykinded Folds</h2><p><small>by Phil Freeman on 2012/02/02</small></p><p>In the following, I will write a polykinded version of the combinators <code>fold</code> and <code>unfold</code>, along with three examples: folds for regular datatypes (specialized to kind <code>*</code>), folds for nested datatypes (specialized to kind <code>* -&gt; *</code>), and folds for mutually recursive data types (specialized to the product kind <code>(*, *)</code>). The approach should generalise easily enough to things such as types indexed by another kind (e.g. by specializing to kind <code>Nat -&gt; *</code>, using the <code>DataKinds</code> extension), or higher order nested datatypes (e.g. by specializing to kind <code>(* -&gt; *) -&gt; (* -&gt; *)</code>).</p>
 <p>The following will compile in the new GHC 7.4.1 release. We require the following GHC extensions:</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE GADTs #-}
+<pre class="{.text}"><code>{-# LANGUAGE GADTs #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE DataKinds #-}
@@ -11,42 +11,42 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 </code></pre>
 <p>The basic <code>fold</code> and <code>unfold</code> combinators can be written as follows:</p>
-<pre class="{.haskell}"><code>-- fold phi = phi . fmap (fold phi) . out
+<pre class="{.text}"><code>-- fold phi = phi . fmap (fold phi) . out
 -- unfold psi = in . fmap (unfold psi) . psi
 </code></pre>
 <p>The idea now is to generalize these combinators by working over different categories. We can capture the basic operations in a category with a typeclass:</p>
-<pre class="{.haskell}"><code>class Category hom where
+<pre class="{.text}"><code>class Category hom where
   ident :: hom a a
   compose :: hom a b -&gt; hom b c -&gt; hom a c
 </code></pre>
 <p>A category has two operations: an identity morphism for every object, and for every two compatible morphisms, the composition of those morphisms.</p>
 <p>In earlier versions of GHC, the type hom would have been specialized to kind <code>* -&gt; * -&gt; *</code>, but with the new <code>PolyKinds</code> extension, hom is polykinded, and the <code>Category</code> typeclass can be instantiated to <code>k -&gt; k -&gt; *</code> for any kind <code>k</code>. This means that in addition to all of the Category instances that we could have written before, we can now write instances of <code>Category</code> for type constructors, type constructor constructors, etc.</p>
 <p>Here is the instance for the category Hask of Haskell types. Objects are Haskell types and morphisms are functions between types. The identity is the regular polymorphic identity function <code>id</code>, and composition is given by the (flipped) composition operator <code>(.)</code></p>
-<pre class="{.haskell}"><code>instance Category (-&gt;) where
+<pre class="{.text}"><code>instance Category (-&gt;) where
   ident = id
   compose = flip (.)
 </code></pre>
 <p>Another example is the category of type constructors and natural transformations. A natural transformation is defined as follows:</p>
-<pre class="{.haskell}"><code>newtype Nat f g = Nat { nu :: (forall a. f a -&gt; g a) } 
+<pre class="{.text}"><code>newtype Nat f g = Nat { nu :: (forall a. f a -&gt; g a) } 
 </code></pre>
 <p>Here is the Category instance for natural transformations. This time the type hom is inferred to have kind <code>(* -&gt; *) -&gt; (* -&gt; *) -&gt; *</code>. Identity and composition are both defined pointwise.</p>
-<pre class="{.haskell}"><code>instance Category (Nat :: (* -&gt; *) -&gt; (* -&gt; *) -&gt; *) where
+<pre class="{.text}"><code>instance Category (Nat :: (* -&gt; *) -&gt; (* -&gt; *) -&gt; *) where
   ident = Nat id
   compose f g = Nat (nu g . nu f)
 </code></pre>
 <p>Let&#39;s define a type class which will capture the idea of a fixed point in a category. This generalizes the idea of recursive types in <code>Hask</code>:</p>
-<pre class="{.haskell}"><code>class Rec hom f t where
+<pre class="{.text}"><code>class Rec hom f t where
   _in :: hom (f t) t
   out :: hom t (f t)
 </code></pre>
 <p>The class <code>Rec</code> defines two morphisms: <code>_in</code>, which is the constructor of the fixed point type <code>t</code>, and <code>out</code>, its destructor.</p>
 <p>The final piece is the definition of a higher order functor, which generalizes the typeclass <code>Functor</code>:</p>
-<pre class="{.haskell}"><code>class HFunctor hom f where
+<pre class="{.text}"><code>class HFunctor hom f where
   hmap :: hom a b -&gt; hom (f a) (f b)
 </code></pre>
 <p>Note the similarity with the type signature of the function <code>fmap :: (Functor f) =&gt; (a -&gt; b) -&gt; f a -&gt; f b</code>. Indeed, specializing hom to <code>(-&gt;)</code> in the definition of <code>HFunctor</code> gives back the type signature of <code>fmap</code>.</p>
 <p>Finally, we can define folds and unfolds in a category. The definitions are as before, but with explicit composition, constructors and destructors replaced with the equivalent type class methods, and <code>hmap</code> in place of <code>fmap</code>:</p>
-<pre class="{.haskell}"><code>fold :: (Category hom, HFunctor hom f, Rec hom f rec) =&gt; hom (f t) t -&gt; hom rec t
+<pre class="{.text}"><code>fold :: (Category hom, HFunctor hom f, Rec hom f rec) =&gt; hom (f t) t -&gt; hom rec t
 fold phi = compose out (compose (hmap (fold phi)) phi)
 
 unfold :: (Category hom, HFunctor hom f, Rec hom f rec) =&gt; hom t (f t) -&gt; hom t rec
@@ -55,24 +55,24 @@ unfold phi = compose phi (compose (hmap (unfold phi)) _in)
 <p>Now for some examples.</p>
 <h2>Example 1 - Folding Binary Leaf Trees</h2>
 <p>The first example is a regular recursive datatype of binary leaf trees. The functor <code>FTree</code> is the base functor of this recursive type:</p>
-<pre class="{.haskell}"><code>data FTree a b = FLeaf a | FBranch b b
+<pre class="{.text}"><code>data FTree a b = FLeaf a | FBranch b b
 
 data Tree a = Leaf a | Branch (Tree a) (Tree a)
 </code></pre>
 <p>An instance of <code>Rec</code> shows the relationship between the defining functor and the recursive type itself:</p>
-<pre class="{.haskell}"><code>instance Rec (-&gt;) (FTree a) (Tree a) where
+<pre class="{.text}"><code>instance Rec (-&gt;) (FTree a) (Tree a) where
   _in (FLeaf a) = Leaf a
   _in (FBranch a b) = Branch a b
   out (Leaf a) = FLeaf a
   out (Branch a b) = FBranch a b
 </code></pre>
 <p><code>FTree</code> is indeed a functor, so it is also a <code>HFunctor</code>:</p>
-<pre class="{.haskell}"><code>instance HFunctor (-&gt;) (FTree a) where
+<pre class="{.text}"><code>instance HFunctor (-&gt;) (FTree a) where
   hmap f (FLeaf a) = FLeaf a
   hmap f (FBranch a b) = FBranch (f a) (f b)
 </code></pre>
 <p>These instances are enough to define folds and unfolds for this type. The following fold calculates the depth of a tree:</p>
-<pre class="{.haskell}"><code>depth :: Tree a -&gt; Int
+<pre class="{.text}"><code>depth :: Tree a -&gt; Int
 depth = (fold :: (FTree a Int -&gt; Int) -&gt; Tree a -&gt; Int) phi where
   phi :: FTree a Int -&gt; Int
   phi (FLeaf a) = 1
@@ -81,12 +81,12 @@ depth = (fold :: (FTree a Int -&gt; Int) -&gt; Tree a -&gt; Int) phi where
 <h2>Example 2 - Folding Perfect Binary Leaf Trees</h2>
 <p>The second example is a fold for the nested (or non-regular) datatype of complete binary leaf trees.</p>
 <p>The higher order functor <code>FCTree</code> defines the type constructor <code>CTree</code> as its fixed point:</p>
-<pre class="{.haskell}"><code>data FCTree f a = FCLeaf a | FCBranch (f (a, a))
+<pre class="{.text}"><code>data FCTree f a = FCLeaf a | FCBranch (f (a, a))
 
 data CTree a = CLeaf a | CBranch (CTree (a, a))
 </code></pre>
 <p>Again, we define type class instances for HFunctor and Rec:</p>
-<pre class="{.haskell}"><code>instance HFunctor Nat FCTree where
+<pre class="{.text}"><code>instance HFunctor Nat FCTree where
   hmap (f :: Nat (f :: * -&gt; *) (g :: * -&gt; *)) = Nat ff where
     ff :: forall a. FCTree f a -&gt; FCTree g a
     ff (FCLeaf a) = FCLeaf a
@@ -101,10 +101,10 @@ instance Rec Nat FCTree CTree where
     outComplete(CBranch a) = FCBranch a
 </code></pre>
 <p>Morphisms between type constructors are natural transformations, so we need a type constructor to act as the target of the fold. For our purposes, a constant functor will do:</p>
-<pre class="{.haskell}"><code>data K a b = K a
+<pre class="{.text}"><code>data K a b = K a
 </code></pre>
 <p>And finally, the following fold calculates the depth of a complete binary leaf tree:</p>
-<pre class="{.haskell}"><code>cdepth :: CTree a -&gt; Int
+<pre class="{.text}"><code>cdepth :: CTree a -&gt; Int
 cdepth c = let (K d) = nu (fold (Nat phi)) c in d where
   phi :: FCTree (K Int) a -&gt; K Int a
   phi (FCLeaf a) = K 1
@@ -113,22 +113,22 @@ cdepth c = let (K d) = nu (fold (Nat phi)) c in d where
 <h2>Example 3 - Folding Even-Length Lists</h2>
 <p>The final example is a fold for the pair of mutually recursive datatype of lists of even and odd lengths. The fold will take a list of even length and produce a list of pairs.</p>
 <p>We cannot express type constructors in Haskell whose return kind is anything other than <code>*</code>, so we cheat a little and emulate the product kind using an arrow kind <code>Choice -&gt; *</code>, where <code>Choice</code> is a two point kind, lifted using the <code>DataKinds</code> extension:</p>
-<pre class="{.haskell}"><code>data Choice = Fst | Snd
+<pre class="{.text}"><code>data Choice = Fst | Snd
 </code></pre>
 <p>A morphism of pairs of types is just a pair of morphisms. For technical reasons, we represent this using a Church-style encoding, along with helper methods, as follows:</p>
-<pre class="{.haskell}"><code>newtype PHom h1 h2 p1 p2 = PHom { runPHom :: forall r. (h1 (p1 Fst) (p2 Fst) -&gt; h2 (p1 Snd) (p2 Snd) -&gt; r) -&gt; r }
+<pre class="{.text}"><code>newtype PHom h1 h2 p1 p2 = PHom { runPHom :: forall r. (h1 (p1 Fst) (p2 Fst) -&gt; h2 (p1 Snd) (p2 Snd) -&gt; r) -&gt; r }
 
 mkPHom f g = PHom (\h -&gt; h f g)
 fstPHom p = runPHom p (\f -&gt; \g -&gt; f)
 sndPHom p = runPHom p (\f -&gt; \g -&gt; g)
 </code></pre>
 <p>Now, <code>PHom</code> allows us to take two categories and form the product category:</p>
-<pre class="{.haskell}"><code>instance (Category h1, Category h2) =&gt; Category (PHom h1 h2) where
+<pre class="{.text}"><code>instance (Category h1, Category h2) =&gt; Category (PHom h1 h2) where
   ident = mkPHom ident ident
   compose p1 p2 = mkPHom (compose (fstPHom p1) (fstPHom p2)) (compose (sndPHom p1) (sndPHom p2))
 </code></pre>
 <p>We can define the types of lists of even and odd length as follows. Note that the kind annotation indicates the appearance of the kind <code>Choice -&gt; *</code>:</p>
-<pre class="{.haskell}"><code>data FAlt :: * -&gt; (Choice -&gt; *) -&gt; Choice -&gt; * where
+<pre class="{.text}"><code>data FAlt :: * -&gt; (Choice -&gt; *) -&gt; Choice -&gt; * where
   FZero :: FAlt a p Fst
   FSucc1 :: a -&gt; (p Snd) -&gt; FAlt a p Fst
   FSucc2 :: a -&gt; (p Fst) -&gt; FAlt a p Snd
@@ -139,7 +139,7 @@ data Alt :: * -&gt; Choice -&gt; * where
   Succ2 :: a -&gt; Alt a Fst -&gt; Alt a Snd
 </code></pre>
 <p>Again, we need to define instances of <code>Rec</code> and <code>HFunctor</code>:</p>
-<pre class="{.haskell}"><code>instance Rec (PHom (-&gt;) (-&gt;)) (FAlt a) (Alt a) where
+<pre class="{.text}"><code>instance Rec (PHom (-&gt;) (-&gt;)) (FAlt a) (Alt a) where
   _in = mkPHom f g where
     f FZero = Zero
     f (FSucc1 a b) = Succ1 a b
@@ -156,14 +156,14 @@ instance HFunctor (PHom (-&gt;) (-&gt;)) (FAlt a) where
     hg (FSucc2 a x) = FSucc2 a (fstPHom p x)
 </code></pre>
 <p>As before, we create a target type for our fold, and this time a type synonym as well:</p>
-<pre class="{.haskell}"><code>data K2 :: * -&gt; * -&gt; Choice -&gt; * where
+<pre class="{.text}"><code>data K2 :: * -&gt; * -&gt; Choice -&gt; * where
   K21 :: a -&gt; K2 a b Fst
   K22 :: b -&gt; K2 a b Snd
 
 type PairUpResult a = K2 [(a, a)] (a, [(a, a)])
 </code></pre>
 <p>At last, here is the fold <code>pairUp</code>, taking even length lists to lists of pairs:</p>
-<pre class="{.haskell}"><code>pairUp :: Alt a Fst -&gt; [(a, a)]
+<pre class="{.text}"><code>pairUp :: Alt a Fst -&gt; [(a, a)]
 pairUp xs = let (K21 xss) = (fstPHom (fold (mkPHom phi psi))) xs in xss where
   phi FZero = K21 []
   phi (FSucc1 x1 (K22 (x2, xss))) = K21 ((x1, x2):xss) 
@@ -171,4 +171,4 @@ pairUp xs = let (K21 xss) = (fstPHom (fold (mkPHom phi psi))) xs in xss where
 
 test = Succ1 0 $ Succ2 1 $ Succ1 2 $ Succ2 3 $ Succ1 4 $ Succ2 5 Zero
 </code></pre>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

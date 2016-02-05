@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Doubly-Recursive Functions, Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Doubly-Recursive Functions, Generically</h2><p><small>by Phil Freeman on 2012/02/12</small></p><p>Consider the following recursive function definitions. What do they have in common?</p>
-<pre class="{.haskell}"><code>-- equals 0 0 = True
+<html><head><title>Functorial Blog - Doubly-Recursive Functions, Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Doubly-Recursive Functions, Generically</h2><p><small>by Phil Freeman on 2012/02/12</small></p><p>Consider the following recursive function definitions. What do they have in common?</p>
+<pre class="{.text}"><code>-- equals 0 0 = True
 -- equals 0 n = False
 -- equals n 0 = False
 -- equals n m = equals (n - 1) (n - 2)
@@ -14,13 +14,13 @@
 -- elementAt _ _ = error &quot;Index out of bounds&quot;
 </code></pre>
 <p>Well, all three functions take two arguments, and each one is defined recursively. Just as we can define (cata/ana)morphisms for arbitrary base functors, we can unify these three functions under a single abstraction which works over a pair of functors.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE Rank2Types, DeriveFunctor #-}
+<pre class="{.text}"><code>{-# LANGUAGE Rank2Types, DeriveFunctor #-}
 </code></pre>
 <p>Let&#39;s define a fixed point type for an arbitrary functor f as follows:</p>
-<pre class="{.haskell}"><code>newtype Rec f = In { out :: f (Rec f) }
+<pre class="{.text}"><code>newtype Rec f = In { out :: f (Rec f) }
 </code></pre>
 <p>We can define folds and unfolds for a functor f in a uniform way as usual.</p>
-<pre class="{.haskell}"><code>fold phi = phi . fmap (fold phi) . out
+<pre class="{.text}"><code>fold phi = phi . fmap (fold phi) . out
 unfold psi = In . fmap (unfold psi) . psi
 </code></pre>
 <p>Now look at the definition of the function equals above. Consider the points where the function calls itself recursively. This happens only in the last case, where both sides contribute a smaller term. In general, we can only call a doubly recursive function recursively if we have two arguments to call the function with.</p>
@@ -29,7 +29,7 @@ unfold psi = In . fmap (unfold psi) . psi
 </code></pre>
 <p>Now, type <code>x</code> appears in <code>(f # g) x</code> in those places where there is an <code>a</code> contributed from <code>f</code>, and a <code>b</code> contributed from <code>g</code>.</p>
 <p>For example, if we define a base functor for the type of natural numbers:</p>
-<pre class="{.haskell}"><code>data Nat t = Zero | Succ t deriving (Show, Functor)
+<pre class="{.text}"><code>data Nat t = Zero | Succ t deriving (Show, Functor)
 </code></pre>
 <p>then we have</p>
 <pre><code>-- (Nat # Nat) t = exists a b. (a -&gt; b -&gt; x) (Nat a) (Nat b)
@@ -53,16 +53,16 @@ unfold psi = In . fmap (unfold psi) . psi
 </code></pre>
 <p>This is the type of algebra that we will use to fold a pair of structures in parallel.</p>
 <p>Finally, let&#39;s define the parallel fold function:</p>
-<pre class="{.haskell}"><code>parFold :: (forall a b. (a -&gt; b -&gt; x) -&gt; f a -&gt; g b -&gt; x) -&gt; Rec f -&gt; Rec g -&gt; x
+<pre class="{.text}"><code>parFold :: (forall a b. (a -&gt; b -&gt; x) -&gt; f a -&gt; g b -&gt; x) -&gt; Rec f -&gt; Rec g -&gt; x
 parFold phi x y = (phi $ parFold phi) (out x) (out y)
 </code></pre>
 <p>The definition is quite simple: we unwrap each of the arguments by one level, and combine them by using the algebra function, passing the fold itself to the algebra function, so that it may call the fold recursively for smaller arguments. This looks a lot like Mendler style recursion, but using two arguments in parallel.</p>
 <p>While we&#39;re at it, let&#39;s define a parallel unfold function, which is dual to the definition above:</p>
-<pre class="{.haskell}"><code>parUnfold :: (forall a b. (x -&gt; (a, b)) -&gt; x -&gt; (f a, g b)) -&gt; x -&gt; (Rec f, Rec g)
+<pre class="{.text}"><code>parUnfold :: (forall a b. (x -&gt; (a, b)) -&gt; x -&gt; (f a, g b)) -&gt; x -&gt; (Rec f, Rec g)
 parUnfold psi x = let (a, b) = (psi $ parUnfold psi) x in (In a, In b)
 </code></pre>
 <p>Now we can define the <code>equals</code> and <code>unify</code> functions above as instances of <code>parFold</code>:</p>
-<pre class="{.haskell}"><code>equals = parFold equals&#39; where
+<pre class="{.text}"><code>equals = parFold equals&#39; where
   equals&#39; _ Zero Zero = True
   equals&#39; _ Zero _ = False
   equals&#39; _ _ Zero = False
@@ -76,11 +76,11 @@ unify = parFold unify&#39; where
   unify&#39; _ _ _ = Nothing
 </code></pre>
 <p>The third example shows that the two recursive structures do not have to be defined over the same base functor:</p>
-<pre class="{.haskell}"><code>data List a t = Empty | Cons a t deriving (Show, Functor)
+<pre class="{.text}"><code>data List a t = Empty | Cons a t deriving (Show, Functor)
 
 elementAt = parFold elementAt&#39; where
   elementAt&#39; _ Zero (Cons a t) = Just a
   elementAt&#39; f (Succ n) (Cons a t) = f n t
   elementAt&#39; _ _ _ = Nothing
 </code></pre>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

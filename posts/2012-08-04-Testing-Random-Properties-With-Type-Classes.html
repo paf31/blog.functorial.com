@@ -1,12 +1,12 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Testing Random Properties With Type Classes</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Testing Random Properties With Type Classes</h2><p><small>by Phil Freeman on 2012/08/04</small></p><p>Consider this common technical interview question:</p>
+<html><head><title>Functorial Blog - Testing Random Properties With Type Classes</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Testing Random Properties With Type Classes</h2><p><small>by Phil Freeman on 2012/08/04</small></p><p>Consider this common technical interview question:</p>
 <blockquote>
 <p>Given a stream of bytes whose length is unknown, select a random byte from the stream using constant memory.</p>
 </blockquote>
 <p>I chose this example because it is a non-trivial example of a problem involving random number generation.</p>
 <p>One naive solution would be to store all of the bytes in a list in memory, waiting for the stream to close. This violates the last requirement of the problem though, which asks for a solution with constant memory utilization.</p>
 <p>Let&#39;s start by defining a <code>Stream</code> datatype so that we can encode the problem in terms of finding a function of the correct type:</p>
-<pre class="{.haskell}"><code>module Random where
+<pre class="{.text}"><code>module Random where
 
 import System.Random (Random, randomRIO)
 import Control.Monad.Identity (Identity, runIdentity)
@@ -31,10 +31,10 @@ fromList&#39; (x:xs) = (x, fromList xs)
 </code></pre>
 <p>Here, the monad <code>m</code> is used to represent the side effect of waiting for the next element in the <code>Stream</code>.</p>
 <p>With that, we might aim to find a function of the following type:</p>
-<pre class="{.haskell}"><code>select&#39; :: NonEmptyStream IO a -&gt; IO a
+<pre class="{.text}"><code>select&#39; :: NonEmptyStream IO a -&gt; IO a
 </code></pre>
 <p>After a bit of thought, one arrives at the following solution:</p>
-<pre class="{.haskell}"><code>select&#39; (a, s) = select&#39;&#39; (return a) 1 s where
+<pre class="{.text}"><code>select&#39; (a, s) = select&#39;&#39; (return a) 1 s where
   select&#39;&#39; :: IO a -&gt; Int -&gt; Stream IO a -&gt; IO a
   select&#39;&#39; a n s = do
     next &lt;- runStream s
@@ -55,19 +55,19 @@ fromList&#39; (x:xs) = (x, fromList xs)
 <p>The problem is that the function <code>select&#39;</code> works in the IO monad, and is inherently non-deterministic. We could replace the use of <code>randomRIO</code> with a deterministic random function using a seed value, but then we would not be able to guarantee full coverage of the code. How many random samples would it take to gain confidence that your function indeed performs as expected?</p>
 <p>The trick is to replace the <code>IO</code> monad with some monad living in a suitable typeclass.</p>
 <p>Let&#39;s replace the call to <code>randomRIO</code> with a call to the new function <code>uniform</code>:</p>
-<pre class="{.haskell}"><code>class (Monad r) =&gt; MonadRandom r where
+<pre class="{.text}"><code>class (Monad r) =&gt; MonadRandom r where
   uniform :: (Int, Int) -&gt; r Int
 </code></pre>
 <p>The new typeclass <code>MonadRandom</code> has at least one inhabitant that we know of, which is <code>IO</code>:</p>
-<pre class="{.haskell}"><code>instance MonadRandom IO where
+<pre class="{.text}"><code>instance MonadRandom IO where
   uniform = randomRIO
 </code></pre>
 <p>Now instead of working with random values, let&#39;s identify the values with their probability distributions. This way, we do not lose any information by selecting a single value from the distribution.</p>
 <p>Introduce the type <code>Dist a</code>, of probability distributions with values in type <code>a</code>:</p>
-<pre class="{.haskell}"><code>newtype Dist a = Dist { runDist :: [(Rational, a)] } deriving (Show, Eq)
+<pre class="{.text}"><code>newtype Dist a = Dist { runDist :: [(Rational, a)] } deriving (Show, Eq)
 </code></pre>
 <p>I&#39;ve written about <code>Dist</code>&#39;s <code>Monad</code> instance before, when I wrote about LINQ to Probability Distributions in C#:</p>
-<pre class="{.haskell}"><code>instance Functor Dist where
+<pre class="{.text}"><code>instance Functor Dist where
   fmap f (Dist xs) = Dist $ fmap (\(p, x) -&gt; (p, f x)) xs
 
 instance Monad Dist where
@@ -78,16 +78,16 @@ instance Monad Dist where
     return $ (p * q, y)
 </code></pre>
 <p>The function <code>normalize</code> appearing the definition of <code>&gt;&gt;=</code> ensures that the probabilities in the distribution sum to 1:</p>
-<pre class="{.haskell}"><code>normalize :: Dist a -&gt; Dist a
+<pre class="{.text}"><code>normalize :: Dist a -&gt; Dist a
 normalize d = Dist $ fmap (\(p, a) -&gt; (p / total, a)) $ runDist d where
   total = sum $ map fst $ runDist d
 </code></pre>
 <p>In fact, <code>Dist</code> is also an instance of <code>MonadRandom</code>. The <code>uniform</code> function just returns a uniform distribution, as one would expect:</p>
-<pre class="{.haskell}"><code>instance MonadRandom Dist where
+<pre class="{.text}"><code>instance MonadRandom Dist where
   uniform (l, u) = Dist [ (1 % (toInteger $ u - l + 1), i) | i &lt;- [l..u] ]
 </code></pre>
 <p>We can now rewrite the function <code>select&#39;</code> in such a way that it works over an arbitrary monad in <code>MonadRandom</code>:</p>
-<pre class="{.haskell}"><code>select :: (Functor m, Monad m, Monad r, MonadRandom r) =&gt; NonEmptyStream m a -&gt; m (r a)
+<pre class="{.text}"><code>select :: (Functor m, Monad m, Monad r, MonadRandom r) =&gt; NonEmptyStream m a -&gt; m (r a)
 select (a, s) = select&#39; (return a) 1 s where
   select&#39; :: (Functor m, Monad m, Monad r, MonadRandom r) =&gt; r a -&gt; Int -&gt; Stream m a -&gt; m (r a)
   select&#39; r n s = do
@@ -106,7 +106,7 @@ select (a, s) = select&#39; (return a) 1 s where
 <p>However, now we can specialize <code>select</code> to the <code>Dist</code> monad for the purposes of testing our QuickCheck properties.</p>
 <p>The idea is that since <code>select</code> is universally quantified in the monad <code>r</code>, we cannot cheat and use any specific knowledge we have about <code>r</code> to make our tests pass. If a test passes for one instance of <code>MonadRandom</code>, then we would expect the test to pass for any sensible instance of <code>MonadRandom</code>.</p>
 <p>For example, let&#39;s write a property to check that selecting a random value from a <code>Stream</code> does not exclude any values:</p>
-<pre class="{.haskell}"><code>testAllValuesPresent :: (Eq a) =&gt; [a] -&gt; Bool
+<pre class="{.text}"><code>testAllValuesPresent :: (Eq a) =&gt; [a] -&gt; Bool
 testAllValuesPresent xs = 
   all (flip elem values) xs where
   values = map snd 
@@ -121,4 +121,4 @@ testAllValuesPresent xs =
 </code></pre>
 <p>Looks good. We could also write properties to verify that the choice is indeed uniform.</p>
 <p>So by replacing the specific monad <code>IO</code> and working in the typeclass <code>MonadRandom</code>, we&#39;ve recovered testability for our random functions.</p>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

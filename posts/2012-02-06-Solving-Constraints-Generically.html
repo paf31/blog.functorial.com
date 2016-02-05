@@ -1,14 +1,14 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Solving Constraints Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Solving Constraints Generically</h2><p><small>by Phil Freeman on 2012/02/06</small></p><p>In this post, I&#39;d like to revisit Algorithm W, which I discussed when I wrote about Purity&#39;s typechecker.</p>
+<html><head><title>Functorial Blog - Solving Constraints Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Solving Constraints Generically</h2><p><small>by Phil Freeman on 2012/02/06</small></p><p>In this post, I&#39;d like to revisit Algorithm W, which I discussed when I wrote about Purity&#39;s typechecker.</p>
 <p>Recalling the approach taken before, a term was typed by collecting constraints between unknown type variables by traversing the term in question, and then solving those constraints by substitution. This time I&#39;d like to generalize the second part of the algorithm, to solve constraints over any type functor by substitution.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE EmptyDataDecls #-}
+<pre class="{.text}"><code>{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleInstances #-}
 
 module Solver where
 </code></pre>
 <p>The free monad for a functor <code>f</code> describes &quot;incomplete <code>f</code>-trees&quot; with variables of type <code>a</code>, so it is not surprising that it appears in the type of our constraints:</p>
-<pre class="{.haskell}"><code>data Free f a = Return a | Wrap (f (Free f a))
+<pre class="{.text}"><code>data Free f a = Return a | Wrap (f (Free f a))
 
 instance (Functor f) =&gt; Monad (Free f) where
   return = Return
@@ -16,24 +16,24 @@ instance (Functor f) =&gt; Monad (Free f) where
   (Wrap xs) &gt;&gt;= f = Wrap (fmap (&gt;&gt;= f) xs)
 </code></pre>
 <p>Type variables are represented as integers:</p>
-<pre class="{.haskell}"><code>type Unknown = Int
+<pre class="{.text}"><code>type Unknown = Int
 </code></pre>
 <p>Then a constraint for a type functor <code>f</code> asserts equality between an unknown (identified by an integer) and an incomplete <code>f</code>-tree with variables in <code>Unknown</code>. It is represented as a pair:</p>
-<pre class="{.haskell}"><code>type Constraint f = (Unknown, Free f Unknown)
+<pre class="{.text}"><code>type Constraint f = (Unknown, Free f Unknown)
 </code></pre>
 <p>A solution set is just a mapping from unknowns to incomplete <code>f</code>-trees:</p>
-<pre class="{.haskell}"><code>type SolutionSet f = Unknown -&gt; Free f Unknown
+<pre class="{.text}"><code>type SolutionSet f = Unknown -&gt; Free f Unknown
 </code></pre>
 <p>A functor is <code>Unifiable</code> if it defines types which can be unified to give constraints. It is expected that unknowns unify with all terms. For simplicity, I have used <code>error</code> below to indicate the failure of terms to <code>unify</code>, but one could rewrite <code>unify</code> to give values in some monad supporting errors.</p>
-<pre class="{.haskell}"><code>class Unifiable f where
+<pre class="{.text}"><code>class Unifiable f where
   unify :: Free f Unknown -&gt; Free f Unknown -&gt; [Constraint f]
 </code></pre>
 <p>The method replace takes a variable, and a new term, and substitutes all instances of that variable for the term, using the bind operation of the free monad:</p>
-<pre class="{.haskell}"><code>replace :: (Functor f) =&gt; Unknown -&gt; Free f Unknown -&gt; Free f Unknown -&gt; Free f Unknown
+<pre class="{.text}"><code>replace :: (Functor f) =&gt; Unknown -&gt; Free f Unknown -&gt; Free f Unknown -&gt; Free f Unknown
 replace i x = flip (&gt;&gt;=) (\j -&gt; if i == j then x else Return j)
 </code></pre>
 <p><code>solve</code> takes a set of constraints and returns a solution set. It does so by repeatedly substituting the first constraint into the remaining constraints, and into the solution set, removing one unknown at a time. As it does so, it may be necessary to unify one or more types, generating further constraints. These are added to the queue of constraints still to be solved.</p>
-<pre class="{.haskell}"><code>solve :: (Functor f, Unifiable f) =&gt; [Constraint f] -&gt; SolutionSet f
+<pre class="{.text}"><code>solve :: (Functor f, Unifiable f) =&gt; [Constraint f] -&gt; SolutionSet f
 solve cs = solve&#39; cs Return where
   solve&#39; [] ss = ss
   solve&#39; (c:cs) ss = 
@@ -47,7 +47,7 @@ solve cs = solve&#39; cs Return where
   substSolutionSet (i, x) = (.) (replace i x)
 </code></pre>
 <p>Now for a small motivating example before moving onto gathering constraints. The following functor defines a single basic type of integers, and the type of arrows:</p>
-<pre class="{.haskell}"><code>data Type a = IntType | Arrow a a
+<pre class="{.text}"><code>data Type a = IntType | Arrow a a
 
 instance Show (Free Type Unknown) where
   show (Return i) = show i
@@ -55,12 +55,12 @@ instance Show (Free Type Unknown) where
   show (Wrap (Arrow a b)) = &quot;(&quot; ++ show a ++ &quot; -&quot; ++ show b ++ &quot;)&quot;
 </code></pre>
 <p>Type defines a functor:</p>
-<pre class="{.haskell}"><code>instance Functor Type where
+<pre class="{.text}"><code>instance Functor Type where
   fmap f IntType = IntType
   fmap f (Arrow t1 t2) = Arrow (f t1) (f t2)
 </code></pre>
 <p>And types can be unified:</p>
-<pre class="{.haskell}"><code>instance Unifiable Type where
+<pre class="{.text}"><code>instance Unifiable Type where
   unify (Return i) x = [(i, x)]
   unify x (Return i) = [(i, x)]
   unify (Wrap IntType) (Wrap IntType) = []
@@ -68,7 +68,7 @@ instance Show (Free Type Unknown) where
   unify _ _ = error &quot;Cannot unify&quot;
 </code></pre>
 <p>The following example corresponds to the constraints gathered by Algorithm W during the typing of the <code>S</code> combinator:</p>
-<pre class="{.haskell}"><code>example = [
+<pre class="{.text}"><code>example = [
   (0, Wrap (Arrow (Return 2) (Return 3))),
   (1, Wrap (Arrow (Return 2) (Return 4))),
   (3, Wrap (Arrow (Return 4) (Return 5))),
@@ -82,37 +82,37 @@ instance Show (Free Type Unknown) where
 <p>((2 -&gt; (4 -&gt; 5)) -&gt; ((2 -&gt; 4) -&gt; (2 -&gt; 5)))</p>
 </blockquote>
 <p>Now that we can solve constraints, let&#39;s write a method to determine constraints for the specific example of terms of the simply-typed lambda calculus. There are three types of terms: variables, applications and abstractions. To save passing around environments containing strings, we will represent the bound variables in a term using a type variable. Abstraction will introduce a new type variable, and parametricity will prevent us from creating any ill-defined terms:</p>
-<pre class="{.haskell}"><code>data Term a = Var a | App (Term a) (Term a) | Abs (forall b. b -&gt; Term (Either a b))
+<pre class="{.text}"><code>data Term a = Var a | App (Term a) (Term a) | Abs (forall b. b -&gt; Term (Either a b))
 </code></pre>
 <p>A closed term is a term with no variables, so we need a type with no inhabitants:</p>
-<pre class="{.haskell}"><code>data Void
+<pre class="{.text}"><code>data Void
 
 type Closed = Term Void
 </code></pre>
 <p>An environment is a mapping from variable names to type variables. The find method looks up a type variable in an environment:</p>
-<pre class="{.haskell}"><code>newtype Env a = Env { find :: a -&gt; Maybe Unknown }
+<pre class="{.text}"><code>newtype Env a = Env { find :: a -&gt; Maybe Unknown }
 </code></pre>
 <p>The only environment for closed terms is the empty environment:</p>
-<pre class="{.haskell}"><code>nil :: Env Void
+<pre class="{.text}"><code>nil :: Env Void
 nil = Env (\_ -&gt; undefined)
 </code></pre>
 <p>To add to an environment, we require a new addend in the type variable of the environment:</p>
-<pre class="{.haskell}"><code>add :: Env a -&gt; Unknown -&gt; Env (Either a b)
+<pre class="{.text}"><code>add :: Env a -&gt; Unknown -&gt; Env (Either a b)
 add e i = Env (either (find e) (const (Just i)))
 </code></pre>
 <p>During the constraint gathering process, we will need to generate names for unknowns. This state monad is used to generate unique type variable names during the constraint-gathering process:</p>
-<pre class="{.haskell}"><code>newtype Context a = Context { runContext :: Unknown -&gt; (a, Unknown) }
+<pre class="{.text}"><code>newtype Context a = Context { runContext :: Unknown -&gt; (a, Unknown) }
 
 instance Monad Context where
   return a = Context (\i -&gt; (a, i))
   f &gt;&gt;= g = Context (\i -&gt; let (a, j) = runContext f i in runContext (g a) j)
 </code></pre>
 <p>And this action generates a new name:</p>
-<pre class="{.haskell}"><code>next :: Context Unknown
+<pre class="{.text}"><code>next :: Context Unknown
 next = Context (\i -&gt; (i, i + 1))
 </code></pre>
 <p>Now that we have all of the required pieces, we can implement generateConstraints, which takes a term and generates a set of constraints. We can use the method above to solve for the types of all subterms. The method works by assigning names to all subterms in a bottom-up fashion, and adding constraints between those names where necessary.</p>
-<pre class="{.haskell}"><code>generateConstraints :: Closed -&gt; [Constraint Type]
+<pre class="{.text}"><code>generateConstraints :: Closed -&gt; [Constraint Type]
 generateConstraints t = let ((cs, _), _) = runContext (generateConstraints&#39; nil t) 0 in cs where
   generateConstraints&#39; :: Env a -&gt; Term a -&gt; Context ([Constraint Type], Unknown)
   generateConstraints&#39; env (Var a) = do
@@ -133,7 +133,7 @@ generateConstraints t = let ((cs, _), _) = runContext (generateConstraints&#39; 
     return ((newConstraint:cs), thisName)
 </code></pre>
 <p>Finally, here are some more examples, the <code>S</code> and <code>K</code> combinators:</p>
-<pre class="{.haskell}"><code>s = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (App (Var $ Left $ Left $ Right $ x) (Var $ Right $ z)) (App (Var $ Left $ Right $ y) (Var $ Right $ z)))))
+<pre class="{.text}"><code>s = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (App (Var $ Left $ Left $ Right $ x) (Var $ Right $ z)) (App (Var $ Left $ Right $ y) (Var $ Right $ z)))))
 
 k = Abs (\x -&gt; Abs (\y -&gt; Var $ Left $ Right $ x))
 </code></pre>
@@ -144,4 +144,4 @@ k = Abs (\x -&gt; Abs (\y -&gt; Var $ Left $ Right $ x))
 <p>ghci&gt; solve (generateConstraints k) 3</p>
 <p>(0 -&gt; (1 -&gt; 0))</p>
 </blockquote>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

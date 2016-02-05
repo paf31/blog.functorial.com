@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Abstraction Elimination For Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Abstraction Elimination For Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/21</small></p><p>Last time, I wrote a little bit about encoding linear lambda terms in Haskell using promoted datatypes to represent the set of variables appearing in a term. This time I&#39;d like to look at an algorithm for abstraction elimination for linear lambda terms.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators, FlexibleInstances #-
+<html><head><title>Functorial Blog - Abstraction Elimination For Linear Lambda Terms</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Abstraction Elimination For Linear Lambda Terms</h2><p><small>by Phil Freeman on 2012/02/21</small></p><p>Last time, I wrote a little bit about encoding linear lambda terms in Haskell using promoted datatypes to represent the set of variables appearing in a term. This time I&#39;d like to look at an algorithm for abstraction elimination for linear lambda terms.</p>
+<pre class="{.text}"><code>{-# LANGUAGE RankNTypes, DataKinds, GADTs, TypeOperators, FlexibleInstances #-
 
 module Elim where
 </code></pre>
@@ -16,13 +16,13 @@ module Elim where
 -- (t1 -&gt; t2 -&gt; t) -&gt; t2 -&gt; t1 -&gt; t
 </code></pre>
 <p>Let&#39;s recall the code from last time. I defined a type of context splittings, used to divide up the variables in an application into two subsets:</p>
-<pre class="{.haskell}"><code>data Splitting v1 v2 s where
+<pre class="{.text}"><code>data Splitting v1 v2 s where
   E :: Splitting &#39;[] &#39;[] &#39;[]
   L :: Splitting xs ys s -Splitting (x &#39;: xs) ys (x &#39;: s)
   R :: Splitting xs ys s -Splitting xs (y &#39;: ys) (y &#39;: s)
 </code></pre>
 <p>I then defined the following type of linear terms, and a few inhabitants:</p>
-<pre class="{.haskell}"><code>data Lin vars where
+<pre class="{.text}"><code>data Lin vars where
   Var :: v -Lin (v &#39;: &#39;[])
   App :: Splitting vs ws s -Lin vs -Lin ws -Lin s
   Abs :: (forall v. v -Lin (v &#39;: vars)) -Lin vars
@@ -35,7 +35,7 @@ c = Abs (\x -&gt; Abs (\y -&gt; Abs (\z -&gt; App (L $ R $ L $ E) (App (R $ L $ 
 </code></pre>
 <p>Now, we will show that these three terms form a basis for all linear terms. That is, these three terms, along with applications, are enough to express all linear lambda terms.</p>
 <p>We seek a function from the type <code>Lin</code> to trees which only mention applications and the three terms <code>B</code>, <code>C</code> and <code>I</code>. Let&#39;s define an extended version of the type <code>Lin</code>, which adds three constructors for the three combinators:</p>
-<pre class="{.haskell}"><code>data Lin&#39; vars where
+<pre class="{.text}"><code>data Lin&#39; vars where
   B :: Lin&#39; &#39;[]
   C :: Lin&#39; &#39;[]
   I :: Lin&#39; &#39;[]
@@ -55,18 +55,18 @@ instance Show (Lin&#39; &#39;[]) where
 </code></pre>
 <p>We can pass in a name for the variable <code>v</code> and get back another expression. Parametricity forces the name of all instances of the variable <code>v</code> in this expression to be equal to the value we passed in to the polymorphic function, so we can look for that value, and replace it with the <code>I</code> combinator recursively.</p>
 <p>We need a supply of unique variable names:</p>
-<pre class="{.haskell}"><code>newtype VarSupply a = VarSupply { runSupply :: Int -&gt; (a, Int) }
+<pre class="{.text}"><code>newtype VarSupply a = VarSupply { runSupply :: Int -&gt; (a, Int) }
 
 instance Monad VarSupply where
   return a = VarSupply (\i -&gt; (a, i))
   f &gt;&gt;= g = VarSupply (\i -&gt; let (a, j) = runSupply f i in runSupply (g a) j)
 </code></pre>
 <p>This action generates a new variable name:</p>
-<pre class="{.haskell}"><code>nextVar :: VarSupply Int
+<pre class="{.text}"><code>nextVar :: VarSupply Int
 nextVar = VarSupply (\i -&gt; (i, i + 1))
 </code></pre>
 <p>The final piece before we can implement the elimination function is a helper function used to create context splittings. This function creates trivial splittings with all variables on the right. These will be used to construct applications of the combinators <code>B</code> and <code>C</code>, which mention no variables at all (and so all variables in the application must occur in the right hand subexpression):</p>
-<pre class="{.haskell}"><code>trivial :: Lin&#39; vars -&gt; Splitting &#39;[] vars vars
+<pre class="{.text}"><code>trivial :: Lin&#39; vars -&gt; Splitting &#39;[] vars vars
 trivial (Var&#39; _) = R $ E
 trivial (App&#39; s t1 t2) = trivial&#39; s where
   trivial&#39; :: Splitting v1 v2 s -&gt; Splitting &#39;[] s s
@@ -79,17 +79,17 @@ trivial C = E
 trivial I = E
 </code></pre>
 <p>Now we can define the elimination function:</p>
-<pre class="{.haskell}"><code>elim :: Lin vars -&gt; Lin&#39; vars
+<pre class="{.text}"><code>elim :: Lin vars -&gt; Lin&#39; vars
 elim t = fst $ runSupply (elim&#39; $ inj t) 0 where
 </code></pre>
 <p>The helper function <code>inj</code> injects values in the type <code>Lin</code> into the type <code>Lin&#39;</code>:</p>
-<pre class="{.haskell}"><code>  inj :: Lin vars -Lin&#39; vars
+<pre class="{.text}"><code>  inj :: Lin vars -Lin&#39; vars
   inj (Var v) = Var&#39; v
   inj (App s t1 t2) = App&#39; s (inj t1) (inj t2)
   inj (Abs f) = Abs&#39; (\v -inj $ f v)
 </code></pre>
 <p>The <code>elim</code> method uses a helper method <code>elim&#39;</code> which runs in the <code>VarSupply</code> monad to generate new variable names. Every time an abstraction is found, a new variable name is generated, used to create a subexpression, and then eliminated from the subexpression.</p>
-<pre class="{.haskell}"><code>  elim&#39; :: Lin&#39; vars -&gt; VarSupply (Lin&#39; vars)
+<pre class="{.text}"><code>  elim&#39; :: Lin&#39; vars -&gt; VarSupply (Lin&#39; vars)
   elim&#39; (App&#39; s t1 t2) = do
     t1&#39; &lt;- elim&#39; t1
     t2&#39; &lt;- elim&#39; t2
@@ -100,13 +100,13 @@ elim t = fst $ runSupply (elim&#39; $ inj t) 0 where
   elim&#39; x = return $ x
 </code></pre>
 <p>The key function is <code>elim&#39;&#39;</code> which eliminates a specific variable from a subexpression. Again, <code>elim&#39;&#39;</code> runs in the <code>VarSupply</code> monad.</p>
-<pre class="{.haskell}"><code>  elim&#39;&#39; :: Int -&gt; Lin&#39; (Int &#39;: vars) -&gt; VarSupply (Lin&#39; vars)
+<pre class="{.text}"><code>  elim&#39;&#39; :: Int -&gt; Lin&#39; (Int &#39;: vars) -&gt; VarSupply (Lin&#39; vars)
 </code></pre>
 <p>A variable can be eliminated using the <code>I</code> combinator. Note that it is not necessary to check that names are equal here, because linearity means that if we were to encounter a different variable here, we would have taken a different path at an application further up the expression tree.</p>
-<pre class="{.haskell}"><code>  elim&#39;&#39; name (Var&#39; _) = return I
+<pre class="{.text}"><code>  elim&#39;&#39; name (Var&#39; _) = return I
 </code></pre>
 <p>In the case of an application, our choices are limited by the types of the subexpression. The splitting context tells us how to proceed. If the eliminated variable occurs on the left of the application, we use the combinator <code>C</code>. If it occurs on the right, we use the combinator <code>B</code>. In either case, we only need to eliminate the variable recursively on one side of the application:</p>
-<pre class="{.haskell}"><code>  elim&#39;&#39; name (App&#39; (L s) t1 t2) = do
+<pre class="{.text}"><code>  elim&#39;&#39; name (App&#39; (L s) t1 t2) = do
     t1&#39; &lt;- elim&#39;&#39; name t1
     return $ App&#39; s (App&#39; (trivial t1&#39;) C t1&#39;) t2
   elim&#39;&#39; name (App&#39; (R s) t1 t2) = do
@@ -114,7 +114,7 @@ elim t = fst $ runSupply (elim&#39; $ inj t) 0 where
     return $ App&#39; s (App&#39; (trivial t1) B t1) t2&#39;
 </code></pre>
 <p>In the case of a nested abstraction, we generate a new variable name, and then eliminate both variables in turn:</p>
-<pre class="{.haskell}"><code>  elim&#39;&#39; name (Abs&#39; f) = do
+<pre class="{.text}"><code>  elim&#39;&#39; name (Abs&#39; f) = do
     name&#39; &lt;- nextVar
     tmp &lt;- elim&#39;&#39; name (f name)
     elim&#39;&#39; name&#39; tmp
@@ -136,4 +136,4 @@ elim t = fst $ runSupply (elim&#39; $ inj t) 0 where
 -- ghci&gt; :t ((c&#39; ((b&#39; b&#39;) ((b&#39; c&#39;) ((c&#39; ((b&#39; b&#39;) id)) id)))) id)
 -- (t2 -&gt; t1 -&gt; t) -&gt; t1 -&gt; t2 -&gt; t
 </code></pre>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

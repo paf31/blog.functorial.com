@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Teaching Haskell To Juggle</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>Teaching Haskell To Juggle</h2><p><small>by Phil Freeman on 2013/05/25</small></p><p><link rel="stylesheet" href="../assets/juggling.css" type="text/css"></link></p>
+<html><head><title>Functorial Blog - Teaching Haskell To Juggle</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Teaching Haskell To Juggle</h2><p><small>by Phil Freeman on 2013/05/25</small></p><p><link rel="stylesheet" href="../assets/juggling.css" type="text/css"></link></p>
 <p><script src="../assets/jquery.min.js" type="text/javascript"></script></p>
 <p><script src="../assets/juggling.min.js" type="text/javascript"></script></p>
 <p>While recently learning some new juggling tricks, I decided to write a few Haskell functions to find valid patterns.</p>
@@ -17,7 +17,7 @@
 <p>The nodes of the graph will need to contain enough data to answer whether or not a ball is scheduled to land <code>n</code> beats in the future for all <code>n &lt; N</code> for some <code>N</code>. We could therefore take the type of states to be a list of booleans of length <code>N</code>. However, it is more conventional to pack these booleans as bits into a single integer and to refer to states by this integer, so we will take the type of states to be a (newtype-wrapped) integer. The number of bits is equal to the maximum height to which a ball will be thrown.</p>
 <p>For example, the 3-ball cascade stays in state 7 = 2^0^ + 2^1^ + 2^2^ = 111~2~. On each beat <code>n</code>, a ball is scheduled to land on beats <code>n</code>, <code>n+1</code>, and <code>n+2</code>. Throwing a ball to height 3 will schedule a ball to land on beat <code>n+3</code>.</p>
 <p>We will represent heights, patterns and states as follows:</p>
-<pre class="{.haskell}"><code>import Data.Bits
+<pre class="{.text}"><code>import Data.Bits
 import Data.Maybe
 import Data.List
 import Control.Monad
@@ -31,7 +31,7 @@ newtype State = State { state :: Int } deriving (Show, Eq, Ord)
 </code></pre>
 <p>We can transition to a new state by throwing a ball to a given height. If the first bit of the state is zero, then there is no ball scheduled to land, hence nothing available to throw, and the only valid throw is a fake throw to &quot;height&quot; 0. If the first bit is a one, then we can throw to any height <code>h</code> such that the bit at position <code>h + 1</code> is a zero.</p>
 <p>A valid throw is indicated by a return value constructed using <code>Just</code>. An invalid throw returns <code>Nothing</code>.</p>
-<pre class="{.haskell}"><code>
+<pre class="{.text}"><code>
 throw :: Height -&gt; State -&gt; Maybe State
 throw (Height 0) (State s) | (s .&amp;. 1) == 0 = 
   Just $ State $ s `shiftR` 1
@@ -40,15 +40,15 @@ throw (Height h) (State s) | h &gt; 0 &amp;&amp; ((1 `shift` h) .&amp;. s) == 0 
 throw _ _ = Nothing
 </code></pre>
 <p>We can also use <code>foldM</code> to attemt to throw a pattern. The return value will be <code>Nothing</code> if any throw was invalid.</p>
-<pre class="{.haskell}"><code>throwMany :: Pattern -&gt; State -&gt; Maybe State
+<pre class="{.text}"><code>throwMany :: Pattern -&gt; State -&gt; Maybe State
 throwMany p s0 = foldM (flip throw) s0 (pattern p)
 </code></pre>
 <p>To find valid patterns, we need to find cycles in the graph of states and throws.</p>
 <p>A graph can be represented by a list of vertices together with a list of edges:</p>
-<pre class="{.haskell}"><code>type Graph v e = ([v], [(v, v, e)])
+<pre class="{.text}"><code>type Graph v e = ([v], [(v, v, e)])
 </code></pre>
 <p>Cycles are just paths whose start and end vertices coincide. We can find paths by choosing a start vertex and performing a depth first traversal of the graph, keeping track of the vertices we have already visited:</p>
-<pre class="{.haskell}"><code>paths :: (Eq v) =&gt; Graph v e -&gt; [(v, v, [e])]
+<pre class="{.text}"><code>paths :: (Eq v) =&gt; Graph v e -&gt; [(v, v, [e])]
 paths (vs, es) = 
   [ (v1, v2, p) 
   | v1 &lt;- vs
@@ -62,7 +62,7 @@ paths (vs, es) =
     , (v3, p) &lt;- paths&#39; v2 es (v1:visited) ]
 </code></pre>
 <p>Cycles are then given by filtering the list of paths:</p>
-<pre class="{.haskell}"><code>cycles :: (Eq v) =&gt; Graph v e -&gt; [(v, [e])]
+<pre class="{.text}"><code>cycles :: (Eq v) =&gt; Graph v e -&gt; [(v, [e])]
 cycles (vs, es) = [ (v1, p ++ [e]) 
                   | (v1, v2, p) &lt;- paths (vs, es)
                   , not $ null p
@@ -72,13 +72,13 @@ cycles (vs, es) = [ (v1, p ++ [e])
 </code></pre>
 <p>In order to generate the graph of states and throws, we need to fix a maximum height and a number of balls to throw.</p>
 <p>The number of 1 bits in a state represents the number of balls in the air:</p>
-<pre class="{.haskell}"><code>countBits :: Int -&gt; Int
+<pre class="{.text}"><code>countBits :: Int -&gt; Int
 countBits 0 = 0
 countBits 1 = 1
 countBits n = let (d, r) = n `divMod` 2 in countBits d + countBits r
 </code></pre>
 <p>The function <code>throw</code> is the transition function which can be used to tell whether or not a throw corresponds to an edge in the graph. Here is a function which generically constructs a graph from such a function:</p>
-<pre class="{.haskell}"><code>generateGraph :: (Eq v) =&gt; (e -&gt; v -&gt; Maybe v) -&gt; [v] -&gt; [e] -&gt; Graph v e
+<pre class="{.text}"><code>generateGraph :: (Eq v) =&gt; (e -&gt; v -&gt; Maybe v) -&gt; [v] -&gt; [e] -&gt; Graph v e
 generateGraph transition vs es =
   let edges = [ (v1, v2, e) 
               | v1 &lt;- vs 
@@ -87,14 +87,14 @@ generateGraph transition vs es =
               , transition e v1 == Just v2] in (vs, edges)
 </code></pre>
 <p>We can now construct the state transition graph for a number of balls with a maximum throw height by using <code>generateGraph</code> with <code>throw</code>. We can use <code>countBits</code> to construct the set of states given the maximum height <code>maxHeight</code>.</p>
-<pre class="{.haskell}"><code>graph :: Height -&gt; Int -&gt; Graph State Height
+<pre class="{.text}"><code>graph :: Height -&gt; Int -&gt; Graph State Height
 graph (Height maxHeight) numBalls = 
   let maxState  = (1 `shiftL` maxHeight) - 1
       states    = map State $ filter ((== numBalls) . countBits) [0..maxState] in
   generateGraph throw states (map Height [0..maxHeight])
 </code></pre>
 <p>Enumerating valid patterns for a number of balls with a maximum throw height is as simple as finding cycles in this graph:</p>
-<pre class="{.haskell}"><code>validPatterns :: Height -&gt; Int -&gt; [(State, [Height])]
+<pre class="{.text}"><code>validPatterns :: Height -&gt; Int -&gt; [(State, [Height])]
 validPatterns maxHeight numBalls = cycles $ graph maxHeight numBalls
 </code></pre>
 <p>For example, we can find all 3-ball patterns with a maximum height of 4, along with their initial states, as follows:</p>
@@ -103,7 +103,7 @@ validPatterns maxHeight numBalls = cycles $ graph maxHeight numBalls
 </code></pre>
 <p>Finally, we can answer this question from earlier in the post: what is the complete list of valid n-ball tricks which can be inserted into a n-ball cascade?</p>
 <p>A trick can be inserted into the n-ball cascade whenever its initial and final states equal the steady state 2^n^-1 of the n-ball cascade.</p>
-<pre class="{.haskell}"><code>tricks :: Height -&gt; Int -&gt; [[Height]]
+<pre class="{.text}"><code>tricks :: Height -&gt; Int -&gt; [[Height]]
 tricks maxHeight numBalls = 
   map snd 
   $ filter ((== (State (2^numBalls - 1))) . fst) 
@@ -116,7 +116,7 @@ tricks maxHeight numBalls =
 <h2>Addendum: Juggling Animator in Elm</h2>
 <p>I originally wrote this juggling animator in Haskell using the HOpenGL library for rendering, and later ported the code to Elm.</p>
 <p>First, we need to define some constants, including the pattern to throw:</p>
-<pre class="{.haskell}"><code>-- The fraction of time spent holding the ball in the hand
+<pre class="{.text}"><code>-- The fraction of time spent holding the ball in the hand
 pauseTime = 0.35
  
 -- The number of milliseconds per beat
@@ -129,13 +129,13 @@ handMovement = 0.2
 pattern = [5]
 </code></pre>
 <p>A key function is <code>rotatePattern</code>, which is used to rotate a list of heights by a number of steps. This is used to shift a pattern after a throw occurs, or to adjust a pattern for each ball being juggled.</p>
-<pre class="{.haskell}"><code>rotatePattern : Int -&gt; [a] -&gt; [a]
+<pre class="{.text}"><code>rotatePattern : Int -&gt; [a] -&gt; [a]
 rotatePattern n xs =
   if | n &lt; length xs -&gt; drop n xs ++ take n xs
      | otherwise     -&gt; rotatePattern (n - length xs) xs
 </code></pre>
 <p>Given the current time (in units of beats), we can calculate the height of the current throw, and the coordinates of the current ball by repeatedly rotating the pattern:</p>
-<pre class="{.haskell}"><code>heightAtTime : [Int] -&gt; Float -&gt; Int
+<pre class="{.text}"><code>heightAtTime : [Int] -&gt; Float -&gt; Int
 heightAtTime hs t =
   let h = head hs in
   if | t &lt; toFloat h     -&gt; h
@@ -158,14 +158,14 @@ yAtTime hs t  =
      | otherwise     -&gt; yAtTime (rotatePattern h hs) (t - toFloat h)
 </code></pre>
 <p>The <code>x</code>-coordinate needs to be clipped to the range <code>0-1</code>. Reflections occur at integer values of <code>x</code>, since the <code>x</code> coordinate represents the total displacement along the <code>x</code>-axis.</p>
-<pre class="{.haskell}"><code>clip : Float -&gt; Float
+<pre class="{.text}"><code>clip : Float -&gt; Float
 clip x =
   if | x &gt; 1     -&gt; 1 - clip (x - 1)
      | x &lt; 0     -&gt; clip (0 - x)
      | otherwise -&gt; x
 </code></pre>
 <p>We can now compute the position of each ball. I have hard-coded the width and height of the canvas to 300 pixels here, but these could be provided as parameters.</p>
-<pre class="{.haskell}"><code>project : Float -&gt; Float -&gt; Int -&gt; Int -&gt; (Float, Float)
+<pre class="{.text}"><code>project : Float -&gt; Float -&gt; Int -&gt; Int -&gt; (Float, Float)
 project x y h maxHeight = 
   let
     xProj = 280.0 * x - 140.0
@@ -184,7 +184,7 @@ positionOfBallAt heights maxHeight time index =
     project cx y (h - 1) maxHeight
 </code></pre>
 <p><code>positionOfBallAt</code> gives the position of the ball, and <code>circle</code> is used to render it. The <code>frame</code> function renders each ball as a circle at its current position:</p>
-<pre class="{.haskell}"><code>frameFor : [Int] -&gt; Int -&gt; Int -&gt; Int -&gt; Int -&gt; Form
+<pre class="{.text}"><code>frameFor : [Int] -&gt; Int -&gt; Int -&gt; Int -&gt; Int -&gt; Form
 frameFor heights timePeriod maxHeight millis index =
   let 
     startMillis     = index * timePerThrow
@@ -204,7 +204,7 @@ frame heights millis =
     [0 .. period - 1] |&gt; List.map (frameFor heights timePeriod maxHeight millis) |&gt; collage 300 300 
 </code></pre>
 <p><code>main</code> simply invokes <code>frame</code> to render the current scene once every millisecond (or as fast as possible):</p>
-<pre class="{.haskell}"><code>main : Signal Element
+<pre class="{.text}"><code>main : Signal Element
 main = lift (frame pattern . round) (every millisecond)
 </code></pre>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

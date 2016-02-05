@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - What Makes the Free Monad Free?</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300|Roboto:400,700|Roboto+Condensed:400,700"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div id="container"><h1 class="text-center">Functorial Blog</h1><p class="lead text-center">A blog about functional programming</p><p class="text-center"><a href="../index.html">Home</a></p></div><section class="dark"><div class="container"><h2>What Makes the Free Monad Free?</h2><p><small>by Phil Freeman on 2012/07/22</small></p><p>I&#39;d like to give an explanation of the word &#39;free&#39; in &#39;free monad&#39;. When we speak of free objects (free groups, free monoids), what we are really doing is asserting the existence of an adjoint functor for a forgetful functor. Therefore, we expect that the construction of free monads should be adjoint to some functor.</p>
+<html><head><title>Functorial Blog - What Makes the Free Monad Free?</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><link rel="stylesheet" type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/styles/default.min.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.7/highlight.min.js"></script><script type="text/javascript">hljs.initHighlightingOnLoad();</script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>What Makes the Free Monad Free?</h2><p><small>by Phil Freeman on 2012/07/22</small></p><p>I&#39;d like to give an explanation of the word &#39;free&#39; in &#39;free monad&#39;. When we speak of free objects (free groups, free monoids), what we are really doing is asserting the existence of an adjoint functor for a forgetful functor. Therefore, we expect that the construction of free monads should be adjoint to some functor.</p>
 <p>Let&#39;s recap the definition of a free monad.</p>
-<pre class="{.haskell}"><code>{-# LANGUAGE Rank2Types #-}
+<pre class="{.text}"><code>{-# LANGUAGE Rank2Types #-}
 
 import Control.Monad (join)
 
@@ -9,7 +9,7 @@ data Free f a = Return a | Bind (f (Free f a))
 </code></pre>
 <p>The free monad for a functor <code>f</code> is given by the fixed point of the bifunctor <code>X -&gt; A -&gt; F (X + A)</code> where the fixed point is taken over <code>X</code>.</p>
 <p>Thus, the free monad describes structures whose pattern of recursion looks like <code>f</code>, but where whole substructures can be replaced with a leaf of type <code>A</code>. The free monad defines a functor in <code>A</code>, and a monad, for any functor <code>f</code>:</p>
-<pre class="{.haskell}"><code>instance (Functor f) =&gt; Functor (Free f) where
+<pre class="{.text}"><code>instance (Functor f) =&gt; Functor (Free f) where
   fmap f (Return x) = Return (f x)
   fmap f (Bind xs) = Bind (fmap (fmap f) xs)
 
@@ -19,19 +19,19 @@ instance (Functor f) =&gt; Monad (Free f) where
   (Bind xs) &gt;&gt;= f = Bind $ fmap (&gt;&gt;= f) xs
 </code></pre>
 <p>As a mapping from functors to monads, <code>Free</code> is also a functor, from the category of endofunctors to the category of monads and monad morphisms. A monad morphism is just a natural transformation which commutes with the return and bind operations.</p>
-<pre class="{.haskell}"><code>mapFree :: (Functor f, Functor g) =&gt; (forall a. f a -&gt; g a) -&gt; Free f a -&gt; Free g a
+<pre class="{.text}"><code>mapFree :: (Functor f, Functor g) =&gt; (forall a. f a -&gt; g a) -&gt; Free f a -&gt; Free g a
 mapFree f (Return x) = Return x
 mapFree f (Bind xs) = Bind $ f $ fmap (mapFree f) xs
 </code></pre>
 <p>Now we can show that this functor from endofunctors to monads is actually left adjoint to the forgetful functor which takes a monad and forgets the monadic structure.</p>
 <p>We need to give a natural equivalence between hom-sets <code>Free f ~&gt; m</code> in the category of monads and monad morphisms, and <code>f -&gt; Forget m</code> in the category of endofunctors.</p>
 <p>That is, we need to define mappings with the following signatures:</p>
-<pre class="{.haskell}"><code>leftAdjunct :: (Functor f, Monad m) =&gt; (forall a. f a -&gt; m a) -&gt; Free f a -&gt; m a
+<pre class="{.text}"><code>leftAdjunct :: (Functor f, Monad m) =&gt; (forall a. f a -&gt; m a) -&gt; Free f a -&gt; m a
 rightAdjunct :: (Functor f, Monad m) =&gt; (forall a. Free f a -&gt; m a) -&gt; f a -&gt; m a
 </code></pre>
 <p>And then show that these are inverses.</p>
 <p>Let&#39;s define these functions by following the types:</p>
-<pre class="{.haskell}"><code>leftAdjunct _ (Return x) = return x
+<pre class="{.text}"><code>leftAdjunct _ (Return x) = return x
 leftAdjunct phi (Bind xs) = join $ phi $ fmap (leftAdjunct phi) xs
 
 rightAdjunct psi = psi . Bind . (fmap Return)
@@ -58,4 +58,4 @@ rightAdjunct psi = psi . Bind . (fmap Return)
 </code></pre>
 <p>so <code>leftAdjunct (rightAdjunct f)</code> is equal to <code>f</code> and <code>Free</code> is indeed left adjoint to the forgetful functor to <code>Endo C</code>.</p>
 <p>The case of cofree comonads is very similar: one can show that the construction of a cofree comonad over a functor <code>f</code> gives a functor from <code>Endo C</code> to comonads and comonad morphisms which is right adjoint to the forgetful functor to <code>Endo C</code>.</p>
-</div></section><div class="container"><p class="text-center text-muted"><small>Copyright Phil Freeman 2010-2015</small></p></div></body></html>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>
