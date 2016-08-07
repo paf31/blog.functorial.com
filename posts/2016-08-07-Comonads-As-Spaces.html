@@ -26,7 +26,7 @@ cocurry (a, bc) ab = bc (ab a)
 uncurry :: Pairing ((-&gt;) a) ((,) a)
 cocurry :: Pairing ((,) a) ((-&gt;) a)
 </code></pre>
-<p>Edward Kmett <a href="http://comonad.com/reader/2008/the-cofree-comonad-and-the-expression-problem/">has written about pairings before</a>, and his <code>adjunctions</code> library contains the <a href="http://hackage.haskell.org/package/adjunctions-0.6.0/docs/Data-Functor-Zap.html">relevant code</a>. There is also a PureScript implementation](<a href="https://pursuit.purescript.org/packages/purescript-pairing/1.4.0/docs/Data.Functor.Pairing">https://pursuit.purescript.org/packages/purescript-pairing/1.4.0/docs/Data.Functor.Pairing</a>) available.</p>
+<p>Edward Kmett <a href="http://comonad.com/reader/2008/the-cofree-comonad-and-the-expression-problem/">has written about pairings before</a>, and his <code>adjunctions</code> library contains the <a href="http://hackage.haskell.org/package/adjunctions-0.6.0/docs/Data-Functor-Zap.html">relevant code</a>. There is also a <a href="https://pursuit.purescript.org/packages/purescript-pairing/1.4.0/docs/Data.Functor.Pairing">PureScript implementation</a> available.</p>
 <h3>Examples of Pairings</h3>
 <p>There are plenty of examples of pairings between functors.</p>
 <p>The <code>Identity</code> functor pairs with itself.</p>
