@@ -1,0 +1,158 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Comonads as Spaces</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Comonads as Spaces</h2><p><small>by Phil Freeman on 2016/08/07</small></p><p>I feel like I&#39;ve had a good intuition for monads for some time, but I&#39;ve struggled to really get
+a handle on comonads until recently. I&#39;d like to present an application of comonads which I think
+provides a helpful intuition, and then interpret several comonads in that setting.</p>
+<h3>Introduction</h3>
+<p>In PureScript, we have several user interface libraries. They are all slightly different, but have
+some things in common. Many of them are based on underlying libraries like React and virtual-dom,
+and the approach always boils down to maintaining some component state, and updating that state in response to user actions. The libraries tend to differ in how that state is presented to the
+developer - some libraries present a very low-level API (e.g. <code>purescript-react</code>), while others
+provide a more restricted API (e.g. Thermite, Halogen). I would like to show one way in which these different approaches can be unified.</p>
+<h3>Functors and Pairings</h3>
+<p>Before we talk about comonads, I&#39;d like to give an overview of <em>functor pairings</em>.</p>
+<p>Consider the <code>uncurry</code> function:</p>
+<pre class="haskell"><code>uncurry :: (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+uncurry f (a, b) = f a b
+</code></pre>
+<p>We can think of this function as a relationship between the <code>(-&gt;) a</code> and <code>(,) a</code> functors, where
+one functor wraps a function type, the other functor wraps a value in the domain of that function type, and the two structures annihilate each other to produce a value in the codomain.</p>
+<p>The two functors are still related when we switch their roles:</p>
+<pre class="haskell"><code>cocurry :: (a, b -&gt; c) -&gt; (a -&gt; b) -&gt; c
+cocurry (a, bc) ab = bc (ab a)
+</code></pre>
+<p>We can generalize this to a <em>pairing</em> between two functors as follows:</p>
+<pre class="haskell"><code>type Pairing f g = forall a b. f (a -&gt; b) -&gt; g b -&gt; c
+
+uncurry :: Pairing ((-&gt;) a) ((,) a)
+cocurry :: Pairing ((,) a) ((-&gt;) a)
+</code></pre>
+<p>Edward Kmett <a href="http://comonad.com/reader/2008/the-cofree-comonad-and-the-expression-problem/">has written about pairings before</a>, and his <code>adjunctions</code> library contains the <a href="http://hackage.haskell.org/package/adjunctions-0.6.0/docs/Data-Functor-Zap.html">relevant code</a>. There is also a PureScript implementation](<a href="https://pursuit.purescript.org/packages/purescript-pairing/1.4.0/docs/Data.Functor.Pairing">https://pursuit.purescript.org/packages/purescript-pairing/1.4.0/docs/Data.Functor.Pairing</a>) available.</p>
+<h3>Examples of Pairings</h3>
+<p>There are plenty of examples of pairings between functors.</p>
+<p>The <code>Identity</code> functor pairs with itself.</p>
+<p><code>Coproduct f1 g1</code> pairs with <code>Product f2 g2</code> whenever <code>f1</code> pairs with <code>f2</code>, and <code>g1</code> pairs with <code>g2</code>:</p>
+<pre class="haskell"><code>data Product f g a = Product (f a) (g a)
+
+data Coproduct f g a = Inl (f a) | Inr (g a)
+
+pair :: Pairing f1 f2
+     -&gt; Pairing g1 g2
+     -&gt; Pairing (Product f1 g1) (Coproduct f2 g2)
+pair f _ (Product f1 _ ) (Inl f2) = f f1 f2
+pair _ g (Product _  g1) (Inr g2) = g g1 g2
+
+pair&#39; :: Pairing f1 f2
+      -&gt; Pairing g1 g2
+      -&gt; Pairing (Coproduct f1 g1) (Product f2 g2)
+pair&#39; f _ (Inl f1) (Product f2 _ ) = f f1 f2
+pair&#39; _ g (Inr g2) (Product _  g2) = g g1 g2
+</code></pre>
+<p>Compositions of functors pair whenever the corresponding components pair (from now on, I&#39;ll omit the implementations):</p>
+<pre class="haskell"><code>data Compose f g a = Compose (f (g a))
+
+pair :: Pairing f1 f2
+     -&gt; Pairing g1 g2
+     -&gt; Pairing (Compose f1 g1) (Compose f2 g2)
+</code></pre>
+<h3>Pairings of Monads and Comonads</h3>
+<p>Plenty of monads and comonads provide interesting examples of pairings:</p>
+<ul>
+<li>The <code>State s</code> monad pairs with the <code>Store s</code> comonad. In fact, <code>StateT s m</code> pairs with <code>StoreT s w</code> whenever <code>m</code> pairs with <code>m</code>.</li>
+<li><code>WriterT a m</code> pairs with <code>TracedT a w</code> whenever <code>m</code> pairs with <code>w</code>.</li>
+<li><code>ReaderT r m</code> pairs with <code>EnvT r w</code> whenever <code>m</code> pairs with <code>w</code>.</li>
+<li><code>Free f</code> pairs with <code>Cofree g</code> whenever <code>f</code> pairs with <code>g</code>.</li>
+</ul>
+<h3>Monads from Comonads</h3>
+<p>Edward Kmett has written a <a href="http://comonad.com/reader/2011/monads-from-comonads/">series of blog posts</a> about generating a monad (and in fact, a <a href="http://comonad.com/reader/2011/monad-transformers-from-comonads/">monad transformer</a>) from every comonad.</p>
+<p>The first blog post describes the following type:</p>
+<pre class="haskell"><code>newtype Co w a = Co { runCo :: forall r. w (a -&gt; r) -&gt; r }
+</code></pre>
+<p>and shows that <code>Co w</code> is a <code>Monad</code> whenever <code>w</code> is a <code>Comonad</code>.</p>
+<p>Another way of looking at this type is that <code>Co</code> is way of constructing a functor which pairs with any functor <code>f</code>, since <code>Co f</code> pairs with <code>f</code>:</p>
+<pre class="haskell"><code>pairCo :: Pairing f (Co f)
+pairCo f cof = cof f
+</code></pre>
+<p>(the opposite pairing is left as an exercise)</p>
+<h3>Comonads as Spaces</h3>
+<p>I would like to think of comonads as describing <em>spaces</em> of possible states of an application. When we come to use comonads to describe user interfaces, I will use a comonadic value to store all possible (lazily-evaluated) future states of my components.</p>
+<p>Actually, the right intuition is that of a <em>pointed space</em>, since we will always have a notion of the &quot;current position&quot;. We can get the state at the current position using <code>extract</code>.</p>
+<p>Let&#39;s see some examples:</p>
+<ul>
+<li><code>Store s</code> explicitly stores a current position of type <code>s</code>, and provides a function of type <code>s -&gt; a</code> to extract the value at any position.</li>
+<li><code>Traced w</code> uses a monoidal type <code>w</code> to describe positions. The default position is <code>mempty</code>, and a function of type <code>w -&gt; a</code> is provided to extract the value at any position.</li>
+<li><code>Env e</code> only contains a single position, which is the default position, but also packages up a read-only state of type <code>e</code>.</li>
+<li><code>Zipper</code> is a comonad, and it provides a value for every position in some list.</li>
+<li><code>Cofree f</code> defines a tree where the branching is determined by the functor <code>f</code>. An example is the type of <code>Moore</code> machines, isomorphic to <code>Cofree ((-&gt;) a)</code>. We can think of <code>Moore a</code> as defining a space with a value for every finite list of past inputs.</li>
+</ul>
+<h3>Exploring Comonads with Pairings</h3>
+<p>A pairing between a comonad <code>w</code> and a monad <code>m</code> gives a way to explore the data in a comonadic value. We can think of this as moving around in the space described by the comonad.</p>
+<p>We would like the actions of <code>m</code> to describe movements which we can use to modify a comonadic value of type <code>m a</code>.</p>
+<p>To implement this, we use the <code>extend</code> function from the <code>Comonad</code> class to extend the pairing function to every comonadic subcontext:</p>
+<pre class="haskell"><code>moving :: Comonad w =&gt; Pairing m w -&gt; m (a -&gt; b) -&gt; w a -&gt; w b
+moving pair m w = extend (pair m)
+
+move :: (Comonad w, Functor m) =&gt; Pairing m w -&gt; m () -&gt; w a -&gt; w a
+move pair m = moving pair (m $&gt; id)
+</code></pre>
+<p>Let&#39;s see some examples.</p>
+<p>The <code>Store s</code> comonad pairs with <code>State s</code>, so we can use <code>get</code> and <code>put</code> to read and write the current state in the store, effectively reading and updating the current position:</p>
+<pre class="haskell"><code>moveStore :: State s () -&gt; Store s a -&gt; Store s a
+</code></pre>
+<p>The <code>Traced w</code> comonad pairs with <code>Writer w</code>, so we can use <code>tell</code> to update the monoidal position, by <code>mappend</code>ing an update to the current position.</p>
+<p><code>Env e</code> pairs with <code>Reader e</code>, so we can&#39;t update the position, but we can read it using <code>ask</code>.</p>
+<p>We can use <code>Free g</code> to move around in <code>Cofree f</code>, whenever <code>g</code> pairs with <code>f</code>. For example, we can move in <code>Moore a</code> by using <code>Free ((,) a)</code>, since <code>((,) a)</code> pairs with <code>((-&gt;) a)</code>. The actions of <code>Free ((,) a)</code> consist of sequences of emitted values of type <code>a</code>, which will be fed as inputs to the Moore machine.</p>
+<p>It&#39;s not obvious what monad to use to explore <code>Zipper</code>, but fortunately we don&#39;t need to decide. The <code>Co Zipper</code> monad pairs with <code>Zipper</code>, so we just need to find some actions in that monad! For example, we can write actions to move left and right:</p>
+<pre class="haskell"><code>data Zipper a = Zipper [a] a [a]
+
+instance Comonad Zipper
+
+left :: Co Zipper ()
+left = Co $ \(Zipper (f : _) _ _) -&gt; f ()
+
+right :: Co Zipper ()
+right = Co $ \(Zipper _ _ (f : _)) -&gt; f ()
+</code></pre>
+<p>To see why this is correct, consider <code>extend</code>ing these functions over an entire zipper. The effect will be that every element moves one unit to the left or right.</p>
+<h3>Comonad Transformers</h3>
+<p>We can compose spaces by using comonad transformers instead of the basic comonads listed above.</p>
+<p>The corresponding monad transformers will combine to provide a monad which allows us to move around in any component of our comonad transformer stack.</p>
+<p>Alternatively, <code>Co</code> comes equipped with instances for <code>MonadReader</code>, <code>MonadWriter</code> and <code>MonadState</code>, whenever the underlying comonad provides instances for <code>ComonadEnv</code>, <code>ComonadTraced</code> and <code>ComonadStore</code> respectively. So, the lazy option is to simply apply <code>Co</code> to the entire comonad transformer stack, and use the <code>mtl</code> instances to lift the actions on the component comonads in the appropriate way!</p>
+<h3>User Interfaces from Comonads</h3>
+<p>Now, let&#39;s see how these ideas can be applied to help us understand the problem of user interface design.</p>
+<p>I said that I would like to think of a comonad as modeling all possible future states of our application. In each state, we will need a representation of the user interface to render. We can represent this abstractly using a type constructor <code>UI</code>:</p>
+<pre class="haskell"><code>data UI action
+</code></pre>
+<p>The type argument <code>action</code> here denotes the type of user actions that we would like to support.</p>
+<p>Well, user actions should result in movement to a new application state, so we should choose our actions from some monad which pairs with our comonad.</p>
+<p>So, our components will be described by a comonad and a monad, and a pairing between them:</p>
+<pre class="haskell"><code>type Component w m = w (UI (m ()))
+</code></pre>
+<p>That is, a space of possible states, each one of which describes a user interface, which embeds actions which can be used to explore the space of states.</p>
+<p>We can make this go by pairing extending each monadic action over the entire current comonadic state. The main function will look something like this:</p>
+<pre class="haskell"><code>explore :: forall w m
+         . Comonad w
+        =&gt; Pairing m w
+        -&gt; w (UI (m ()))
+        -&gt; IO ()
+</code></pre>
+<h3>UI Paradigms, Unified</h3>
+<p>I have <a href="https://gist.github.com/paf31/e123ec82b33eea4458e50206326e883e">implemented this in PureScript</a> using React to wire up user actions and states.</p>
+<p>However, I&#39;m not interested in the implementation right now, so much as applying the general idea to different comonads.</p>
+<p>If we apply this construction to the <code>Store s</code> comonad, then we get a model very close to pure React components: we have a type <code>s</code> of states, which we can read and write in user actions using <code>State s</code>.</p>
+<p>The <code>Traced w</code> comonad gives a nice model for <a href="https://en.wikipedia.org/wiki/Incremental_game">incremental games</a>, in which the state increases in some monoid (like a click count). We can append to the state using <code>tell</code>.</p>
+<p>The <code>Moore a</code> comonad defines a type of <em>actions</em>, and components can emit actions in response to user events. Actions act by updating the current state, but the developer only has access to the actions defined by the type <code>a</code>. This is quite similar to the approach taken in libraries like Redux, or the Elm architecture.</p>
+<p>The <code>Zipper</code> comonad provides a model for breadcrumb components, pagination controls, or undo/redo.</p>
+<p>The <code>Cofree</code> comonad provides a general model for components which define some typed query interface using a functor. User actions can be combined using the corresponding free monad. However, compared to the action-driven model defined by <code>Moore a</code>, the <code>Cofree</code> model allows queries to have <em>typed</em> responses. This means that components can provide limited access to their internal state. This is very close to the approach taken in the Halogen library in PureScript.</p>
+<p>Comonad transformers provide a way to combine components which use different models. The corresponding monad transformers combine in such a way that we are able to move around in each subcomponent independently in response to user actions.</p>
+<h3>Comonad Morphisms</h3>
+<p>Comonad morphisms demonstrate when one model subsumes another. For example:</p>
+<ul>
+<li><code>Traced w</code> can be interpreted in <code>Store w</code>, much like we can model <code>Writer w</code> using the <code>State w</code> monad. This means that incremental games are a special case of pure React components.</li>
+<li><code>Moore a</code> can be interpreted in <code>Traced [a]</code> (exercise for the reader). This means that action-driven user interfaces are a special case of the incremental model, and in turn pure React components.</li>
+<li><code>Cofree f</code> can be interpreted in <code>w</code> whenever there is a natural transformation from <code>f</code> to <code>w</code>. This means that if we can interpret each action defined by <code>f</code> in the comonad <code>w</code>, then the model defined by <code>w</code> subsumes the model defined by <code>Cofree f</code>.</li>
+</ul>
+<p>So, many models are equivalent in the sense that one might be able to interpret one in terms of another. The benefit of having many models is that we can restrict the API by choosing an appropriate comonad.</p>
+<h3>Conclusion</h3>
+<p>The approach can probably be extended to support real-world applications. For example, there is currently no support for external input or side effects in response to user actions. I&#39;m confident those features could be added.</p>
+<p>However, my hope is only that this approach can be used to help understanding both user interfaces and comonads. Hopefully, I&#39;ve provided some intuition for comonads as spaces of states, and shown that many approaches to user interfaces can be unified under this general approach.</p>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>
