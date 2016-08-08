@@ -57,18 +57,18 @@ pair :: Pairing f1 f2
 <h3>Pairings of Monads and Comonads</h3>
 <p>Plenty of monads and comonads provide interesting examples of pairings:</p>
 <ul>
-<li>The <code>State s</code> monad pairs with the <code>Store s</code> comonad. In fact, <code>StateT s m</code> pairs with <code>StoreT s w</code> whenever <code>m</code> pairs with <code>m</code>.</li>
+<li>The <code>State s</code> monad pairs with the <code>Store s</code> comonad. In fact, <code>StateT s m</code> pairs with <code>StoreT s w</code> whenever <code>m</code> pairs with <code>w</code>.</li>
 <li><code>WriterT a m</code> pairs with <code>TracedT a w</code> whenever <code>m</code> pairs with <code>w</code>.</li>
 <li><code>ReaderT r m</code> pairs with <code>EnvT r w</code> whenever <code>m</code> pairs with <code>w</code>.</li>
 <li><code>Free f</code> pairs with <code>Cofree g</code> whenever <code>f</code> pairs with <code>g</code>.</li>
 </ul>
 <h3>Monads from Comonads</h3>
-<p>Edward Kmett has written a <a href="http://comonad.com/reader/2011/monads-from-comonads/">series of blog posts</a> about generating a monad (and in fact, a <a href="http://comonad.com/reader/2011/monad-transformers-from-comonads/">monad transformer</a>) from every comonad.</p>
+<p>Edward Kmett has written a <a href="http://comonad.com/reader/2011/monads-from-comonads/">series of blog posts</a> about generating a monad (and in fact, a <a href="http://comonad.com/reader/2011/monad-transformers-from-comonads/">monad transformer</a>) from any comonad.</p>
 <p>The first blog post describes the following type:</p>
 <pre class="haskell"><code>newtype Co w a = Co { runCo :: forall r. w (a -&gt; r) -&gt; r }
 </code></pre>
 <p>and shows that <code>Co w</code> is a <code>Monad</code> whenever <code>w</code> is a <code>Comonad</code>.</p>
-<p>Another way of looking at this type is that <code>Co</code> is way of constructing a functor which pairs with any functor <code>f</code>, since <code>Co f</code> pairs with <code>f</code>:</p>
+<p>Another way of looking at this type is that <code>Co</code> is way of constructing a functor which pairs with any given functor <code>f</code>, since <code>Co f</code> pairs with <code>f</code>:</p>
 <pre class="haskell"><code>pairCo :: Pairing f (Co f)
 pairCo f cof = cof f
 </code></pre>
@@ -86,7 +86,7 @@ pairCo f cof = cof f
 </ul>
 <h3>Exploring Comonads with Pairings</h3>
 <p>A pairing between a comonad <code>w</code> and a monad <code>m</code> gives a way to explore the data in a comonadic value. We can think of this as moving around in the space described by the comonad.</p>
-<p>We would like the actions of <code>m</code> to describe movements which we can use to modify a comonadic value of type <code>m a</code>.</p>
+<p>We would like the actions of <code>m</code> to describe movements which we can use to modify a comonadic value of type <code>w a</code>.</p>
 <p>To implement this, we use the <code>extend</code> function from the <code>Comonad</code> class to extend the pairing function to every comonadic subcontext:</p>
 <pre class="haskell"><code>moving :: Comonad w =&gt; Pairing m w -&gt; m (a -&gt; b) -&gt; w a -&gt; w b
 moving pair m w = extend (pair m)
