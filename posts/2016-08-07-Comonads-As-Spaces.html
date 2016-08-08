@@ -21,7 +21,7 @@ one functor wraps a function type, the other functor wraps a value in the domain
 cocurry (a, bc) ab = bc (ab a)
 </code></pre>
 <p>We can generalize this to a <em>pairing</em> between two functors as follows:</p>
-<pre class="haskell"><code>type Pairing f g = forall a b. f (a -&gt; b) -&gt; g b -&gt; c
+<pre class="haskell"><code>type Pairing f g = forall a b. f (a -&gt; b) -&gt; g a -&gt; b
 
 uncurry :: Pairing ((-&gt;) a) ((,) a)
 cocurry :: Pairing ((,) a) ((-&gt;) a)
