@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Comonads and Day Convolution</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Comonads and Day Convolution</h2><p><small>by Phil Freeman on 2016/08/08</small></p><h3>Day Convolution</h3>
+<p>The <em>Day convolution</em> of two functors is another functor, defined as follows:</p>
+<pre class="haskell"><code>data Day f g a where
+  Day :: (x -&gt; y -&gt; a) -&gt; f x -&gt; g y -&gt; Day f g a
+</code></pre>
+<p>There is an implementation of <code>Day</code> in <a href="https://hackage.haskell.org/package/kan-extensions-5.0.1/docs/Data-Functor-Day.html">Edward Kmett&#39;s <code>kan-extensions</code> package</a> on Hackage.</p>
+<h3>Day Convolution of Comonads</h3>
+<p>While writing my <a href="2016-08-07-Comonads-As-Spaces.html">last post</a>, I was looking for a way to combine comonads, and found out some interesting things about Day convolution in the process.</p>
+<p>It turns out that there is a valid <code>Comonad</code> instance for <code>Day f g</code> whenever <code>f</code> and <code>g</code> are
+themselves <code>Comonad</code>s:</p>
+<pre class="haskell"><code>instance Functor (Day f g) where
+  fmap g (Day f x y) = Day (\a b -&gt; g (f a b)) x y
+
+instance (Comonad f, Comonad g) =&gt; Comonad (Day f g) where
+  extract (Day f x y) = f (extract x) (extract y)
+  duplicate (Day f x y) = Day (Day f) (duplicate x) (duplicate y)
+</code></pre>
+<p>That&#39;s interesting, but what&#39;s more interesting is that <code>Day f</code> is even a comonad transformer:</p>
+<pre class="haskell"><code>instance Comonad f =&gt; ComonadTrans (Day f) where
+  lower (Day f x y) = fmap (f (extract x)) y
+</code></pre>
+<p>So for every comonad, we have a (<a href="https://hackage.haskell.org/package/kan-extensions-5.0.1/docs/Data-Functor-Day.html#v:swapped">symmetric</a>) comonad transformer, for free!</p>
+<p>These instances are now available <a href="https://github.com/ekmett/kan-extensions/commit/c77c6ec2180ddbd1d1bf82c308ef4a36a6702255">in the <code>kan-extensions</code> package</a>.</p>
+<h3>A Free Theorem</h3>
+<p>In order to prove the comonad laws, we&#39;ll need to apply a certain free theorem.</p>
+<p>Consider how we might observe the state of a comonadic value of type <code>Day f g</code>. We would need a
+function <code>f</code> of type <code>Day f g a -&gt; r</code> for some result type <code>r</code>. Now, this is isomorphic to:</p>
+<pre class="haskell"><code>f :: Day f g a -&gt; r
+   ~ (exists x y. (x -&gt; y -&gt; a, f x, g y) -&gt; r
+   ~ forall x y. (x -&gt; y -&gt; a) -&gt; f x -&gt; g y -&gt; r
+</code></pre>
+<p>If we plug the type of <code>f</code> into the <a href="http://www-ps.iai.uni-bonn.de/cgi-bin/free-theorems-webui.cgi">online free theorem generator</a>, then we find out that its free theorem is (after some tidying):</p>
+<pre class="haskell"><code>f (\a b -&gt; g (f1 a) (f2 b)) x y = f g (fmap f1 x) (fmap f2 y)
+</code></pre>
+<p>This theorem tells us that we can either apply a function in one of the functorial structures <code>x</code> or <code>y</code>,
+or defer it until the extraction function <code>g</code>. We won&#39;t be able to observe the difference, so we
+should consider these two values to be equal:</p>
+<pre class="haskell"><code>Day (\a b -&gt; g (f1 a) (f2 b)) x y = Day g (fmap f1 x) (fmap f2 y)
+</code></pre>
+<p>This theorem will come in very useful soon.</p>
+<h3>Proving the Comonad Laws</h3>
+<p>The first comonad law states that</p>
+<pre class="haskell"><code>extract . duplicate = id
+</code></pre>
+<p>This one is simple to prove:</p>
+<pre class="haskell"><code>extract (duplicate (Day f x y))
+  = extract (Day (Day f) (duplicate x) (duplicate y))
+  = Day f (extract (duplicate x)) (extract (duplicate y))
+  = Day f x y
+</code></pre>
+<p>The second comonad law states that</p>
+<pre class="haskell"><code>fmap extract . duplicate = id
+</code></pre>
+<p>This is slightly trickier, relying on the free theorem above:</p>
+<pre class="haskell"><code>fmap extract (duplicate (Day f x y))
+  = fmap extract (Day (Day f) (duplicate x) (duplicate y))
+  = Day (\a b -&gt; extract (Day f a b)) (duplicate x) (duplicate y)
+  = Day (\a b -&gt; f (extract a) (extract b)) (duplicate x) (duplicate y)
+  = Day f (fmap extract (duplicate x)) (fmap extract (duplicate y))
+  = Day f x y
+</code></pre>
+<p>Notice how we use the free theorem in the fifth line, to move the <code>extract</code> from the first argument to the second and third arguments.</p>
+<p>The final law states that</p>
+<pre class="haskell"><code>fmap duplicate . duplicate = duplicate . duplicate
+</code></pre>
+<p>Again, we&#39;ll need the free theorem:</p>
+<pre class="haskell"><code>duplicate (duplicate (Day f x y))
+  = duplicate (Day (Day f) (duplicate x) (duplicate y))
+  = Day (Day (Day f)) (duplicate (duplicate x)) (duplicate (duplicate y))
+  = Day (Day (Day f)) (fmap duplicate (duplicate x)) (fmap duplicate (duplicate y))
+  = Day (\a b -&gt; duplicate (Day (Day f) a b)) (duplicate x) (duplicate y)
+  = fmap duplicate (Day (Day f) (duplicate x) (duplicate y))
+  = fmap duplicate (duplicate (Day f x y))
+</code></pre>
+<p>Success!</p>
+<p>Now let&#39;s check the two <code>ComonadTrans</code> laws. The first says that</p>
+<pre class="haskell"><code>extract . lower = extract
+</code></pre>
+<p>This one is straightforward:</p>
+<pre class="haskell"><code>extract (lower (Day f x y))
+= extract (fmap (f (extract x)) y)
+= f (extract x) (extract y)
+= extract (Day f x y)
+</code></pre>
+<p>The second <code>ComonadTrans</code> law states that</p>
+<pre class="haskell"><code>duplicate . lower = lower . fmap lower . duplicate
+</code></pre>
+<p>This one is a more involved application of the comonad laws of the base monad:</p>
+<pre class="haskell"><code>lower (fmap lower (duplicate (Day f x y)))
+  = lower (fmap lower (Day (Day f) (duplicate x) (duplicate y)))
+  = lower (Day (\a b -&gt; lower (Day f a b)) (duplicate x) (duplicate y))
+  = lower (Day (\a b -&gt; fmap (f (extract a)) b) (duplicate x) (duplicate y))
+  = fmap ((\a b -&gt; fmap (f (extract a)) b) (extract (duplicate x)) (duplicate y)
+  = fmap ((\a b -&gt; fmap (f (extract a)) b) x) (duplicate y)
+  = fmap (fmap (f (extract x))) (duplicate y)
+  = duplicate (fmap (f (extract x)) y)
+  = duplicate (lower (Day f x y))
+</code></pre>
+<p>That&#39;s it! <code>Day f</code> is a law-abiding comonad transformer for any <code>Comonad</code> <code>f</code>.</p>
+<h3>Comonad Optics</h3>
+<p>In fact, <code>Day</code> provides a <em>symmetric monoidal product</em> over the category of Haskell comonads. The unit of this product is the <code>Identity</code> functor.</p>
+<p><code>kan-extensions</code> defines the functions which provide this structure, but I won&#39;t cover the proof here.</p>
+<p>In <a href="https://www.youtube.com/watch?v=Bxcz23GOJqc">his video on monad transformer lenses</a>, Edward Kmett makes a case for generalized profunctor lenses whenever we have a monoidal category. In the case of monads, the monoidal product was <code>Compose</code>. However, <code>Compose</code> is not symmetric, so we needed to separate left lenses from right lenses. However, in the case of comonads, we can use <code>Day</code> as our monoidal product, and <code>Day</code> <em>is</em> symmetric, making things a little simpler.</p>
+<p>If we form the class of &quot;strong&quot; profunctors in the comonad category, we can derive a sensible notion of an optic which can focus on a component in a larger comonad which is isomorphic to a Day convolution of smaller comonads:</p>
+<pre class="haskell"><code>type (~&gt;) f g = forall a. f a -&gt; g a
+
+class Profunctor p where
+  dimap :: (f ~&gt; g)
+        -&gt; (h ~&gt; i)
+        -&gt; p i f
+        -&gt; p h g
+
+class Convoluted p where
+  convoluted :: (Comonad f, Comonad g, Comonad w)
+             =&gt; p f g
+             -&gt; p (Day f w) (Day g w)
+
+type Optic s t a b = Convoluted p =&gt; p a b -&gt; p s t
+</code></pre>
+<p>Now for the interesting part: it turns out that many standard comonad transformers are <em>already</em>
+isomorphic to <code>Day f</code> for some <code>f</code>, so we can use these optics to easily operate inside comonad transformer stacks.</p>
+<p>For example, consider <code>StoreT</code>:</p>
+<pre class="haskell"><code>data StoreT s w a = StoreT (s, w (s -&gt; a))
+</code></pre>
+<p>Now, it turns out this is isomorphic to <code>Day (Store s)</code> as follows:</p>
+<pre class="haskell"><code>Day (Store s) w a
+  ~ exists x y. (x -&gt; y -&gt; a, Store s x, w y)
+  ~ exists x y. (x -&gt; y -&gt; a, s, s -&gt; x, w y)
+  ~ exists y. (s, s -&gt; y -&gt; a, w y)
+  ~ exists y. (s, y -&gt; s -&gt; a, w y)
+  ~ (s, w (s -&gt; a))
+  ~ StoreT s w a
+</code></pre>
+<p>Similarly, for <code>EnvT</code>:</p>
+<pre class="haskell"><code>Day (Env e) w a
+  ~ exists x y. (x -&gt; y -&gt; a, Env e x, w y)
+  ~ exists x y. (x -&gt; y -&gt; a, e, x, w y)
+  ~ exists y. (y -&gt; a, e, w y)
+  ~ (e, w a)
+  ~ EnvT e w a
+</code></pre>
+<p>And <code>TracedT</code>:</p>
+<pre class="haskell"><code>Day (Traced m) w a
+  ~ exists x y. (x -&gt; y -&gt; a, Traced m x, w y)
+  ~ exists x y. (x -&gt; y -&gt; a, m -&gt; x, w y)
+  ~ exists y. (m -&gt; y -&gt; a, w y)
+  ~ w (m -&gt; a)
+  ~ TracedT m w a
+</code></pre>
+<p>So now we can write optics which focus on a <code>Store</code> inside a <code>StoreT</code>, or on the comonad transformed by <code>StoreT</code>, and similar optics for <code>EnvT</code> and <code>TracedT</code>.</p>
+<p>I have a <a href="https://github.com/paf31/purescript-functor-optics/blob/c3745a59588a80aae67a089c5e1215751b977ba6/src/Data/Functor/Optic.purs#L49-L80">sketch</a> of an implementation of these optics in PureScript.</p>
+<p>It&#39;s not entirely clear to me what we can do with these optics just yet, but it seems like it should at least be possible to <a href="https://github.com/paf31/purescript-comonad-ui/blob/a644d0d39c39c5c58a0f55804e956e133f237dec/src/Main.purs#L152-L156">lift actions for the corresponding monads</a> whenever we have a comonad optic which identifies one comonad as a Day convolution of a smaller comonad. I&#39;m hoping this can be useful when using <a href="2016-08-07-Comonads-As-Spaces.html">comonads to describe user interfaces</a>.</p>
+</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>

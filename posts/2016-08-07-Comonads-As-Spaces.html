@@ -70,7 +70,7 @@ pair :: Pairing f1 f2
 <p>and shows that <code>Co w</code> is a <code>Monad</code> whenever <code>w</code> is a <code>Comonad</code>.</p>
 <p>Another way of looking at this type is that <code>Co</code> is way of constructing a functor which pairs with any given functor <code>f</code>, since <code>Co f</code> pairs with <code>f</code>:</p>
 <pre class="haskell"><code>pairCo :: Pairing f (Co f)
-pairCo f cof = cof f
+pairCo f cof = runCo cof f
 </code></pre>
 <p>(the opposite pairing is left as an exercise)</p>
 <h3>Comonads as Spaces</h3>
