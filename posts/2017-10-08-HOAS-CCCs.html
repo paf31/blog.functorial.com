@@ -1,0 +1,232 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Higher-order Abstract Syntax for Cartesian Closed Categories</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Higher-order Abstract Syntax for Cartesian Closed Categories</h2><p><small>by Phil Freeman on 2017/10/08</small></p><h3>Higher-order Abstract Syntax</h3>
+<p>Higher-order abstract syntax allows us to create domain-specific languages which
+reuse the binding structure of the host language. For example, we can create an
+interface for a tiny typed lambda calculus by requiring term formers for applications
+and lambda abstractions:</p>
+<pre class="haskell"><code>class HOAS rep where
+  app :: rep (a -&gt; b) -&gt; rep a -&gt; rep b
+  lam :: (rep a -&gt; rep b) -&gt; rep (a -&gt; b)
+</code></pre>
+<p>Note that lambda abstractions are expressed using actual Haskell functions.</p>
+<p>We can write lambda terms which work with any choice of representation:</p>
+<pre class="haskell"><code>s :: HOAS rep =&gt; rep ((p -&gt; q -&gt; r) -&gt; (p -&gt; q) -&gt; p -&gt; r)
+s = lam $ \x -&gt; lam $ \y -&gt; lam $ \z -&gt; (x `app` z) `app` (y `app` z)
+</code></pre>
+<p>and we can choose concrete representations in order to interpret these terms.
+For example, we could interpret terms as regular Haskell functions by choosing
+the representation of a type <code>a</code> to be the type <code>a</code> itself:</p>
+<pre class="haskell"><code>newtype I a = I { getI :: a }
+
+instance HOAS I where
+  app (I f) (I a) = I (f a)
+  lam f = I (\a -&gt; let I b = f (I a) in b)
+</code></pre>
+<p>More interestingly, we could create an interpretation which generates code.
+For example, using the <code>pretty</code> package for layout, we might generate JavaScript
+as follows:</p>
+<pre class="haskell"><code>import Text.PrettyPrint
+
+newtype JS a = JS { codegen :: Int -&gt; Doc }
+
+instance HOAS JS where
+  app (JS f) (JS a) = JS $ \gensym -&gt;
+    (f gensym &lt;&gt; text &quot;(&quot; &lt;&gt; a gensym &lt;&gt; text &quot;)&quot;)
+  lam f = JS $ \gensym -&gt;
+    let name = &quot;v&quot; ++ show gensym
+        a = JS $ \_ -&gt; text name
+        b = f a
+    in text &quot;function(&quot; &lt;&gt; text name &lt;&gt; text &quot;) {&quot;
+       $$ nest 2 (text &quot;return &quot; &lt;&gt; codegen b (gensym + 1) &lt;&gt; text &quot;;&quot;)
+       $$ text &quot;}&quot;
+</code></pre>
+<p>We could generate JavaScript from our <code>s</code> combinator as follows:</p>
+<pre class="text"><code>ghci&gt; codegen s 0
+function(v0) {
+  return function(v1) {
+           return function(v2) {
+                    return v0(v2)(v1(v2));
+                  };
+         };
+}
+</code></pre>
+<p>We could add more features to our DSL in order to create a more interesting
+language, but for now I&#39;m just interested in embedding the lambda calculus.</p>
+<h3>Cartesian-Closed Categories</h3>
+<p>Now, here is a second way to think about lambda calculus. We can interpret the
+terms of the lambda calculus in any <em>Cartesian-closed category</em>. A category is
+Cartesian-closed if it has a terminal object, binary products and exponential
+objects.</p>
+<p>The terminal object plays the role of the unit type, categorical products give us
+product types, and exponential objects give us function types. The adjunction between
+products and exponentials shows up as the <code>curry</code> and <code>uncurry</code> functions, which
+witness the bijection between hom sets.</p>
+<p>We can define cartesian-closed categories in Haskell using a type class:</p>
+<pre class="haskell"><code>import Control.Category
+
+-- | A Cartesian-closed category is a Category k, together with...
+class Category k =&gt; CCC k where
+  -- | a terminal object,
+  data Unit k :: *
+  -- | products
+  data Tensor k :: * -&gt; * -&gt; *
+  -- | exponentials,
+  data Hom k :: * -&gt; * -&gt; *
+
+  -- | evaluation morphisms,
+  eval :: forall a b. k (Tensor k (Hom k a b) a) b
+
+  -- | currying and uncurring operations,
+  curry :: forall a b c. k (Tensor k a b) c -&gt; k a (Hom k b c)
+  uncurry :: forall a b c. k a (Hom k b c) -&gt; k (Tensor k a b) c
+
+  -- | product introduction and elimination terms
+  fork :: forall a c d. k a c -&gt; k a d -&gt; k a (Tensor k c d)
+  exl :: forall a b. k (Tensor k a b) a
+  exr :: forall a b. k (Tensor k a b) b
+</code></pre>
+<p>As an exercise, you might like to try defining an instance of this class for
+regular Haskell functions. We can define many other interesting instances, and
+Conal Elliott covers many other examples in his paper <a href="http://conal.net/papers/compiling-to-categories/">Compiling to Categories</a>.</p>
+<h3>HOAS for CCCs</h3>
+<p>So, now that we have two ways to express lambda calculus in Haskell, we can
+ask if the two have equal expressive power. Certainly, any term expressible in the
+language of CCCs can be expressed using higher-order abstract syntax (since we can
+express each of the building blocks such as <code>curry</code> and <code>uncurry</code>). But can we go
+in the other direction, and turn terms expressed using higher-order abstract syntax
+into terms in the language of CCCs? In other words, can we provide an implementation of the
+HOAS combinators <code>app</code> and <code>lam</code> for some wrapper around a given <code>CCC</code>?</p>
+<p>Suppose we have a Cartesian-closed category <code>k</code>. We can think of values of type
+<code>k a b</code> as like values in our DSL of &quot;type&quot; <code>b</code> in a &quot;context&quot; of type <code>a</code>.</p>
+<p>We can write a function which lifts regular morphisms in our category to terms with
+this representation:</p>
+<pre class="haskell"><code>liftCCC :: forall k i a b. CCC k =&gt; k a b -&gt; k i a -&gt; k i b
+liftCCC = (&lt;&lt;&lt;)
+</code></pre>
+<p>It&#39;s also possible to write helper functions for working with products:</p>
+<pre class="haskell"><code>fst = liftCCC exl
+snd = liftCCC exr
+</code></pre>
+<p>Let&#39;s see if we can define <code>app</code> and <code>lam</code> functions for this representation.</p>
+<p><code>app</code> is relatively simple to implement:</p>
+<pre class="haskell"><code>app :: forall k i a b. CCC k =&gt; k i (Hom k a b) -&gt; k i a -&gt; k i b
+app f x = eval &lt;&lt;&lt; fork f x
+</code></pre>
+<p>Remember that <code>Hom k a b</code> acts like our function type, so this is a reasonable
+type for our application function. Note that the &quot;context&quot; type <code>i</code> is the same for
+both arguments.</p>
+<p><code>lam</code> is more interesting. Ideally, <code>lam</code> would invert <code>app</code> and have the type</p>
+<pre class="haskell"><code>forall k i a b. CCC k =&gt; (k i a -&gt; k i b) -&gt; k i (Hom k a b)
+</code></pre>
+<p>But if we try to implement this, we run into trouble.</p>
+<p>How might we construct a value of type <code>k i (Hom k a b)</code>? One way would be to start from
+a term of type <code>k (Tensor k i a) b</code>, and use <code>curry</code>. But then the type of our
+&quot;context&quot; is no longer <code>i</code>, but <code>Tensor k i a</code>.</p>
+<p>But let&#39;s continue this way anyway. We can think of this as pushing new information into
+our context, making our lambda-bound value of type <code>a</code> available in the context inside
+the body of the lambda.</p>
+<p>So our new proposed type of <code>lam</code> will be</p>
+<pre class="haskell"><code>CCC k =&gt; (k (Tensor k i a) a -&gt; k (Tensor k i a) b) -&gt; k i (Hom k a b)
+</code></pre>
+<p>And now, this is simple to implement!</p>
+<pre class="haskell"><code>
+lam1 f = curry (f exr)
+</code></pre>
+<p>We can try out our DSL in the REPL. For example, here is the identity function:</p>
+<pre class="text"><code>ghci&gt; :t lam1 (\x -&gt; x)
+CCC k =&gt; k i (Hom k a a)
+</code></pre>
+<p>This says that we have a &quot;value&quot; in our DSL of type <code>Hom k a a</code> in any context <code>i</code>.</p>
+<p>But things go wrong when we try to define some more interesting terms:</p>
+<pre class="text"><code>ghci&gt; :t lam1 (\x -&gt; lam1 (\y -&gt; x))
+
+&lt;interactive&gt;
+    Occurs check: cannot construct the infinite type: i ~ Tensor k i a
+</code></pre>
+<p>The problem here is that we are trying to use the value <code>x</code> inside the body of the
+inner lambda, where the context type is different. In the outer lambda, the context
+type is <code>i</code>, but in the inner lambda, it is <code>Tensor k i a</code>.</p>
+<p>So we need some way of coercing the contexts of terms which are bound in outer lambdas.</p>
+<h3>Second Version: Explicit Coercions</h3>
+<p>Our second version of <code>lam</code> makes an additional &quot;coercion&quot; term available in the body
+of the lambda, which allows the caller to solve this problem by explicitly coercing
+terms which are bound outside the innermost lambda:</p>
+<pre class="haskell"><code>let lam2 :: CCC k
+         =&gt; (k (Tensor k i a) i
+            -&gt; k (Tensor k i a) a
+            -&gt; k (Tensor k i a) b)
+          -&gt; k i (Hom k a b)
+    lam2 f = curry (f exl exr)
+</code></pre>
+<p>Now we can express all lambda functions by coercing as necessary. For example:</p>
+<pre class="haskell"><code>ghci&gt; :t lam2 (\_ x -&gt; lam2 (\cast y -&gt; x &lt;&lt;&lt; cast))
+CCC k =&gt; k i (Hom k b (Hom k a b))
+</code></pre>
+<p>But this is going to get cumbersome very quickly, and our DSL is sort of losing the
+appeal of a pure HOAS encoding.</p>
+<h3>Third Version: Deriving Coercions</h3>
+<p>Our coercion terms are going to get potentially quite complex. We can solve that
+problem by using a type class to express coercible terms:</p>
+<pre class="haskell"><code>class CCC k =&gt; Cast k x y where
+  cast :: k x y
+</code></pre>
+<p>There will be two instances for this class. The first tries to strip off the outermost
+<code>Tensor</code> to look for the term we want underneath, and the second assumes that we&#39;ve already
+found the term we&#39;re looking for:</p>
+<pre class="haskell"><code>instance {-# OVERLAPPABLE #-} (CCC k, Cast k b a, Tensor k b i ~ t) =&gt; Cast k t a where
+  cast = cast . exl
+
+instance CCC k =&gt; Cast k a a where
+  cast = id
+</code></pre>
+<p>Thanks to @kcongor for showing me how to implement this without requiring
+<code>IncoherentInstances</code>!</p>
+<p>Now we can go back to using <code>lam1</code>, and simply derive any potentially-complex
+coercion terms using <code>cast</code>! For example:</p>
+<pre class="haskell"><code>ghci&gt; :t lam1 (\x -&gt; lam1 (\y -&gt; x &lt;&lt;&lt; cast))
+CCC k =&gt; k i (Hom k b (Hom k i1 b))
+</code></pre>
+<p>This is a definite improvement, but having to remember to <code>cast</code> terms is still annoying.</p>
+<h3>Final Version: Implicit Coercions</h3>
+<p>The final trick will be to give a more general type to any lambda-bound names, allowing
+them to be used in any subcontext.</p>
+<p>So here is our final version of <code>lam</code>:</p>
+<pre><code>lam :: forall k i a b
+     . CCC k
+    =&gt; ((forall x. Cast k x (Tensor k i a) =&gt; k x a)
+       -&gt; k (Tensor k i a) b
+       )
+    -&gt; k i (Hom k a b)
+lam f = curry (f exr_) where
+  exr_ :: forall x. Cast k x (Tensor k i a) =&gt; k x a
+  exr_ = exr &lt;&lt;&lt; (cast :: k x (Tensor k i a))
+</code></pre>
+<p>Note that the type of the lambda-bound name is now</p>
+<pre class="haskell"><code>forall x. Cast k x (Tensor k i a) =&gt; k x a
+</code></pre>
+<p>This type is general enough that names can be used in any valid context!</p>
+<p>And finally, we are able to express our combinator without any casts:</p>
+<pre class="haskell"><code>ghci&gt; :t lam (\x -&gt; lam (\y -&gt; x))
+CCC k =&gt; k i (Hom k b (Hom k i1 b))
+</code></pre>
+<p>In fact, we can express much more interesting terms. For example, the S combinator
+which we saw earlier:</p>
+<pre class="haskell"><code>ghci&gt; :t lam (\x -&gt; lam (\y -&gt; lam (\z -&gt; x `app` z `app` (y `app` z))))
+CCC k =&gt; k i (Hom k (Hom k i1 (Hom k a1 b)) (Hom k (Hom k i1 a1) (Hom k i1 b)))
+</code></pre>
+<p>We can also work with products using the helpers we defined earlier. For example,
+here is a combinator which swaps the two components of a product:</p>
+<pre class="haskell"><code>ghci&gt; :t lam (\x -&gt; fork (snd x) (fst x))
+CCC k =&gt; k i (Hom k (Tensor k a b) (Tensor k b a))
+</code></pre>
+<h3>Conclusion</h3>
+<p>We&#39;ve seen two presentations of lambda calculus in Haskell - on the one hand, using higher-order
+abstract syntax, and on the other, as the internal language of cartesian-closed
+categories. This construction shows that the two have equal expressive power,
+since we can express any term written in the HOAS encoding in the language of CCCs.</p>
+<p>I hope that this will be a useful tool for building small DSLs in Haskell.
+Define a Cartesian-closed category, and get higher-order abstract syntax for free!</p>
+<p>The code in this blog post is available
+<a href="https://gist.github.com/paf31/5c1279796d66fe04a177e34b0d674ac6">here</a>
+as a single Haskell module.</p>
+</main></div></body></html>

@@ -1,0 +1,49 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Stack-Safe Traversals via Dissection</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Stack-Safe Traversals via Dissection</h2><p><small>by Phil Freeman on 2017/06/18</small></p><p>Writing <code>Traversable</code> instances which are both efficient and safe can be quite tricky in a strict language like PureScript.
+Consider writing an instance for a linked list, for example. The naive instance is not tail recursive, and will build up large
+thunks for some <code>Applicative</code> instances:</p>
+<pre class="purescript"><code>traverseList :: forall f a b. Applicative f =&gt; (a -&gt; f b) -&gt; List a -&gt; f (List b)
+traverseList f Nil = pure Nil
+traverseList f (Cons x xs) = Cons &lt;$&gt; f x &lt;*&gt; traverseList f xs
+</code></pre>
+<p>As it turns out, we can make this traversal tail recursive by writing it as a fold (this is what the <code>purescript-lists</code> library does,
+in fact). But that won&#39;t stop the instance from building up thunks, and it won&#39;t work for other functors. For example, how can we write a safe traversal on a binary tree without allocating an
+intermediate list?</p>
+<p>While I was thinking about this problem recently, I was reminded of the paper &quot;Clowns to the left of me, jokers to the right&quot; by
+Conor McBride. The paper shows how to turn a fold over a data type into a step-by-step calculation backed by an explicit stack
+of intermediate computations. Interestingly, the shape of the stack can be computed generically from the type of the input structure
+by a process called <em>dissection</em>.</p>
+<p>In PureScript, the type class for dissectible containers and their associated dissection (a <code>Bifunctor</code>) looks like this:</p>
+<pre class="purescript"><code>class (Traversable f, Bifunctor d) &lt;= Dissectible f d | f -&gt; d where
+  moveRight :: forall c j. Either (f j) (Tuple (d c j) c) -&gt; Either (f c) (Tuple (d c j) j)
+</code></pre>
+<p>The <code>moveRight</code> structure allows us to move right inside the container, one step at a time, turning a &quot;joker&quot; on the right into
+a &quot;clown&quot; on the left at each step.</p>
+<p>We can write an instance for lists, or many other types of container (including trees):</p>
+<pre class="purescript"><code>instance dissectibleList :: Dissectible List (Product (Clown List) (Joker List)) where
+  moveRight (Left Nil) = Left Nil
+  moveRight (Left (j : js)) = Right (Tuple (Product (Clown Nil) (Joker js)) j)
+  moveRight (Right (Tuple (Product (Clown cs) (Joker js)) c)) =
+    case js of
+      Nil -&gt; Left (reverse (c : cs))
+      j : js&#39; -&gt; Right (Tuple (Product (Clown (c : cs)) (Joker js&#39;)) j)
+</code></pre>
+<p>As an example of turning a fold into a tail-recursive function, the paper shows how we can implement the <code>map</code> function from the
+<code>Functor</code> type class from any container which supports dissection. In PureScript:</p>
+<pre class="purescript"><code>mapP :: forall f d a b. Dissectible f d =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+mapP f xs = tailRec step (Left xs) where
+  step = moveRight &gt;&gt;&gt; case _ of
+           Left ys -&gt; Done ys
+           Right (Tuple dba a) -&gt; Loop (Right (Tuple dba (f a)))
+</code></pre>
+<p>As I was reading, I noticed I could use the same idea to solve my original problem. Using <code>MonadRec</code>, we can get a
+safe traversal for any dissectible container and any <code>MonadRec</code>, simply by switching from a regular tail recursion with
+<code>tailRec</code> to a monadic tail recursion with <code>tailRecM</code>:</p>
+<pre class="purescript"><code>traverseP :: forall m f d a b. Dissectible f d =&gt; MonadRec m =&gt; (a -&gt; m b) -&gt; f a -&gt; m (f b)
+traverseP f xs = tailRecM step (Left xs) where
+  step = moveRight &gt;&gt;&gt; case _ of
+           Left ys -&gt; pure (Done ys)
+           Right (Tuple dba a) -&gt; Loop &lt;&lt;&lt; Right &lt;&lt;&lt; Tuple dba &lt;$&gt; f a
+</code></pre>
+<p>Write a dissection, get a safe traversal for free!</p>
+</main></div></body></html>

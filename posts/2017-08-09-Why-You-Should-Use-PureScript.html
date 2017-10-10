@@ -1,0 +1,96 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Why You Should Use PureScript</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Why You Should Use PureScript</h2><p><small>by Phil Freeman on 2017/08/09</small></p><h3>Better Abstractions</h3>
+<p>PureScript has type classes, and we use them to create <em>very</em> reusable code. Write less code by using a language which allows you to reuse more.</p>
+<p>How many times have you written <a href="https://pursuit.purescript.org/packages/purescript-foldable-traversable/3.4.0/docs/Data.Traversable#t:Traversable"><code>traverse</code></a> in a language without type classes? Entire NPM libraries exist just to implement <code>traverse</code> once. All of these things can be accomplished with the same <code>Traversable</code> instance:</p>
+<ul>
+<li>Waiting for a list of AJAX requests to complete</li>
+<li>Validating a list of form fields</li>
+<li>Ensuring a list of nullable values are all non-null</li>
+<li>Finding a list of values which maximizes the value of some function</li>
+</ul>
+<p>If I change the word &quot;list&quot; in each of these examples for the word &quot;stream&quot; or &quot;array&quot; or &quot;tree&quot;, I can continue to use <code>traverse</code>, because all of these structures implement the same type class!</p>
+<p>In languages without higher kinded polymorphism and type classes, you have to write <code>traverse</code> once for each container/<code>Applicative</code> pair - that&#39;s a lot of functions! Instead, just write <code>traverse</code> once for each container and treat them uniformly using a type class.</p>
+<p>Better abstractions also let you express more general ideas, and to talk about concepts abstractly.</p>
+<h3>Better Libraries</h3>
+<p><a href="https://pursuit.purescript.org/">Pursuit</a> hosts documentation for hundreds of PureScript libraries, supporting all sorts of different types of development:</p>
+<ul>
+<li>Single page applications</li>
+<li>Web services</li>
+<li>Server-side rendering</li>
+<li>Database applications</li>
+<li>Mobile development</li>
+<li>Testing and benchmarking</li>
+<li>Graphics and audio</li>
+<li>Game development</li>
+<li>Data structures and algorithms</li>
+</ul>
+<p>You name it, Pursuit has a library for it. And if we don&#39;t have the exact library you want, you can easily wrap any existing JavaScript libraries available on NPM using the foreign function interface!</p>
+<h3>More Guarantees</h3>
+<p>In JavaScript, we get very few guarantees about our code. For example, we rarely can know for sure that</p>
+<ul>
+<li>Our data is even in the right format</li>
+<li>A value is never <code>null</code></li>
+<li>We handled exceptions in the right places</li>
+<li>We removed a piece of debugging code before deploying to production</li>
+<li>We handled all possible cases in a complex pattern match</li>
+<li>We didn&#39;t leak a reference to a mutable data structure</li>
+<li>We took the right steps to avoid possible SQL injection attacks</li>
+<li>Our application doesn&#39;t accidentally <a href="https://hackage.haskell.org/package/acme-missiles-0.3/docs/Acme-Missiles.html">launch any missiles</a>.</li>
+</ul>
+<p>PureScript&#39;s type system provides a way to prevent all of these bugs, and many more.</p>
+<h3>Better Records</h3>
+<p>Extensible records are a great fit for JavaScript, but of limited use when you can&#39;t use common JavaScript idioms.</p>
+<p>In PureScript, <a href="https://github.com/purescript/purescript-typelevel-prelude/">we can express</a> many common patterns such as mapping over and traversing the properties of a record, merging and zipping records and more, all in a type-safe way.</p>
+<p>You can even <a href="https://pursuit.purescript.org/packages/purescript-profunctor-lenses/3.2.0/docs/Data.Lens.Record#v:prop">abstract over the labels in a record</a>. Never write another lens again, when you can derive a lens for any record property automatically using the type system.</p>
+<h3>Better Tools</h3>
+<p>PureScript supports <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/15.markdown">instant rebuilds</a>, so that you can see errors in your editor immediately. Editor plugins will even fix warnings and minimize imports for you.</p>
+<p>Put types to work! <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/23.markdown">Type-directed search</a> will use type information to automatically find the programs which fit into the gaps in your code.</p>
+<p>Let the compiler write your code for you. PureScript will derive instances of many <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/3.markdown">common</a> <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/4.markdown">type</a> <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/5.markdown">classes</a>. For those it doesn&#39;t support, you can often use <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/11.markdown">generic deriving</a> to fill in the implementation.</p>
+<h3>Better Techniques</h3>
+<p>PureScript supports many of the development paradigms pioneered in Haskell. For example:</p>
+<ul>
+<li><a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/11.markdown">Datatype-generic programming</a></li>
+<li>Type-level programming with <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/10.markdown">functional dependencies</a></li>
+<li><a href="https://github.com/purescript/purescript-quickcheck">Property-based testing</a></li>
+<li>Denotational design</li>
+</ul>
+<p>PureScript is also a great language for implementing the latest techniques.</p>
+<p>PureScript also makes a great playground for testing out ideas for new programming language features. You can even build <a href="https://github.com/purescript/documentation/blob/master/ecosystem/Alternate-backends.md">alternative backends</a> for the compiler if you&#39;d like to test out ideas which don&#39;t target JavaScript.</p>
+<h3>A Great Community</h3>
+<p>Find like-minded individuals on Slack, <a href="http://reddit.com/r/purescript">Reddit</a> and IRC who are enthusiastic about bringing pure typed functional programming to the web browser.</p>
+<h2>Common Complaints</h2>
+<h3>&quot;Sharing code is difficult&quot;</h3>
+<p>This used to be true, but now there are great options like <a href="https://hackage.haskell.org/package/purescript-bridge"><code>purescript-bridge</code></a> and <a href="https://github.com/eskimor/servant-purescript"><code>servant-purescript</code></a>.</p>
+<p>Datatype-generic programming makes it very easy to derive most of the code you&#39;ll need for any shared types, including the most important one, JSON serialization.</p>
+<h3>&quot;Strictness not a good default&quot;</h3>
+<p>This is an interesting complaint. I use Haskell every day, and I make use of laziness extensively. There are great blog posts on the internet (<a href="http://augustss.blogspot.com/2011/05/more-points-for-lazy-evaluation-in.html">for example</a>) about the pitfalls of dropping laziness in a Haskell-like language.</p>
+<p>I think it is a mistake to use PureScript as if it were a lazy language, just like it is a mistake to use Haskell as if it were strict (space leaks are a good example of this common mistake).</p>
+<p>This means you cannot naively port Haskell code to PureScript and expect it to work. It might work, but be slow, or it might crash due to a loop, or just not even compile.</p>
+<p>But we have great tools to support pure FP in a strict language, some new, and others inspired by techniques pioneered in other strict FP languages like Scala.</p>
+<p>Ultimately, if you really want all the benefits of laziness-by-default, you should use GHCJS, but be aware that for many use cases, opt-in laziness in a strict-by-default language turns out to be a perfectly practical option.</p>
+<h3>&quot;Hiring is hard&quot;</h3>
+<p>The Haskell community has proven this to be false - hire remote PureScript developers (and be willing to train them if necessary) and you will have no shortage of qualified candidates.</p>
+<p>Alternatively, PureScript can be adopted gradually by leaning on the foreign function interface to integrate with existing JavaScript code. So you can hire JavaScript developers with some functional programming experience, and get the benefits of PureScript as you transition existing code over time.</p>
+<h3>&quot;Training is hard&quot;</h3>
+<p>Learning PureScript is not easy, but it is very possible. It can take a while.</p>
+<p>Training others is another tricky problem, and it also takes time.</p>
+<p>I&#39;d recommend working through <a href="http://haskellbook.com/">the Haskell book</a> first if you are not familiar with Haskell or pure functional programming. Then work through <a href="https://leanpub.com/purescript">the PureScript book</a> and read through the documentation of the core libraries on Pursuit to get an idea of the way PureScript code works.</p>
+<h3>&quot;Too much category theory&quot;</h3>
+<p>You don&#39;t need to know category theory to be proficient in PureScript, although it certainly helps with some of the more esoteric core libraries. Learning category theory is a long term investment.</p>
+<p>If you are interested in learning the basics, I would recommend working through the first chapters of one of the standard category theory texts, some of which are aimed at computer scientists.</p>
+<h3>&quot;Not enough support&quot;</h3>
+<p>At the end of the day, nobody is paid to work on the PureScript compiler. This might change one day, but for now, it is a mistake to expect long term support. I recommend treating PureScript like any other open source library.</p>
+<p>That said, if you do need better support, that can probably be arranged in exchange for hard currency.</p>
+<h3>&quot;Documentation is lacking&quot;</h3>
+<p>We try our best to provide high-quality documentation, but it is a hard problem to communicate complex ideas clearly.</p>
+<p><a href="https://github.com/purescript/documentation">PRs are welcome</a>! If you have ideas for how to improve documentation, please let us know, but please don&#39;t be upset if we tell you that we&#39;re not going to rename <code>Functor</code> to <code>Mappable</code>.</p>
+<h3>&quot;PureScript changes too quickly&quot;</h3>
+<p>PureScript will continue to see breaking changes until we hit 1.0, but that milestone is getting closer. Things are stabilizing, and we don&#39;t expect many breaking changes between 0.12.0 and 1.0.</p>
+<h3>&quot;I don&#39;t like Bower&quot;</h3>
+<p>There are reasons why we use Bower, which Harry has <a href="http://harry.garrood.me/blog/purescript-why-bower/">written about in detail</a>. Bower may or may not be a good fit for JavaScript any more, but it&#39;s still a great fit for PureScript.</p>
+<p>But you don&#39;t have to use Bower. Alternative package managers such as <a href="https://github.com/purescript/psc-package/"><code>psc-package</code></a> and <a href="https://github.com/chrisdone/purify">Purify</a> already exist.</p>
+<p>Some users use PureScript with <a href="https://nixos.org/nix/">Nix</a>. Others use Git directly. PureScript assumes nothing about the package manager you use.</p>
+<h3>&quot;I don&#39;t want to use Node&quot;</h3>
+<p>See above. <code>psc-package</code> and Purify in particular do not depend on Node.</p>
+<p>For the REPL, you can <a href="https://github.com/paf31/24-days-of-purescript-2016/blob/master/8.markdown">use the <code>--port</code> option to evaluate code in the browser</a>, instead of using Node.</p>
+</main></div></body></html>

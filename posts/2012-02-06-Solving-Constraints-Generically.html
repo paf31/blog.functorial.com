@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Solving Constraints Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><section><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><hr></section><section><h2>Solving Constraints Generically</h2><p><small>by Phil Freeman on 2012/02/06</small></p><p>In this post, I&#39;d like to revisit Algorithm W, which I discussed when I wrote about Purity&#39;s typechecker.</p>
+<html><head><title>Functorial Blog - Solving Constraints Generically</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Solving Constraints Generically</h2><p><small>by Phil Freeman on 2012/02/06</small></p><p>In this post, I&#39;d like to revisit Algorithm W, which I discussed when I wrote about Purity&#39;s typechecker.</p>
 <p>Recalling the approach taken before, a term was typed by collecting constraints between unknown type variables by traversing the term in question, and then solving those constraints by substitution. This time I&#39;d like to generalize the second part of the algorithm, to solve constraints over any type functor by substitution.</p>
 <pre class="{.text}"><code>{-# LANGUAGE EmptyDataDecls #-}
 {-# LANGUAGE RankNTypes #-}
@@ -36,12 +36,12 @@ replace i x = flip (&gt;&gt;=) (\j -&gt; if i == j then x else Return j)
 <pre class="{.text}"><code>solve :: (Functor f, Unifiable f) =&gt; [Constraint f] -&gt; SolutionSet f
 solve cs = solve&#39; cs Return where
   solve&#39; [] ss = ss
-  solve&#39; (c:cs) ss = 
+  solve&#39; (c:cs) ss =
     let cs&#39; = substConstraints c cs in
     let ss&#39; = substSolutionSet c ss in
     solve&#39; cs&#39; ss&#39;
   substConstraints c [] = []
-  substConstraints (i, x) ((j, y): cs) 
+  substConstraints (i, x) ((j, y): cs)
     | i == j = (substConstraints (i, x) cs) ++ (unify x y)
     | otherwise = ((j, replace i x y) : substConstraints (i, x) cs)
   substSolutionSet (i, x) = (.) (replace i x)
@@ -77,10 +77,10 @@ instance Show (Free Type Unknown) where
   (8, Wrap (Arrow (Return 0) (Return 7))) ]
 </code></pre>
 <p>One can check that solve does indeed determine the correct type for the <code>S</code> combinator:</p>
-<blockquote>
-<p>ghci&gt; solve example 8</p>
-<p>((2 -&gt; (4 -&gt; 5)) -&gt; ((2 -&gt; 4) -&gt; (2 -&gt; 5)))</p>
-</blockquote>
+<pre class="{.text}"><code>ghci&gt; solve example 8
+
+((2 -&gt; (4 -&gt; 5)) -&gt; ((2 -&gt; 4) -&gt; (2 -&gt; 5)))
+</code></pre>
 <p>Now that we can solve constraints, let&#39;s write a method to determine constraints for the specific example of terms of the simply-typed lambda calculus. There are three types of terms: variables, applications and abstractions. To save passing around environments containing strings, we will represent the bound variables in a term using a type variable. Abstraction will introduce a new type variable, and parametricity will prevent us from creating any ill-defined terms:</p>
 <pre class="{.text}"><code>data Term a = Var a | App (Term a) (Term a) | Abs (forall b. b -&gt; Term (Either a b))
 </code></pre>
@@ -138,10 +138,12 @@ generateConstraints t = let ((cs, _), _) = runContext (generateConstraints&#39; 
 k = Abs (\x -&gt; Abs (\y -&gt; Var $ Left $ Right $ x))
 </code></pre>
 <p>We can test these examples in GHCi as follows:</p>
-<blockquote>
-<p>ghci&gt; solve (generateConstraints s) 8</p>
-<p>((2 -&gt; (4 -&gt; 5)) -&gt; ((2 -&gt; 4) -&gt; (2 -&gt; 5)))</p>
-<p>ghci&gt; solve (generateConstraints k) 3</p>
-<p>(0 -&gt; (1 -&gt; 0))</p>
-</blockquote>
-</section><section><hr><p class="text-muted"><small>Copyright Phil Freeman 2010-2016</small></p></section></div></body></html>
+<pre class="{.text}"><code>ghci&gt; solve (generateConstraints s) 8
+
+((2 -&gt; (4 -&gt; 5)) -&gt; ((2 -&gt; 4) -&gt; (2 -&gt; 5)))
+
+ghci&gt; solve (generateConstraints k) 3
+
+(0 -&gt; (1 -&gt; 0))
+</code></pre>
+</main></div></body></html>

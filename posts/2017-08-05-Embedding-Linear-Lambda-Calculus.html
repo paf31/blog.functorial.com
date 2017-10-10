@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Embedding Linear Lambda Calculus, Quickly and Easily</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Embedding Linear Lambda Calculus, Quickly and Easily</h2><p><small>by Phil Freeman on 2017/08/05</small></p><p>Suppose you want to create an embedded DSL based on the linear lambda calculus. Why might you want to do this? Well, you might want to control access to some resource, or perhaps you&#39;ve heard that <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.31.5002" title="Liner types can change the world!">linear types can change the world</a> and now you&#39;d like to compile your EDSL to some target language and optimize things using mutable data structures.</p>
+<p>There are existing techniques for embedding linear lambda calculus in a typed language like Haskell. For example, <a href="http://dl.acm.org/citation.cfm?id=2804309" title="Embedding a full linear lambda calculus in Haskell">one approach is to use higher order abstract syntax</a>. However, I&#39;m going to show a simpler (but less powerful) technique. We won&#39;t get multiplicatives and additives, and we won&#39;t get a separate non-linear function type, but the implementation is tiny.</p>
+<p>The <a href="https://pursuit.purescript.org/packages/purescript-substructural/" title="`purescript-substructural`"><code>purescript-substructural</code></a> library by @rightfold uses this technique to embed functions which are allowed to modify mutable data structures in place, and provides a great example with readable source code.</p>
+<h2>Abstraction Elimination</h2>
+<p>Abstraction elimination is the process of turning regular lambda calculus terms into point-free combinators. Proof-theoretically, it corresponds to the deduction theorem from first-order logic.</p>
+<p>For the regular non-linear lambda calculus, abstraction elimination results in a term formed using the SKI basis. However, this won&#39;t work for the linear lambda calculus, since the S and K combinators are not linear! Instead, we can generate a term using the <a href="https://en.wikipedia.org/wiki/B,_C,_K,_W_system" title="B, C, K, W system">&quot;BCI&quot; system</a>.</p>
+<p>The <code>B</code> combinator is regular function composition:</p>
+<pre><code>B = \x y z -&gt; x (y z)
+</code></pre>
+<p>And the <code>C</code> combinator is the <code>flip</code> function:</p>
+<pre><code>C = \x y z -&gt; (x z) y
+</code></pre>
+<p>Now, consider the name <code>z</code> in each of these (linear) terms. It can only be used once, and in the case of the <code>B</code> combinator, it is used on the right of the outer function application, and on the left in the case of the <code>C</code> combinator.</p>
+<p>This gives us an idea of how abstraction elimination can work in a linear setting - each time we see a function application, the variable we are trying to eliminate can only appear on one side of the application. Without loss of generality, it appears on the right (apply <code>C</code> if necessary), so we can eliminate the variable recursively using <code>B</code>.</p>
+<p>Note that unlike regular abstraction elimination to SKI term, this algorithm has two benefits:</p>
+<ul>
+<li>There is no exponential explosion in term size, since we only need to recurse into one side of each function application.</li>
+<li>The <code>B</code> and <code>C</code> combinators correspond to functions we use every day: <code>compose</code> and <code>flip</code>, so abstraction elimination actually results in understandable terms.</li>
+</ul>
+<h2>Example</h2>
+<p>As an example, consider the following lambda calculus term:</p>
+<pre><code>\a b c d e -&gt; a (b c) (d e)
+</code></pre>
+<p>Let&#39;s eliminate <code>e</code> first. It appears on the right, so we can use <code>B</code>:</p>
+<pre><code>\a b c d -&gt; B (a (b c)) d
+</code></pre>
+<p>Eliminating <code>d</code> is easy, using eta conversion:</p>
+<pre><code>\a b c -&gt; B (a (b c))
+</code></pre>
+<p>Next, we can use <code>B</code> twice to eliminate <code>c</code>:</p>
+<pre><code>\a b c -&gt; B ((B a b) c)
+= \a b -&gt; B B (B a b)
+</code></pre>
+<p>To eliminate <code>b</code>, again notice that it appears on the right:</p>
+<pre><code>\a b -&gt; (B B) ((B a) b)
+= \a -&gt; B (B B) (B a)
+</code></pre>
+<p>Finally, one more application of <code>B</code> eliminates <code>a</code>, giving our final point-free term:</p>
+<pre><code>B (B (B B)) B
+</code></pre>
+<h2>A note about ordered, affine and relevant terms</h2>
+<p>Notice, we never actually used the <code>C</code> combinator here. The reason is that nothing needed to be flipped, because all names were used in order.</p>
+<p>The <em>ordered</em> linear lambda calculus consists of those terms which satisfy this property - not only must a name be used exactly once, but it must be used in the order it was declared.</p>
+<p>In fact, it&#39;s possible to express any ordered linear lambda calculus term using only the <code>B</code> and <code>I</code> combinators. I&#39;ve written up an implementation of the algorithm in PureScript <a href="http://try.purescript.org/?gist=7c3055b578a58428aeb31cfa43162b23">here</a>.</p>
+<p>Notice that ordered linear terms can be interpreted in any category, since <code>B</code> and <code>I</code> are just the <code>compose</code> and <code>identity</code> functions!</p>
+<p>Instead of dropping the <code>C</code> combinator, we could instead <em>add</em> the <code>K</code> combinator. The <code>K</code> combinator corresponds to the <code>const</code> function, and ignores its argument. We get <em>affine</em> lambda calculus terms, in which every function argument must be used at most once.</p>
+<p>We can also add the <code>W</code> combinator if we want <em>relevant</em> lambda calculus, in which arguments must be used at least once.</p>
+<p>If we add both <code>K</code> and <code>W</code>, we get regular old lambda calculus again, via the BCKW basis.</p>
+<h2>Embedding linear lambda calculus</h2>
+<p>So, now that we know how to perform abstraction elimination, how can we use this to embed a language of linear lambda calculus terms?</p>
+<p>Well, simply create an abstract data type for linear terms, and hide the constructor. Provide a <code>Category</code> instance (which implements the <code>B</code> and <code>I</code> combinators) and a <code>flip</code> function (which implements the <code>C</code> combinator). In order to make your DSL useful, you will also want to provide some standard terms which the user can combine.</p>
+<p>This approach requires the user to perform abstraction elimination on terms, but in practice, this is not a big problem. As we&#39;ve seen, the generated terms can be quite small, and straightforward. With something like typed holes (or even <em>type-directed search</em>), it can be quite simple to build these terms directly.</p>
+<p>Because the constructor is hidden, we know that every term the user builds must use its argument linearly, and we might be able to exploit this property for optimization purposes</p>
+<p>As another little example, <a href="http://try.purescript.org/?gist=51d7971a85d6e1cd38b02e04e2fa1ced">this</a> shows how we might use this approach to ensure that resources such as file handles are always accessed exactly once.</p>
+</main></div></body></html>
