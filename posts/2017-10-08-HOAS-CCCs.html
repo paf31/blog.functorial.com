@@ -73,9 +73,6 @@ class Category k =&gt; CCC k where
   -- | exponentials,
   data Hom k :: * -&gt; * -&gt; *
 
-  -- | evaluation morphisms,
-  eval :: forall a b. k (Tensor k (Hom k a b) a) b
-
   -- | currying and uncurring operations,
   curry :: forall a b c. k (Tensor k a b) c -&gt; k a (Hom k b c)
   uncurry :: forall a b c. k a (Hom k b c) -&gt; k (Tensor k a b) c
@@ -108,9 +105,12 @@ liftCCC = (&lt;&lt;&lt;)
 snd = liftCCC exr
 </code></pre>
 <p>Let&#39;s see if we can define <code>app</code> and <code>lam</code> functions for this representation.</p>
-<p><code>app</code> is relatively simple to implement:</p>
+<p><code>app</code> is relatively simple to implement in terms of an &quot;evaluation&quot; morphism:</p>
 <pre class="haskell"><code>app :: forall k i a b. CCC k =&gt; k i (Hom k a b) -&gt; k i a -&gt; k i b
 app f x = eval &lt;&lt;&lt; fork f x
+
+eval :: forall a b. k (Tensor k (Hom k a b) a) b
+eval = uncurry id
 </code></pre>
 <p>Remember that <code>Hom k a b</code> acts like our function type, so this is a reasonable
 type for our application function. Note that the &quot;context&quot; type <code>i</code> is the same for
