@@ -109,7 +109,7 @@ snd = liftCCC exr
 <pre class="haskell"><code>app :: forall k i a b. CCC k =&gt; k i (Hom k a b) -&gt; k i a -&gt; k i b
 app f x = eval &lt;&lt;&lt; fork f x
 
-eval :: forall a b. k (Tensor k (Hom k a b) a) b
+eval :: forall k a b. CCC k =&gt; k (Tensor k (Hom k a b) a) b
 eval = uncurry id
 </code></pre>
 <p>Remember that <code>Hom k a b</code> acts like our function type, so this is a reasonable
