@@ -129,7 +129,7 @@ the body of the lambda.</p>
 <pre class="haskell"><code>CCC k =&gt; (k (Tensor k i a) a -&gt; k (Tensor k i a) b) -&gt; k i (Hom k a b)
 </code></pre>
 <p>And now, this is simple to implement!</p>
-<pre class="haskell"><code>
+<pre class="haskell"><code>lam1 :: CCC k =&gt; (k (Tensor k i a) a -&gt; k (Tensor k i a) b) -&gt; k i (Hom k a b)
 lam1 f = curry (f exr)
 </code></pre>
 <p>We can try out our DSL in the REPL. For example, here is the identity function:</p>
