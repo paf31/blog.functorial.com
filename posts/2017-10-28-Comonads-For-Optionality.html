@@ -1,0 +1,115 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - Comonads for Optionality</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Comonads for Optionality</h2><p><small>by Phil Freeman on 2017/10/28</small></p><h3>Motivation</h3>
+<p>I&#39;ve been thinking more about <a href="http://blog.functorial.com/posts/2016-08-07-Comonads-As-Spaces.html">comonads as spaces</a> of user interface states lately. You might like to read that blog post before continuing here, if you haven&#39;t already.</p>
+<p>Based on the notes in some of my recent blog posts, we have comonads for describing almost all useful compositions of user interfaces:</p>
+<ul>
+<li>Independent adjacent components, using <a href="http://blog.functorial.com/posts/2016-08-08-Comonad-And-Day-Convolution.html">Day convolution</a></li>
+<li>Static lists of components, using <a href="http://blog.functorial.com/posts/2017-07-01-FreeAp-Is-A-Comonad.html">the free Applicative functor</a></li>
+<li>Components with shared state, constructed using <a href="http://blog.functorial.com/posts/2017-07-13-Equalizers-of-Comonads.html">equalizers of comonads</a></li>
+</ul>
+<p>This approach certainly seems to be a useful source of new comonads! But there is one sort of component which is notably missing from this list - components for <em>optional data</em>.</p>
+<p>Consider the <code>Coproduct</code> comonad. This allows us to represent components with two possible classes of states, which is useful. But the implementation of <code>duplicate</code> means that we cannot move <em>between</em> those two classes. There is no function that we can <code>extend</code> over a <code>Coproduct</code> in order to move from the left to the right, or back again.</p>
+<p>Compare this to a component for a list of subcomponents which is built from the free applicative. Since
+the free applicative is essentially built from coproducts and Day convolution, we
+end up being able to manipulate the state of each list, but unable to change the <em>length</em> of the list or permute its elements.</p>
+<p>In this post, I&#39;ll show how we can create a <code>Comonad</code> to recover this sort of functionality.</p>
+<h3>Inspiration</h3>
+<p>Let&#39;s consider the <code>Store</code> comonad. This comonad certainly allows us a lot of freedom - we can move freely to any other state we want!</p>
+<p>To see why we are able to change the state <code>s</code>, we can look at the <code>Extend</code> instance:</p>
+<pre class="purescript"><code>data Store s a = Store s (s -&gt; a)
+
+instance extendStore :: Extend (Store s) where
+  extend f (Store s get) = Store s \next -&gt; f (Store next get)
+</code></pre>
+<p>Notice that <code>f</code> receives the store refocussed at the <code>next</code> state.</p>
+<p>We can take this as inspiration for our new comonad.</p>
+<h3>Comonads for optionality</h3>
+<p>Let&#39;s start by creating a comonad with two possible states: empty and non-empty. The possible states in the non-empty case will be represented by some other comonad <code>w</code>.</p>
+<p>We could start with a <code>Store</code> with two possible states, represented by the <code>Boolean</code> type. But this wouldn&#39;t work, because the return type <code>a</code> needs to depend on the current boolean state. If the boolean is <code>true</code> (representing an empty state), we can return a value of type <code>a</code> (there is only one empty state, after all), but if the boolean is <code>false</code> (representing a non-empty state), then we need to return a value of type <code>w a</code> (representing all possible future states of the subcomponent).</p>
+<p>So what we really need is some sort of &quot;dependent store&quot; comonad:</p>
+<pre class="purescript"><code>data DependentStore index (w :: index -&gt; * -&gt; *) a = DependentStore index ((i :: index) -&gt; w i a)
+</code></pre>
+<p>Here, the comonad <code>w</code> is parameterized by an index type, and the choice of comonad in the result depends on the new index that we receive.</p>
+<p>Of course, we can&#39;t represent this type in Haskell directly, but fortunately, we don&#39;t need to in the case of a <code>Boolean</code>-valued index, since a dependent function from a <code>Boolean</code> can be represented directly as a product:</p>
+<pre class="purescript"><code>data Optional w a = Optional Boolean a (w a)
+</code></pre>
+<p>The idea here is that the <code>a</code> argument here tracks the case where the incoming <code>Boolean</code> is <code>true</code>, and the <code>w a</code> tracks the case where it is <code>false</code>. With that in mind, we can write out our <code>Store</code>-inspired instances:</p>
+<pre class="purescript"><code>instance extendOptional :: Extend w =&gt; Extend (Optional w) where
+  extend f (Optional b a wa) =
+    Optional b
+             (f (Optional true a wa))
+             (extend (f &lt;&lt;&lt; Optional false a) wa)
+
+instance comonadOptional :: Comonad w =&gt; Comonad (Optional w) where
+  extract (Optional true a _) = a
+  extract (Optional false _ wa) = extract wa
+</code></pre>
+<p>There are a couple of interesting things to note here:</p>
+<ul>
+<li>The <code>f</code> function passed to <code>extend</code> receives a refocussed comonad, whose state is <code>true</code> or <code>false</code> depending on if it is being used to redecorate the left-hand <code>a</code> or the right-hand <code>w a</code>. This is just like in the <code>Store</code> case above.</li>
+<li>The <code>extract</code> function behaves as if it were passing the current state into the (dependent) function, so it takes the left-hand <code>a</code> if the current state is <code>true</code>, or extracts from the right-hand <code>w a</code> if the state is <code>false</code>.</li>
+</ul>
+<p>This comonad is enough to model user interfaces with optional subcomponents, such as tabs, but we can do more!</p>
+<h3>Comonads for lists</h3>
+<p>A linked list is isomorphic to an optional pair of its head and its tail:</p>
+<pre class="purescript"><code>List a ~ Maybe (Tuple a (List a))
+</code></pre>
+<p>Similarly, we can use our <code>Optional</code> comonad to build a comonad for lists of subcomponents:</p>
+<pre class="purescript"><code>newtype ListOf w a = ListOf (Optional (Day w (ListOf w)) a)
+</code></pre>
+<p>In the definition of <code>ListOf</code>, we use <code>Day</code> convolution to represent the conjunction of the component modeling the head of the list, and the component modeling the tail.</p>
+<p>This is a <code>Comonad</code> by construction. Since this is a <code>newtype</code>, we can even derive its instances:</p>
+<pre class="purescript"><code>derive newtype instance extendListOf :: Extend w =&gt; Extend (ListOf w)
+derive newtype instance comonadListOf :: Comonad w =&gt; Comonad (ListOf w)
+</code></pre>
+<p>The <code>ListOf w a</code> type represents an infinite structure, with alternatives for every possible future length of our list. We can <code>extend</code> a function across this structure which changes the length to any new length we want.</p>
+<h3>Another approach to lists</h3>
+<p>In fact, there is another way to construct a component for lists - we can consider a list to be indexed by its length, and use our dependent store comonad:</p>
+<pre class="purescript"><code>data ListOf&#39; w a = ListOf&#39; Nat ((n :: Nat) -&gt; FreeAp n w a)
+</code></pre>
+<p>(again, of course, this type is not representable directly in Haskell or PureScript)</p>
+<p>Here, <code>FreeAp</code> is an indexed free applicative functor, indexed by the number of copies of <code>w</code> that it contains:</p>
+<pre class="purescript"><code>data FreeAp (n :: Nat) w a where
+  Nil :: Identity a -&gt; FreeAp 0 w a
+  Cons :: Day w (FreeAp n w) a -&gt; FreeAp (n + 1) w a
+</code></pre>
+<p>So we can think of our dependent store comonad as recovering some of the dynamic behavior that we lost when we modeled our list using the free applicative.</p>
+<h3>Conclusion</h3>
+<p>This construction fills in the remaining gap in the comonads as spaces approach to user interfaces, and suggests a new interesting way to build new comonads from old. We can construct models for optional subcomponents, and as we&#39;ve seen, for lists of subcomponents.</p>
+<h3>Appendix: Proofs of the comonad laws</h3>
+<h4><code>extract . duplicate = id</code></h4>
+<pre class="purescript"><code>extract (duplicate e@(Optional b a wa))
+= if b then (Optional true a wa) else extract (map (Optional false a) (duplicate wa))
+= if b then e else Optional false a wa
+= if b then e else e
+= e
+</code></pre>
+<h4><code>map extract . duplicate = id</code></h4>
+<pre class="purescript"><code>map extract (duplicate e@(Optional b a wa))
+= map extract (Optional b (Optional true a wa) (map (Optional false a) (duplicate wa)))
+= Optional b (extract (Optional true a wa)) (map extract (map (Optional false a) (duplicate wa))))
+= Optional b a (map (extract &lt;&lt;&lt; Optional false a) (duplicate wa)))
+= Optional b a (map extract (duplicate wa)))
+= Optional b a wa
+= e
+</code></pre>
+<h4><code>duplicate . duplicate = map duplicate . duplicate</code></h4>
+<pre class="purescript"><code>duplicate (duplicate e@(Optional b a wa))
+= duplicate (Optional b (Optional true a wa) (map (Optional false a) (duplicate wa)))
+= Optional b (Optional true (Optional true a wa) (map (Optional false a) (duplicate wa))) (map (Optional false (Optional true a wa)) (duplicate (map (Optional false a) (duplicate wa))))
+= Optional b (duplicate (Optional true a wa)) (map (Optional false (Optional true a wa)) (duplicate (map (Optional false a) (duplicate wa))))
+= ... (see lemma below)
+= Optional b (duplicate (Optional true a wa)) (map duplicate (map (Optional false a) (duplicate wa)))
+= map duplicate (Optional b (Optional true a wa) (map (Optional false a) (duplicate wa)))
+= map duplicate (duplicate e@(Optional b a wa))
+</code></pre>
+<h4>Proof of Lemma</h4>
+<pre class="purescript"><code>map (Optional false (Optional true a wa)) (duplicate (map (Optional false a) (duplicate wa)))
+= map (Optional false (Optional true a wa)) (map (map (Optional false a)) (duplicate (duplicate wa)))
+= map (Optional false (Optional true a wa) &lt;&lt;&lt; map (Optional false a)) (map duplicate (duplicate wa))
+= map (\w -&gt; Optional false (Optional true a wa) (map (Optional false a) w)) (map duplicate (duplicate wa))
+= map (\w -&gt; Optional false (Optional true a wa) (map (Optional false a) (duplicate w))) (duplicate wa)
+= map (\w -&gt; duplicate (Optional false a w)) (duplicate wa)
+= map duplicate (map (Optional false a) (duplicate wa))
+</code></pre>
+</main></div></body></html>
