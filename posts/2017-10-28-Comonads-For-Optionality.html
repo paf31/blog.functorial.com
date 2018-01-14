@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Comonads for Optionality</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p><small><a href="../feed.rss">RSS Feed</a></small></p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Comonads for Optionality</h2><p><small>by Phil Freeman on 2017/10/28</small></p><h3>Motivation</h3>
+<html><head><title>Functorial Blog - Comonads for Optionality</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:300"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><header><h1>Comonads for Optionality</h1><p>by Phil Freeman on 2017/10/28</p><hr></header><main><h3>Motivation</h3>
 <p>I&#39;ve been thinking more about <a href="http://blog.functorial.com/posts/2016-08-07-Comonads-As-Spaces.html">comonads as spaces</a> of user interface states lately. You might like to read that blog post before continuing here, if you haven&#39;t already.</p>
 <p>Based on the notes in some of my recent blog posts, we have comonads for describing almost all useful compositions of user interfaces:</p>
 <ul>
@@ -113,4 +113,4 @@ derive newtype instance comonadListOf :: Comonad w =&gt; Comonad (ListOf w)
 = map (\w -&gt; duplicate (Optional false a w)) (duplicate wa)
 = map duplicate (map (Optional false a) (duplicate wa))
 </code></pre>
-</main></div></body></html>
+</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2018</small></p></footer></body></html>

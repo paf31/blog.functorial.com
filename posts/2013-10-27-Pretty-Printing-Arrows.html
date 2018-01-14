@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Pretty Printing Arrows</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p><small><a href="../feed.rss">RSS Feed</a></small></p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Pretty Printing Arrows</h2><p><small>by Phil Freeman on 2013/10/27</small></p><p>I&#39;d like to show a neat use of arrows for pretty printing an AST.</p>
+<html><head><title>Functorial Blog - Pretty Printing Arrows</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:300"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><header><h1>Pretty Printing Arrows</h1><p>by Phil Freeman on 2013/10/27</p><hr></header><main><p>I&#39;d like to show a neat use of arrows for pretty printing an AST.</p>
 <pre class="{.text}"><code>{-# LANGUAGE GADTs, GeneralizedNewtypeDeriving #-} 
 
 import Data.Maybe (fromMaybe)
@@ -165,4 +165,4 @@ eqn = buildPrettyPrinter ops (fmap show con &lt;+&gt; parenthesize eqn)
     binOp c = AssocL (bin c) $ \e1 e2 -&gt; e1 ++ c : e2
 </code></pre>
 <p>For yet another (more developed) example, see my current project on GitHub, <a href="http://github.com/paf31/purescript/">here</a>.</p>
-</main></div></body></html>
+</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2018</small></p></footer></body></html>

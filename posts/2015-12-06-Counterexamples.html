@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Counterexamples of Type Classes</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p><small><a href="../feed.rss">RSS Feed</a></small></p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Counterexamples of Type Classes</h2><p><small>by Phil Freeman on 2015/12/06</small></p><p>In Haskell and PureScript, we are familiar with certain standard hierarchies of type classes. For example, here are some of the type classes provided by the PureScript core libraries:</p>
+<html><head><title>Functorial Blog - Counterexamples of Type Classes</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:300"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><header><h1>Counterexamples of Type Classes</h1><p>by Phil Freeman on 2015/12/06</p><hr></header><main><p>In Haskell and PureScript, we are familiar with certain standard hierarchies of type classes. For example, here are some of the type classes provided by the PureScript core libraries:</p>
 <ul>
 <li><code>Semigroup</code>, <code>Monoid</code></li>
 <li><code>Semiring</code>, <code>Ring</code>, <code>CommutativeRing</code>, <code>EuclideanRing</code>, <code>Field</code></li>
@@ -268,4 +268,4 @@ liftIso :: forall p a s. (Profunctor p) =&gt; Iso s a -&gt; p a a -&gt; p s s
 
 liftLens :: forall p a s. (Strong p) =&gt; Lens s a -&gt; p a a -&gt; p s s
 </code></pre>
-</main></div></body></html>
+</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2018</small></p></footer></body></html>

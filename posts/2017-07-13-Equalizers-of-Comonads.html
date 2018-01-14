@@ -1,5 +1,5 @@
 <!DOCTYPE HTML>
-<html><head><title>Functorial Blog - Equalizers of Comonads</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:400,300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:400,300"><link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><div class="container"><header><h1><a href="../index.html">Functorial Blog</a></h1><p class="lead">A blog about functional programming</p><p><small><a href="../feed.rss">RSS Feed</a></small></p><p class="text-muted"><small>© Phil Freeman 2010-2017</small></p></header><main><h2>Equalizers of Comonads</h2><p><small>by Phil Freeman on 2017/07/13</small></p><p>Here&#39;s an interesting little result:</p>
+<html><head><title>Functorial Blog - Equalizers of Comonads</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:300"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><header><h1>Equalizers of Comonads</h1><p>by Phil Freeman on 2017/07/13</p><hr></header><main><p>Here&#39;s an interesting little result:</p>
 <blockquote>
 <p>Consider a comonad <code>w</code> which preserves limits, and suppose we have a natural transformation <code>f :: w ~&gt; I</code> where <code>I</code> is the identity functor.</p>
 <p>Note that <code>extend f</code> is also a natural transformation <code>w ~&gt; w</code>.</p>
@@ -37,4 +37,4 @@ right = liftFree (R unit)
 <p>The claim is that <code>alpha</code> gives a comonad structure on <code>q</code>, together with <code>extract</code> given by <code>extract . phi</code>.</p>
 <p>To see this, observe that <code>map phi . phi . alpha = duplicate . phi</code>, and that <code>phi</code> is a mono. The comonad laws for <code>duplicate</code> pull back to the equivalent laws for <code>alpha</code> via the mono <code>phi</code>.</p>
 <p>QED</p>
-</main></div></body></html>
+</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2018</small></p></footer></body></html>
