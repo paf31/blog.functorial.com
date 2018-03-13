@@ -1,0 +1,236 @@
+<!DOCTYPE HTML>
+<html><head><title>Functorial Blog - You Might Not Need The Virtual DOM</title><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Slab:300"><link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Roboto+Mono:300"><link rel="stylesheet" type="text/css" href="../assets/default.css"><meta name="viewport" content="width=device-width, initial-scale=1"><script type="text/javascript" src="../assets/gaq.js"></script></head><body><header><h1>You Might Not Need The Virtual DOM</h1><p>by Phil Freeman on 2018/03/12</p><hr></header><main><h2>Introduction</h2>
+<p>Lately, I&#39;ve been working on a new library called <a href="https://github.com/paf31/purescript-sdom">purescript-sdom</a>. It is an attempt to build a UI library in 100% PureScript without using the virtual DOM. I&#39;ll give an overview of the motivation behind the library, and the way in which it was implemented.</p>
+<h2>Motivation</h2>
+<p>The virtual DOM is a powerful technique for the development of web applications. Popularized by React, emulated by many other JavaScript libraries and ported to other languages, it has become commonplace in web development.</p>
+<p>I think the main reason for this is that the idea is so straightforward - an application is essentially a function from states to the type of virtual DOM elements. Another reason is that the virtual DOM enables many other useful abstractions for building user interfaces. The Elm architecture is a great example of this, but there is <a href="http://blog.functorial.com/posts/2016-08-07-Comonads-As-Spaces.html">a whole category of VDOM-based abstractions</a> waiting to be understood.</p>
+<p>Denotationally speaking, the virtual DOM is very appealing, but operationally, it is a heavyweight solution for many problems. Every time we modify our application state and rerun our render function, we allocate a new tree of (virtual) DOM components, and perform a tree diff in order to discover what must change in the actual DOM. For many (most?) applications, this seems to be overkill. We can optimize the diff algorithm in various ways, but ultimately, the diffing is essentially unnecessary - for simple changes to the model, I know precisely which nodes need to be updated. We simply need a way to make this obvious in the code.</p>
+<p>An example will help to illustrate the inefficiency here. Consider a form which contains text inputs and validation messages which appear when the user enters incorrect data. Each input corresponds directly to a validation message element, and so, when the model changes, we can update these elements directly. Without a virtual DOM, we would just lay out the form statically, set the initial attributes and add event handlers to update them. Crucially, the elements themselves would never change or move.</p>
+<p>This is a deliberately simple example, but this approach works in many other cases. In general, we can lay out the initial UI once and use event handlers to update attributes as the model changes. We rarely need to modify or move the actual DOM elements.</p>
+<p>You might say &quot;but my data isn&#39;t always static - tables contain dynamic data from the database&quot;. This is correct, but in many cases, even lists of data can use this approach, since we have a (usually quite small) upper bound on the number of rows in a table, for example. We can simply allocate the elements up front, and hide the elements we don&#39;t need.</p>
+<p>Of course, this approach has its limitations. We don&#39;t always have a small upper bound on the number of child elements - we might not have an upper bound at all. Even so, we can still take advantage of certain guarantees about the static nature of a UI, as we&#39;ll see.</p>
+<h2>An Initial Encoding</h2>
+<p>Let&#39;s start with a simple data type that we might use as the basis of a virtual DOM implementation:</p>
+<pre class="purescript"><code>data VDOM
+  = Text String
+  | Element
+      String -- element name
+      (Map AttributeName AttributeValue) -- attributes
+      (Map EventName EventHandler) -- event handlers
+      (Array VDOM) -- child elements
+</code></pre>
+<p>A <code>VDOM</code> node is either a <code>Text</code> node which contains a single string, or an <code>Element</code> with an element name, a collection of attributes, a collection of event handlers, and a collection of child elements.</p>
+<p>In order do use this type to build a user interface, we would implement a function <code>model -&gt; VDOM</code> from <em>models</em> to our type of virtual DOM representations. When a new model becomes available, we would diff the old representation and the new representation, and then apply the resulting patchset to the actual DOM.</p>
+<p>Looking more closely at the type <code>model -&gt; VDOM</code>, we see that every part of the VDOM can depend on the current model. If we would like to keep the <em>shape</em> of the page static, but allow the text and attributes to vary, we can simply move the model type into our <code>VDOM</code> type and move the function arrow under the various functors. This gives us the alternate type <code>SDOM</code> of &quot;static DOM&quot; elements:</p>
+<pre class="purescript"><code>data SDOM model
+  = Text (model -&gt; String)
+  | Element
+      String
+      (Map AttributeName (model -&gt; AttributeValue))
+      (Map EventName (model -&gt; EventHandler))
+      (Array (SDOM model))
+</code></pre>
+<p>This is very close to the first version of the <code>SDOM</code> data type that I defined when working on <code>purescript-sdom</code>.</p>
+<p>This simple change to the types is enough to guarantee that only the content of text nodes, attributes and event handlers are allowed to vary with the model. Everything else must be static. We can exploit this property to render the UI only once on application startup. We can write a function in order to attach such a component to the actual DOM:</p>
+<pre class="purescript"><code>setup 
+  :: forall model
+   . SDOM model
+  -&gt; DOMNode -- the DOM node to use as the root
+  -&gt; model -- the initial model
+  -&gt; Event { old :: model, new :: model } -- fires when the model changes
+  -&gt; Eff _
+       { events :: Event (model -&gt; model) -- a stream of event changes
+       , unsubscribe :: Eff _ Unit -- remove event listeners
+       }
+</code></pre>
+<p>The <code>Event</code> type here is taken from my <code>purescript-behaviors</code> library, and it represents a stream of future values.</p>
+<p>The <code>setup</code> function could be written by pattern matching the data constructors of <code>SDOM</code>. Using it, we can build a function which &quot;ties the knot&quot;, feeding events from our component back into the input event, causing the DOM nodes and attributes to get updated:</p>
+<pre class="purescript"><code>attach
+  :: forall model
+   . Node
+  -&gt; model
+  -&gt; SDOM model
+  -&gt; Eff _ Unit
+</code></pre>
+<p>As we noted earlier though, this approach only works if we don&#39;t need arrays of <em>potentially unbounded length</em>. For many real applications, we&#39;re quite likely to run into this limitation, so now we&#39;ll extend this approach to deal with that case.</p>
+<h2>Adding Support for Arrays</h2>
+<p>How can we add support for arrays of dynamic length while keeping the benefits of a static DOM? In general, we will need to be prepared to create new DOM elements if necessary (we can only preallocate a finite number, after all), but it should be possible to <em>reuse</em> DOM elements so long as the shape of the DOM is uniform across the elements of the array.</p>
+<p>Switching to a <em>generalized algebraic data type</em>, we can add a new data constructor for elements with a dynamic collection of children:</p>
+<pre class="purescript"><code>data SDOM model where
+  Text 
+    :: (model -&gt; String)
+    -&gt; SDOM model
+  
+  Element
+    :: String
+    -&gt; Map AttributeName (model -&gt; AttributeValue)
+    -&gt; Map EventName (model -&gt; EventHandler)
+    -&gt; Array (SDOM model)
+    -&gt; SDOM model
+    
+  Array
+    :: String -- containing element
+    -&gt; SDOM model -- element UI
+    -&gt; SDOM (Array model)
+</code></pre>
+<p>The type of <code>Array</code> is straightforward: given a UI for each array element, we can construct a UI for a model which is an array. The implementation of this UI can reuse child elements as needed, since they all have the same shape, or create new elements if necessary, appending them to the end of the container.</p>
+<p>However, since PureScript does not support GADTs, I instead switched to a final encoding at this point, identifying <code>SDOM</code> values with their partial application to the <code>setup</code> function above:</p>
+<pre class="purescript"><code>newtype SDOM model = SDOM
+  (DOMNode
+  -&gt; model
+  -&gt; Event { old :: model, new :: model }
+  -&gt; Eff _
+       { events :: Event (model -&gt; model)
+       , unsubscribe :: Eff _ Unit
+       })
+</code></pre>
+<p>A value of type <code>SDOM model</code> is now a function which renders the initial <code>model</code> and then subscribes to an event in order to receive model updates.</p>
+<p>With this new representation, we can hide the constructor in the module&#39;s export list, and provide smart constructors, including a constructor for dynamic arrays:</p>
+<pre class="purescript"><code>text :: forall model. (model -&gt; String) -&gt; SDOM model
+
+element
+  :: forall model
+   . String
+  -&gt; Map AttributeName (model -&gt; AttributeValue)
+  -&gt; Map EventName (model -&gt; EventHandler)
+  -&gt; Array (SDOM model)
+  -&gt; SDOM model
+
+array :: String -&gt; SDOM model -&gt; SDOM (Array model)
+</code></pre>
+<p>As it turns out, this new representation has an additional benefit: it becomes simpler to work with third-party components which are not necessarily written in PureScript, since we don&#39;t need to build a very low-level escape hatch into our initial encoding - our representation itself is now low-level.</p>
+<h2>Context</h2>
+<p>When working with dynamic arrays, we very often need access to the index of the array element we are currently rendering. This is solved by adding <em>context</em> to components, which I represent with an additional type argument:</p>
+<pre class="purescript"><code>newtype SDOM context model = SDOM
+  (DOMNode
+  -&gt; context
+  -&gt; model
+  -&gt; Event { old :: model, new :: model }
+  -&gt; Eff _
+       { events :: Event (model -&gt; model)
+       , unsubscribe :: Eff _ Unit
+       })
+</code></pre>
+<p>The <code>context</code> type argument is only used once, to provide an additional value which can be used during the initial setup of a component. The <code>context</code> never changes like the model does - once a component is created, its context is fixed until the component is removed.</p>
+<p>For example, the <code>array</code> function can be modified to add the current index to the context:</p>
+<pre class="purescript"><code>type ArrayContext context =
+  { index :: Int
+  , parent :: context
+  }
+  
+array
+  :: forall context model
+   . String
+  -&gt; SDOM (ArrayContext context) model
+  -&gt; SDOM context (Array model)
+</code></pre>
+<p>The other smart constructors can be modified to make the context available:</p>
+<pre class="purescript"><code>text 
+  :: forall context model
+   . (context -&gt; model -&gt; String)
+  -&gt; SDOM context model
+
+element
+  :: forall context model
+   . String
+  -&gt; Map AttributeName (context -&gt; model -&gt; AttributeValue)
+  -&gt; Map EventName (context -&gt; model -&gt; EventHandler)
+  -&gt; Array (SDOM context model)
+  -&gt; SDOM context model
+</code></pre>
+<p>Notice that the shape of an element cannot depend on its context - only the values of text nodes and attributes.</p>
+<h2>Channels</h2>
+<p>There is a second challenge when dealing with dynamic arrays. It is often useful to be able to access the array itself when defining the UI for an array <em>element</em>. For example, when creating a list of elements, it is useful to be able to attach a &quot;remove&quot; button to each array element, but such a button needs to modify the array itself, not just the current element.</p>
+<p>In order to allow this, I added yet another type argument to the <code>SDOM</code> type, this time to keep track of the <em>event channel</em>:</p>
+<pre class="purescript"><code>newtype SDOM channel context model = SDOM
+  (DOMNode
+  -&gt; context
+  -&gt; model
+  -&gt; Event { old :: model, new :: model }
+  -&gt; Eff _
+       { events :: Event (Either channel (model -&gt; model))
+       , unsubscribe :: Eff _ Unit
+       })
+</code></pre>
+<p>The new <code>channel</code> type argument only appears in the type of the events that a component can raise. Now, instead of forcing the user to return a function of type <code>model -&gt; model</code> which modifies the <em>current</em> model type, we also allow the user to use a secondary <em>channel</em> to send events back to a parent element.</p>
+<p>For example, the <code>array</code> function provides a channel to its subcomponents which allows them to modify the array itself:</p>
+<pre class="purescript"><code>data ArrayChannel model channel
+  = Parent channel
+  | Here (Array model -&gt; Array model)
+
+array
+  :: forall channel context model
+   . String
+  -&gt; SDOM (ArrayChannel model channel) (ArrayContext context) model
+  -&gt; SDOM channel context (Array model)
+</code></pre>
+<p>An <code>ArrayChannel</code> lets the user choose between applying a function <code>Here</code> to the current array, or delegating to the <code>Parent</code> channel, passing an event further up the chain.</p>
+<p>The other smart constructors can be modified to give the user access to the event channel. For example:</p>
+<pre class="purescript"><code>element
+  :: forall channel context model
+   . String
+  -&gt; Map AttributeName (context -&gt; model -&gt; AttributeValue)
+  -&gt; Map EventName (context -&gt; model -&gt; EventHandler channel) 
+  -- ^ Event handlers can now use the event channel
+  -&gt; Array (SDOM channel context model)
+  -&gt; SDOM channel context model
+</code></pre>
+<p>This is enough to support the &quot;remove&quot; use case we just saw. The remove button can simply use the <code>Here</code> constructor to modify the array of elements in order to remove its own model!</p>
+<h2>Asynchronous Events</h2>
+<p>Events channels are more generally useful, since they allow us to decouple UI components from the logic they require. For example, we can use an event channel to send an event to a parent component, without specifying how it can be interpreted. To support this sort of use case, I added the <code>interpretChannel</code> combinator:</p>
+<pre class="purescript"><code>interpretChannel
+  :: forall channel channel&#39; context model
+   . (Event channel -&gt; Event (Either channel&#39; (model -&gt; model)))
+  -&gt; SDOM channel context model
+  -&gt; SDOM channel&#39; context model
+</code></pre>
+<p>There is an interesting special case of <code>interpretChannel</code>, where the event channel itself uses the <code>Event</code> type to describe a stream of future values. This allows us to respond to DOM events asynchronously, or to respond with multiple model updates over time. The <code>withAsync</code> combinator facilitates this use case:</p>
+<pre class="purescript"><code>withAsync
+  :: forall channel context model
+   . SDOM (Event (Either channel (model -&gt; model))) context model
+  -&gt; SDOM channel context model
+withAsync = interpretChannel keepLatest
+</code></pre>
+<p>This gives us lots of expressive power, since the entire language of <code>Event</code>s (and <code>Behavior</code>s) becomes available for describing component behavior.</p>
+<h2>Focusing State</h2>
+<p>The final version of the <code>SDOM</code> type involves just one more type argument (!)</p>
+<p>However, this time, I am not really adding a new type argument so much as splitting an existing one into two. This is one of my favorite tricks, since it extends our API with the expressiveness of <em>profunctor lenses</em>, almost for free.</p>
+<p>Let&#39;s split the <code>model</code> type into two arguments, one for covariant uses (I&#39;ll call this <code>o</code> for &quot;output&quot;), and the other for contravariant uses (called <code>i</code> for &quot;input&quot;):</p>
+<pre class="purescript"><code>newtype SDOM channel context i o = SDOM
+  (DOMNode
+  -&gt; context
+  -&gt; i
+  -&gt; Event { old :: i, new :: i }
+  -&gt; Eff _
+       { events :: Event (Either channel (i -&gt; o))
+       , unsubscribe :: Eff _ Unit
+       })
+</code></pre>
+<p>This makes <code>SDOM channel context</code> into a <em>profunctor</em>:</p>
+<pre class="purescript"><code>instance profunctorSDOM :: Profunctor (SDOM channel context)
+</code></pre>
+<p>More importantly, it is also a <em>strong profunctor</em>:</p>
+<pre class="purescript"><code>instance strongSDOM :: Strong (SDOM channel context)
+</code></pre>
+<p>Now consider the definition of a profunctor lens:</p>
+<pre class="purescript"><code>type Lens s t a b = forall p. Strong p =&gt; p a b -&gt; p s t
+</code></pre>
+<p>We can see that it is now possible to apply a profunctor lens directly to a value of type <code>SDOM</code>, since we can simply <em>instantiate</em> the type variable <code>p</code> with the type <code>SDOM channel context</code>, giving us a very useful combinator for free:</p>
+<pre class="purescript"><code>focus 
+  :: forall s t a b
+   . Lens s t a b
+  -&gt; SDOM channel context a b
+  -&gt; SDOM channel context s t
+focus l = l
+</code></pre>
+<p>This combinator is just the identity function, but it is very useful in practice. If we only want to use a subset of the current model type, we can simply apply a <code>Lens</code> to focus on that part. This lets us write our components in such a way that we only ever deal with the absolute minimum amount of state.</p>
+<h2>Conclusion</h2>
+<p>That&#39;s all there is to the <code>purescript-sdom</code> library. I&#39;ve enjoyed working on it because many of the decisions were made automatically, by observing any issues and then simply following the types, as I&#39;ve tried to illustrate here.</p>
+<p>If you&#39;d like to help me work on the library, please let me know. There&#39;s still plenty to do!</p>
+<h2>Addendum: Incremental Rendering</h2>
+<p>The <code>purescript-sdom</code> approach has some limitations of its own. Most notably, the <code>array</code> function is optimized for array additions and removals which happen at the end of the array, so that array elements near the start are reused. For modifications away from the end of the array, we can end up with many more DOM updates than absolutely needed. In practice, this is mostly fine, but there are corner cases where it could become a performance issue. For that reason, I&#39;m also working on another approach based on the <em>incremental lambda calculus</em>.</p>
+<p>The incremental lambda calculus is a model of lambda calculus in which each type is associated with a type of <em>changes</em>, and in which each function is <em>differentiable</em>, in the sense that we can produce a function on the level of changes which allows us to incrementally compute changes in results from changes in inputs.</p>
+<p>This is a good fit for a UI library, since we can define a UI as an incremental function from some model type to a type of DOM elements. The incremental nature of functions means that we can turn model changes directly into DOM changes without having to diff any sort of virtual DOM representation (clearly, there is an overlap with <code>purescript-sdom</code> here).</p>
+<p>We can endow arrays with a type of changes which support arbitrary insertions and removals, and then translate those to change on the DOM. This way, we don&#39;t need to worry any more about updates away from the end of an array.</p>
+<p>I hope to have something to report about this approach soon.</p>
+</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2018</small></p></footer></body></html>
