@@ -31,4 +31,4 @@ derive newtype instance comonadFreeApply :: Comonad f =&gt; Comonad (FreeApply f
 <pre class="purescript"><code>instance comonadTransFreeApply :: ComonadTrans FreeApply where
   lower (FreeApply d) = runDay (\f w fa -&gt; map (\x -&gt; f x (extract fa)) w) d
 </code></pre>
-</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2018</small></p></footer></body></html>
+</main><footer><hr><p class="text-muted"><small>© Phil Freeman 2010-2021</small></p></footer></body></html>
